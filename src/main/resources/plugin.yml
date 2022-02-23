@@ -1,12 +1,12 @@
-name: ExamplePonderPlugin
+name: DansPluginManager
 version: '${project.version}'
-main: preponderous.exampleponderplugin.ExamplePonderPlugin
+main: dansplugins.dpm.DansPluginManager
 api-version: 1.13
 
 commands:
-  exampleponderplugin:
-  epp:
+  danspluginmanager:
+  dpm:
 
 permissions:
-  epp.help:
+  dpm.help:
     default: true
