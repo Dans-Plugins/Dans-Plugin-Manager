@@ -6,7 +6,6 @@ import dansplugins.dpm.data.EphemeralData;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**

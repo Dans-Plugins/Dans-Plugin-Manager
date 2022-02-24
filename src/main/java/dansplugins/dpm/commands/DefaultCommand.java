@@ -21,7 +21,7 @@ public class DefaultCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender commandSender) {
         commandSender.sendMessage(ChatColor.AQUA + "Dan's Plugin Manager " + DansPluginManager.getInstance().getVersion());
-        commandSender.sendMessage(ChatColor.AQUA + "Developed by: Daniel McCoy Stephenson");
+        commandSender.sendMessage(ChatColor.AQUA + "Developed by: Daniel McCoy Stephenson, Deej");
         commandSender.sendMessage(ChatColor.AQUA + "Wiki: https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki");
         return true;
     }

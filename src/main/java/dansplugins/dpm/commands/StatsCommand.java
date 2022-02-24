@@ -20,7 +20,8 @@ public class StatsCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender commandSender) {
-        commandSender.sendMessage("Number of project records: " + EphemeralData.getInstance().getNumProjectRecords());
+        commandSender.sendMessage(ChatColor.AQUA + "=== DPM Stats ===");
+        commandSender.sendMessage(ChatColor.AQUA + "Number of project records: " + EphemeralData.getInstance().getNumProjectRecords());
         return true;
     }
 
