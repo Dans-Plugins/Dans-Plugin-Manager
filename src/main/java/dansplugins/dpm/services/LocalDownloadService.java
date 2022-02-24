@@ -24,7 +24,7 @@ public class LocalDownloadService {
     }
 
     public int downloadFromLink(ProjectRecord projectRecord) {
-        return downloadFromLink(projectRecord.getLink(), PATH_TO_PLUGINS_FOLDER + projectRecord.getName());
+        return downloadFromLink(projectRecord.getLink(), PATH_TO_PLUGINS_FOLDER + projectRecord.getName() + ".jar");
     }
 
     public int downloadFromLink(String link, String path) {
