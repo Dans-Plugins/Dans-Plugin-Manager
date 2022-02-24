@@ -9,7 +9,7 @@ import dansplugins.dpm.services.LocalDownloadService;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Daniel McCoy Stephenson
@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class GetCommand extends AbstractPluginCommand {
 
     public GetCommand() {
-        super(new ArrayList<>(Arrays.asList("get")), new ArrayList<>(Arrays.asList("dpm.get")));
+        super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
     }
 
     @Override

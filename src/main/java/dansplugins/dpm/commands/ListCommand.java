@@ -7,6 +7,7 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Daniel McCoy Stephenson
@@ -14,7 +15,7 @@ import java.util.Arrays;
 public class ListCommand extends AbstractPluginCommand {
 
     public ListCommand() {
-        super(new ArrayList<>(Arrays.asList("list")), new ArrayList<>(Arrays.asList("dpm.list")));
+        super(new ArrayList<>(List.of("list")), new ArrayList<>(List.of("dpm.list")));
     }
 
     @Override

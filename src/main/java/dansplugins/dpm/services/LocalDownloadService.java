@@ -29,8 +29,7 @@ public class LocalDownloadService {
 
     public int downloadFromLink(String link, String path) {
         try {
-            int bytesRead = readAndWrite(link, path);
-            return bytesRead;
+            return readAndWrite(link, path);
         } catch (IOException e) {
             Logger.getInstance().log("Something went wrong downloading from a link.");
             return -1;

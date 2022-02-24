@@ -31,8 +31,8 @@ public class EphemeralData {
         return null;
     }
 
-    public boolean addProjectRecord(ProjectRecord projectRecord) {
-        return projectRecords.add(projectRecord);
+    public void addProjectRecord(ProjectRecord projectRecord) {
+        projectRecords.add(projectRecord);
     }
 
     public boolean removeProjectRecord(ProjectRecord projectRecord) {

@@ -9,7 +9,7 @@ import dansplugins.dpm.commands.HelpCommand;
 import dansplugins.dpm.commands.ListCommand;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.LocalConfigService;
-import preponderous.ponder.minecraft.bukkit.PonderMC;
+import org.jetbrains.annotations.NotNull;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import preponderous.ponder.minecraft.bukkit.abs.PonderBukkitPlugin;
 import preponderous.ponder.minecraft.bukkit.services.CommandService;
@@ -24,7 +24,7 @@ import java.util.Arrays;
 public final class DansPluginManager extends PonderBukkitPlugin {
     private static DansPluginManager instance;
     private final String pluginVersion = "v" + getDescription().getVersion();
-    private final CommandService commandService = new CommandService((PonderMC) getPonder());
+    private final CommandService commandService = new CommandService(getPonder());
 
     /**
      * This can be used to get the instance of the main class that is managed by itself.
@@ -62,7 +62,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
      * @return A boolean indicating whether the execution of the command was successful.
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 0) {
             DefaultCommand defaultCommand = new DefaultCommand();
             return defaultCommand.execute(sender);
@@ -85,7 +85,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
      */
     public boolean isVersionMismatched() {
         String configVersion = this.getConfig().getString("version");
-        if (configVersion == null || this.getVersion() == null) {
+        if (configVersion == null) {
             return false;
         } else {
             return !configVersion.equalsIgnoreCase(this.getVersion());
