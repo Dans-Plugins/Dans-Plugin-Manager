@@ -5,7 +5,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.Listener;
 
 import dansplugins.dpm.commands.DefaultCommand;
+import dansplugins.dpm.commands.GetCommand;
 import dansplugins.dpm.commands.HelpCommand;
+import dansplugins.dpm.commands.ListCommand;
 import dansplugins.dpm.eventhandlers.JoinHandler;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.LocalConfigService;
@@ -138,7 +140,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
      */
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
-                new HelpCommand()
+                new HelpCommand(),
+                new GetCommand(),
+                new ListCommand()
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }

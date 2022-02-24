@@ -2,6 +2,9 @@ package dansplugins.dpm.data;
 
 import java.util.ArrayList;
 
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+
 import dansplugins.dpm.objects.ProjectRecord;
 
 public class EphemeralData {
@@ -34,5 +37,12 @@ public class EphemeralData {
 
     public boolean removeProjectRecord(ProjectRecord projectRecord) {
         return projectRecords.remove(projectRecord);
+    }
+
+    public void sendListOfProjectRecordsToCommandSender(CommandSender commandSender) {
+        commandSender.sendMessage(ChatColor.AQUA + "=== Project Records ===");
+        for (ProjectRecord projectRecord : projectRecords) {
+            commandSender.sendMessage(ChatColor.AQUA + projectRecord.getName());
+        }
     }
 }

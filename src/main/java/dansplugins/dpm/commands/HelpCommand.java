@@ -20,6 +20,8 @@ public class HelpCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender commandSender) {
         commandSender.sendMessage(ChatColor.AQUA + "/dpm help");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm list");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm get");
         return true;
     }
 
