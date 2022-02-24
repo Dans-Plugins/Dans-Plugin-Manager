@@ -8,7 +8,6 @@ import dansplugins.dpm.commands.GetCommand;
 import dansplugins.dpm.commands.HelpCommand;
 import dansplugins.dpm.commands.ListCommand;
 import dansplugins.dpm.commands.StatsCommand;
-import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.LocalConfigService;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 
