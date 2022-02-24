@@ -26,6 +26,7 @@ Please fill out a bug report [here](https://github.com/Dans-Plugins/Dans-Plugin-
 Name | Main Contributions
 ------------ | -------------
 Daniel Stephenson | Creator
+Mr-Deej | Minor cleanup and fixes
 
 ## License
 MIT
