@@ -39,12 +39,13 @@ public class GetCommand extends AbstractPluginCommand {
             commandSender.sendMessage(ChatColor.RED + "No bytes were read.");
             return false;
         }
-        if (bytesRead == -1) {
+        else if (bytesRead == -1) {
             commandSender.sendMessage(ChatColor.RED + "Something went wrong.");
             return false;
         }
-
-        commandSender.sendMessage(ChatColor.GREEN + "Success! " + bytesRead + " bytes were retrieved. Restart the server in order to enable " + projectRecord.getName() + ".");
-        return true;
+        else {
+            commandSender.sendMessage(ChatColor.GREEN + "Success! " + bytesRead + " bytes were retrieved. Restart the server in order to enable " + projectRecord.getName() + ".");
+            return true;
+        }
     }
 }
