@@ -45,4 +45,8 @@ public class EphemeralData {
             commandSender.sendMessage(ChatColor.AQUA + projectRecord.getName());
         }
     }
+
+    public int getNumProjectRecords() {
+        return projectRecords.size();
+    }
 }
