@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import dansplugins.dpm.commands.DefaultCommand;
 import dansplugins.dpm.commands.HelpCommand;
 import dansplugins.dpm.eventhandlers.JoinHandler;
+import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.LocalConfigService;
 import preponderous.ponder.minecraft.bukkit.PonderMC;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -43,6 +44,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         initializeConfig();
         registerEventHandlers();
         initializeCommandService();
+        initializeProjectRecords();
     }
 
     /**
@@ -139,5 +141,17 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new HelpCommand()
         ));
         commandService.initialize(commands, "That command wasn't found.");
+    }
+
+    private void initializeProjectRecords() {
+        createRecord("medievalfactions", "https://github.com/Dans-Plugins/Medieval-Factions/releases/download/v4.6.2/Medieval-Factions-4.6.2.jar");
+        createRecord("simpleskills", "https://github.com/Dans-Plugins/SimpleSkills/releases/download/v2.0/SimpleSkills-2.0.jar");
+        createRecord("wildpets", "https://github.com/Dans-Plugins/Wild-Pets/releases/download/1.4/WildPets-1.4.jar");
+        createRecord("currencies", "https://github.com/Dans-Plugins/Currencies");
+        createRecord("foodspoilage", "https://github.com/Dans-Plugins/FoodSpoilage");
+    }
+
+    private void createRecord(String name, String link) {
+        ProjectRecordFactory.getInstance().createProjectRecord(name, link);
     }
 }
