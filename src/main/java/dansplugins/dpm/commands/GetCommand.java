@@ -44,7 +44,7 @@ public class GetCommand extends AbstractPluginCommand {
             return false;
         }
 
-        commandSender.sendMessage(ChatColor.GREEN + "Success! " + bytesRead + " bytes were retrieved.");
+        commandSender.sendMessage(ChatColor.GREEN + "Success! " + bytesRead + " bytes were retrieved. Restart the server in order to enable " + projectRecord.getName() + ".");
         return true;
     }
 }
