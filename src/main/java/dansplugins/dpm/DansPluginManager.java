@@ -2,20 +2,17 @@ package dansplugins.dpm;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.event.Listener;
 
 import dansplugins.dpm.commands.DefaultCommand;
 import dansplugins.dpm.commands.GetCommand;
 import dansplugins.dpm.commands.HelpCommand;
 import dansplugins.dpm.commands.ListCommand;
-import dansplugins.dpm.eventhandlers.JoinHandler;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.LocalConfigService;
 import preponderous.ponder.minecraft.bukkit.PonderMC;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import preponderous.ponder.minecraft.bukkit.abs.PonderBukkitPlugin;
 import preponderous.ponder.minecraft.bukkit.services.CommandService;
-import preponderous.ponder.minecraft.bukkit.tools.EventHandlerRegistry;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -44,7 +41,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     public void onEnable() {
         instance = this;
         initializeConfig();
-        registerEventHandlers();
         initializeCommandService();
         initializeProjectRecords();
     }
@@ -122,17 +118,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
             LocalConfigService.getInstance().saveMissingConfigDefaultsIfNotPresent();
         }
         reloadConfig();
-    }
-
-    /**
-     * Registers the event handlers of the plugin using Ponder.
-     */
-    private void registerEventHandlers() {
-        EventHandlerRegistry eventHandlerRegistry = new EventHandlerRegistry();
-        ArrayList<Listener> listeners = new ArrayList<>(Arrays.asList(
-                new JoinHandler()
-        ));
-        eventHandlerRegistry.registerEventHandlers(listeners, this);
     }
 
     /**
