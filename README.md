@@ -7,9 +7,9 @@ This Minecraft plugin is intended to allow operators to easily download the comm
 This plugin is not ready for use yet.
 
 ## Usage
-- [User Guide](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Guide)
-- [List of Commands](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Commands)
-- [FAQ](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/FAQ)
+- [User Guide](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Guide) (coming soon)
+- [List of Commands](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Commands) (coming soon)
+- [FAQ](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/FAQ) (coming soon)
 
 ## Support
 You can find the support discord server [here](https://discord.gg/xXtuAQ2).
@@ -20,7 +20,7 @@ Please fill out a bug report [here](https://github.com/Dans-Plugins/Dans-Plugin-
 - [Known Bugs](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Contributing
-- [Notes for Developers (coming soon)](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Developer-Notes)
+- [Notes for Developers (coming soon)](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Developer-Notes) (coming soon)
 
 ## Authors and acknowledgement
 Name | Main Contributions
