@@ -8,7 +8,6 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author Daniel McCoy Stephenson
@@ -16,7 +15,7 @@ import java.util.List;
 public class DefaultCommand extends AbstractPluginCommand {
 
     public DefaultCommand() {
-        super(new ArrayList<>(List.of("default")), new ArrayList<>(List.of("dpm.default")));
+        super(new ArrayList<>(Arrays.asList("default")), new ArrayList<>(Arrays.asList("dpm.default")));
     }
 
     @Override
