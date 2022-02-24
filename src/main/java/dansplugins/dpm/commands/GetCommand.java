@@ -22,7 +22,7 @@ public class GetCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender commandSender) {
-        commandSender.sendMessage(ChatColor.RED + "Usage: /dpm get medievalfactions");
+        commandSender.sendMessage(ChatColor.RED + "Usage: /dpm get <project-record-name>");
         return false;
     }
 
