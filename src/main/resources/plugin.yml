@@ -10,3 +10,7 @@ commands:
 permissions:
   dpm.help:
     default: true
+  dpm.list:
+    default: true
+  dpm.get:
+    default: op
