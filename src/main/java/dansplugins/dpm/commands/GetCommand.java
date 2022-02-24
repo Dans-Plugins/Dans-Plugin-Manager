@@ -43,6 +43,8 @@ public class GetCommand extends AbstractPluginCommand {
             commandSender.sendMessage(ChatColor.RED + "Something went wrong.");
             return false;
         }
+
+        commandSender.sendMessage(ChatColor.GREEN + "Success! " + bytesRead + " bytes were retrieved.");
         return true;
     }
 }
