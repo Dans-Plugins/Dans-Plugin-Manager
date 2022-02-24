@@ -3,8 +3,9 @@
 ## Description
 This Minecraft plugin is intended to allow operators to easily download the community's plugins in-game or through a server console.
 
-## Installation
-This plugin is not ready for use yet.
+## Download
+You can download the plugin here:
+https://github.com/Dans-Plugins/Dans-Plugin-Manager/releases
 
 ## Usage
 - [User Guide](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Guide) (coming soon)
