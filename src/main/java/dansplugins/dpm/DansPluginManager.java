@@ -7,6 +7,7 @@ import dansplugins.dpm.commands.DefaultCommand;
 import dansplugins.dpm.commands.GetCommand;
 import dansplugins.dpm.commands.HelpCommand;
 import dansplugins.dpm.commands.ListCommand;
+import dansplugins.dpm.commands.StatsCommand;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.LocalConfigService;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
@@ -129,7 +130,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
                 new GetCommand(),
-                new ListCommand()
+                new ListCommand(),
+                new StatsCommand()
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }
