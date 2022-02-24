@@ -3,7 +3,6 @@ package dansplugins.dpm.commands;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-import dansplugins.dpm.DansPluginManager;
 import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.LocalDownloadService;
