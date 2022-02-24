@@ -19,7 +19,7 @@ public class HelpCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender commandSender) {
-        commandSender.sendMessage("=== DPM Commands ===");
+        commandSender.sendMessage(ChatColor.AQUA + "=== DPM Commands ===");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm help - View a list of helpful commands.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm list - List project records.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm get <project-record-name> - Download a project");
