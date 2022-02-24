@@ -32,6 +32,7 @@ public class ProjectRecordInitializer {
         createRecord("netheraccesscontroller", "https://github.com/Dans-Plugins/Nether-Access-Controller/releases/tag/v1.0.1");
         createRecord("mailboxes", "https://github.com/Dans-Plugins/Mailboxes/releases/download/v1.1/Mailboxes-v1.1.jar");
         createRecord("fiefs", "https://github.com/Dans-Plugins/Fiefs/releases/download/v0.10/Fiefs-0.10.jar");
+        createRecord("medievaleconomy", "https://github.com/Dans-Plugins/Medieval-Economy/releases/download/v1.1.1/Medieval-Economy-v1.1.1.jar");
     }
 
     private void createRecord(String name, String link) {
