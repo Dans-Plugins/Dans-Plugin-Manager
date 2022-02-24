@@ -12,5 +12,7 @@ permissions:
     default: true
   dpm.list:
     default: true
+  dpm.stats:
+    default: true
   dpm.get:
     default: op
