@@ -21,7 +21,7 @@ Please fill out a bug report [here](https://github.com/Dans-Plugins/Dans-Plugin-
 - [Known Bugs](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Contributing
-- [Notes for Developers (coming soon)](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Developer-Notes) (coming soon)
+- [Notes for Developers](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Developer-Notes) (coming soon)
 
 ## Authors and acknowledgement
 Name | Main Contributions
