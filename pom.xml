@@ -6,7 +6,7 @@
 
     <groupId>dansplugins</groupId>
     <artifactId>DansPluginManager</artifactId>
-    <version>0.3</version>
+    <version>0.4-alpha-1</version>
     <packaging>jar</packaging>
 
     <name>Dan's Plugin Manager</name>
