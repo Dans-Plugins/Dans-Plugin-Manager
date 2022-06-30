@@ -6,22 +6,14 @@ import dansplugins.dpm.DansPluginManager;
  * @author Daniel McCoy Stephenson
  */
 public class Logger {
+    private final DansPluginManager dansPluginManager;
 
-    private static Logger instance;
-
-    private Logger() {
-
-    }
-
-    public static Logger getInstance() {
-        if (instance == null) {
-            instance = new Logger();
-        }
-        return instance;
+    public Logger(DansPluginManager dansPluginManager) {
+        this.dansPluginManager = dansPluginManager;
     }
 
     public void log(String message) {
-        if (DansPluginManager.getInstance().isDebugEnabled()) {
+        if (dansPluginManager.isDebugEnabled()) {
             System.out.println("[DPM] " + message);
         }
     }

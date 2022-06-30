@@ -7,44 +7,36 @@ package dansplugins.dpm.services;
     - sendConfigList()
  */
 
+import dansplugins.dpm.DansPluginManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import dansplugins.dpm.DansPluginManager;
-
 /**
  * @author Daniel McCoy Stephenson
  */
-public class LocalConfigService {
+public class ConfigService {
+    private final DansPluginManager dansPluginManager;
 
-    private static LocalConfigService instance;
     private boolean altered = false;
 
-    private LocalConfigService() {
-
-    }
-
-    public static LocalConfigService getInstance() {
-        if (instance == null) {
-            instance = new LocalConfigService();
-        }
-        return instance;
+    public ConfigService(DansPluginManager dansPluginManager) {
+        this.dansPluginManager = dansPluginManager;
     }
 
     public void saveMissingConfigDefaultsIfNotPresent() {
         // set version
         if (!getConfig().isString("version")) {
-            getConfig().addDefault("version", DansPluginManager.getInstance().getVersion());
+            getConfig().addDefault("version", dansPluginManager.getVersion());
         } else {
-            getConfig().set("version", DansPluginManager.getInstance().getVersion());
+            getConfig().set("version", dansPluginManager.getVersion());
         }
 
         // save config options
         if (!isSet("debugMode")) { getConfig().set("debugMode", false); }
 
         getConfig().options().copyDefaults(true);
-        DansPluginManager.getInstance().saveConfig();
+        dansPluginManager.saveConfig();
     }
 
     public void setConfigOption(String option, String value, CommandSender sender) {
@@ -67,7 +59,7 @@ public class LocalConfigService {
             }
 
             // save
-            DansPluginManager.getInstance().saveConfig();
+            dansPluginManager.saveConfig();
             altered = true;
         } else {
             sender.sendMessage(ChatColor.RED + "That config option wasn't found.");
@@ -85,7 +77,7 @@ public class LocalConfigService {
     }
 
     public FileConfiguration getConfig() {
-        return DansPluginManager.getInstance().getConfig();
+        return dansPluginManager.getConfig();
     }
 
     public boolean isSet(String option) {
