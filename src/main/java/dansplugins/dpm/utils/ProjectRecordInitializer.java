@@ -3,17 +3,10 @@ package dansplugins.dpm.utils;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 
 public class ProjectRecordInitializer {
-    private static ProjectRecordInitializer instance;
+    private final ProjectRecordFactory projectRecordFactory;
 
-    private ProjectRecordInitializer() {
-
-    }
-
-    public static ProjectRecordInitializer getInstance() {
-        if (instance == null) {
-            instance = new ProjectRecordInitializer();
-        }
-        return instance;
+    public ProjectRecordInitializer(ProjectRecordFactory projectRecordFactory) {
+        this.projectRecordFactory = projectRecordFactory;
     }
 
     public void initializeProjectRecords() {
@@ -43,6 +36,6 @@ public class ProjectRecordInitializer {
     }
 
     private void createRecord(String name, String link) {
-        ProjectRecordFactory.getInstance().createProjectRecord(name, link);
+        projectRecordFactory.createProjectRecord(name, link);
     }
 }

@@ -1,16 +1,14 @@
 package dansplugins.dpm;
 
+import dansplugins.dpm.commands.*;
+import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.factories.ProjectRecordFactory;
+import dansplugins.dpm.services.ConfigService;
+import dansplugins.dpm.services.DownloadService;
+import dansplugins.dpm.utils.Logger;
+import dansplugins.dpm.utils.ProjectRecordInitializer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-
-import dansplugins.dpm.commands.DefaultCommand;
-import dansplugins.dpm.commands.GetCommand;
-import dansplugins.dpm.commands.HelpCommand;
-import dansplugins.dpm.commands.ListCommand;
-import dansplugins.dpm.commands.StatsCommand;
-import dansplugins.dpm.services.LocalConfigService;
-import dansplugins.dpm.utils.ProjectRecordInitializer;
-
 import org.jetbrains.annotations.NotNull;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import preponderous.ponder.minecraft.bukkit.abs.PonderBukkitPlugin;
@@ -24,27 +22,24 @@ import java.util.Arrays;
  * @author Daniel McCoy Stephenson
  */
 public final class DansPluginManager extends PonderBukkitPlugin {
-    private static DansPluginManager instance;
     private final String pluginVersion = "v" + getDescription().getVersion();
-    private final CommandService commandService = new CommandService(getPonder());
 
-    /**
-     * This can be used to get the instance of the main class that is managed by itself.
-     * @return The managed instance of the main class.
-     */
-    public static DansPluginManager getInstance() {
-        return instance;
-    }
+    private final CommandService commandService = new CommandService(getPonder());
+    private final EphemeralData ephemeralData = new EphemeralData();
+    private final ProjectRecordFactory projectRecordFactory = new ProjectRecordFactory(ephemeralData);
+    private final ProjectRecordInitializer projectRecordInitializer = new ProjectRecordInitializer(projectRecordFactory);
+    private final ConfigService configService = new ConfigService(this);
+    private final Logger logger = new Logger(this);
+    private final DownloadService downloadService = new DownloadService(logger);
 
     /**
      * This runs when the server starts.
      */
     @Override
     public void onEnable() {
-        instance = this;
         initializeConfig();
         initializeCommandService();
-        ProjectRecordInitializer.getInstance().initializeProjectRecords();
+        projectRecordInitializer.initializeProjectRecords();
     }
 
     /**
@@ -66,7 +61,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 0) {
-            DefaultCommand defaultCommand = new DefaultCommand();
+            DefaultCommand defaultCommand = new DefaultCommand(this);
             return defaultCommand.execute(sender);
         }
 
@@ -99,7 +94,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
      * @return Whether debug is enabled.
      */
     public boolean isDebugEnabled() {
-        return LocalConfigService.getInstance().getBoolean("debugMode");
+        return configService.getBoolean("debugMode");
     }
 
     private void initializeConfig() {
@@ -107,7 +102,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
             performCompatibilityChecks();
         }
         else {
-            LocalConfigService.getInstance().saveMissingConfigDefaultsIfNotPresent();
+            configService.saveMissingConfigDefaultsIfNotPresent();
         }
     }
 
@@ -117,7 +112,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     private void performCompatibilityChecks() {
         if (isVersionMismatched()) {
-            LocalConfigService.getInstance().saveMissingConfigDefaultsIfNotPresent();
+            configService.saveMissingConfigDefaultsIfNotPresent();
         }
         reloadConfig();
     }
@@ -128,9 +123,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
-                new GetCommand(),
-                new ListCommand(),
-                new StatsCommand()
+                new GetCommand(ephemeralData, downloadService),
+                new ListCommand(ephemeralData),
+                new StatsCommand(ephemeralData)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }
