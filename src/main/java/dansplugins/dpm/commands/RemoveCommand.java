@@ -27,7 +27,7 @@ public class RemoveCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender sender) {
-        sender.sendMessage(ChatColor.RED + "Usage: /dpm remove <plugin-name>");
+        sender.sendMessage(ChatColor.RED + "Usage: /dpm remove <plugin-name> [--confirm]");
         return false;
     }
 

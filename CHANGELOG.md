@@ -6,9 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- `/dpm reload` — reloads `config.yml` and re-applies live settings (e.g. `githubToken`) without a server restart
+- `/dpm remove <plugin-name> [--confirm]` — previews the JAR to be deleted; pass `--confirm` to actually remove it and clear the stored version tag
+
 ### Changed
 - `/dpm clean` now previews what would be deleted; pass `--confirm` to actually remove the files
-- `/dpm remove <plugin-name>` now previews what would be deleted; pass `--confirm` to actually remove the file
+- `/dpm clean --confirm` now distinguishes deletion failures (permission errors) from "no duplicates found"
 
 ## [0.4.0]
 

@@ -59,22 +59,34 @@ public class CleanCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.AQUA + "Removing duplicate plugin JARs...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 List<String> removed = new ArrayList<>();
+                List<String> failed = new ArrayList<>();
                 for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
                     for (File conflict : pluginFolderService.findConflictingJars(record)) {
+                        String label = conflict.getName() + " (" + record.getName() + ")";
                         if (conflict.delete()) {
-                            removed.add(conflict.getName() + " (" + record.getName() + ")");
+                            removed.add(label);
+                        } else {
+                            failed.add(label);
                         }
                     }
                 }
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (removed.isEmpty()) {
+                    if (removed.isEmpty() && failed.isEmpty()) {
                         sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
-                    } else {
+                        return;
+                    }
+                    if (!removed.isEmpty()) {
                         sender.sendMessage(ChatColor.GREEN + "Removed " + removed.size() + " duplicate JAR(s):");
                         for (String entry : removed) {
                             sender.sendMessage(ChatColor.AQUA + "  - " + entry);
                         }
                         sender.sendMessage(ChatColor.YELLOW + "Restart the server to apply changes.");
+                    }
+                    if (!failed.isEmpty()) {
+                        sender.sendMessage(ChatColor.RED + "Failed to delete " + failed.size() + " JAR(s) — check server file permissions:");
+                        for (String entry : failed) {
+                            sender.sendMessage(ChatColor.RED + "  - " + entry);
+                        }
                     }
                 });
             });
