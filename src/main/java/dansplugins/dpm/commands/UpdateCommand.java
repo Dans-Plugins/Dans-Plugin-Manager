@@ -62,12 +62,15 @@ public class UpdateCommand extends AbstractPluginCommand {
     private void runUpdates(CommandSender sender, List<ProjectRecord> records) {
         int updated = 0;
         int upToDate = 0;
+        int skipped = 0;
         int failed = 0;
 
         for (ProjectRecord record : records) {
             int result = downloadService.downloadLatest(record);
             if (result == DownloadService.ALREADY_UP_TO_DATE) {
                 upToDate++;
+            } else if (result == DownloadService.NO_RELEASE) {
+                skipped++;
             } else if (result > 0) {
                 updated++;
                 String tag = versionStore.getStoredTag(record.getName());
@@ -83,12 +86,21 @@ public class UpdateCommand extends AbstractPluginCommand {
 
         final int finalUpdated = updated;
         final int finalUpToDate = upToDate;
+        final int finalSkipped = skipped;
         final int finalFailed = failed;
         Bukkit.getScheduler().runTask(plugin, () -> {
-            sender.sendMessage(ChatColor.AQUA + "Update complete: "
-                    + ChatColor.GREEN + finalUpdated + " updated"
-                    + ChatColor.AQUA + ", " + finalUpToDate + " already up to date"
-                    + (finalFailed > 0 ? ChatColor.RED + ", " + finalFailed + " failed" : "") + ".");
+            StringBuilder summary = new StringBuilder();
+            summary.append(ChatColor.AQUA).append("Update complete: ")
+                   .append(ChatColor.GREEN).append(finalUpdated).append(" updated")
+                   .append(ChatColor.AQUA).append(", ").append(finalUpToDate).append(" already up to date");
+            if (finalSkipped > 0) {
+                summary.append(ChatColor.AQUA).append(", ").append(finalSkipped).append(" skipped (no release)");
+            }
+            if (finalFailed > 0) {
+                summary.append(ChatColor.RED).append(", ").append(finalFailed).append(" failed");
+            }
+            summary.append(ChatColor.AQUA).append(".");
+            sender.sendMessage(summary.toString());
             if (finalUpdated > 0) {
                 sender.sendMessage(ChatColor.YELLOW + "Restart the server to load updated plugins.");
             }
