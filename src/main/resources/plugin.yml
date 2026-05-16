@@ -20,3 +20,5 @@ permissions:
     default: op
   dpm.update:
     default: op
+  dpm.info:
+    default: true

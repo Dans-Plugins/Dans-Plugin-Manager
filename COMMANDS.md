@@ -10,3 +10,4 @@ All commands use `/dpm` or `/danspluginmanager` as the base.
 | `/dpm clean` | Remove duplicate plugin JARs from the plugins folder. | `dpm.clean` |
 | `/dpm stats` | View plugin statistics. | `dpm.stats` |
 | `/dpm update` | Update all installed managed plugins to their latest release. | `dpm.update` |
+| `/dpm info <plugin-name>` | Show latest release tag and install status for a plugin. | `dpm.info` |
