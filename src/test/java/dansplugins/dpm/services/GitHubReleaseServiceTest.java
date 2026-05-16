@@ -135,6 +135,26 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // setApiToken()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void setApiToken_nullTreatedAsEmpty() {
+        // Should not throw; null is coerced to empty string internally.
+        assertDoesNotThrow(() -> service.setApiToken(null));
+    }
+
+    @Test
+    void setApiToken_emptyStringAccepted() {
+        assertDoesNotThrow(() -> service.setApiToken(""));
+    }
+
+    @Test
+    void setApiToken_validTokenAccepted() {
+        assertDoesNotThrow(() -> service.setApiToken("ghp_exampletoken123"));
+    }
+
+    // -------------------------------------------------------------------------
     // parseJarUrlFromAssets() — edge cases
     // -------------------------------------------------------------------------
 

@@ -23,6 +23,9 @@ public class ConfigService {
         if (!isSet("debugMode")) {
             getConfig().set("debugMode", false);
         }
+        if (!isSet("githubApiToken")) {
+            getConfig().set("githubApiToken", "");
+        }
         getConfig().options().copyDefaults(true);
         dansPluginManager.saveConfig();
     }
@@ -50,6 +53,9 @@ public class ConfigService {
         sender.sendMessage(ChatColor.AQUA + "=== Config ===");
         sender.sendMessage(ChatColor.AQUA + "version: " + getConfig().getString("version"));
         sender.sendMessage(ChatColor.AQUA + "debugMode: " + getConfig().getBoolean("debugMode"));
+        String token = getConfig().getString("githubApiToken");
+        String tokenDisplay = (token != null && !token.isEmpty()) ? "(set)" : "(not set)";
+        sender.sendMessage(ChatColor.AQUA + "githubApiToken: " + tokenDisplay);
     }
 
     public boolean hasBeenAltered() {
