@@ -14,10 +14,8 @@ import java.util.List;
 public class DownloadService {
     /** No published release found on GitHub for this plugin. */
     public static final int NO_RELEASE = -2;
-    /** The installed version already matches the latest release. */
+    /** The installed JAR is present and its version matches the latest release. */
     public static final int ALREADY_UP_TO_DATE = -3;
-
-    private static final String PATH_TO_PLUGINS_FOLDER = "./plugins/";
 
     private final Logger logger;
     private final GitHubReleaseService gitHubReleaseService;
@@ -34,9 +32,10 @@ public class DownloadService {
 
     /**
      * Resolves the latest release via the GitHub API. Returns {@link #ALREADY_UP_TO_DATE}
-     * if the stored tag matches the latest tag. Otherwise removes conflicting JARs and
-     * downloads the new version. Returns bytes downloaded on success,
-     * {@link #NO_RELEASE} if no release has been published yet, or -1 on other errors.
+     * if the stored tag matches the latest tag AND the managed JAR is present on disk.
+     * Otherwise removes conflicting JARs and downloads the new version.
+     * Returns bytes downloaded on success, {@link #NO_RELEASE} if no release has been
+     * published yet, or -1 on other errors.
      */
     public int downloadLatest(ProjectRecord projectRecord) {
         ReleaseInfo release = gitHubReleaseService.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
@@ -49,12 +48,15 @@ public class DownloadService {
         }
 
         String latestTag = release.getTagName();
-        if (latestTag != null && latestTag.equals(versionStore.getStoredTag(projectRecord.getName()))) {
+        if (latestTag != null
+                && latestTag.equals(versionStore.getStoredTag(projectRecord.getName()))
+                && pluginFolderService.isInstalled(projectRecord)) {
             return ALREADY_UP_TO_DATE;
         }
 
         removeConflictingJars(projectRecord);
-        int bytes = downloadFromUrl(release.getJarUrl(), PATH_TO_PLUGINS_FOLDER + projectRecord.getName() + ".jar");
+        String dest = pluginFolderService.getPluginsFolder() + projectRecord.getName() + ".jar";
+        int bytes = downloadFromUrl(release.getJarUrl(), dest);
         if (bytes > 0 && latestTag != null) {
             versionStore.setTag(projectRecord.getName(), latestTag);
         }

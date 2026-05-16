@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Persists the last-downloaded release tag for each managed plugin so that
@@ -14,6 +15,8 @@ import java.util.Properties;
  * inside the plugin's data folder.
  */
 public class VersionStore {
+    private static final Logger LOGGER = Logger.getLogger(VersionStore.class.getName());
+
     private final File storeFile;
     private final Properties props = new Properties();
 
@@ -43,7 +46,9 @@ public class VersionStore {
         if (!storeFile.exists()) return;
         try (FileInputStream in = new FileInputStream(storeFile)) {
             props.load(in);
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            LOGGER.warning("Failed to load " + storeFile.getName() + ": " + e.getMessage()
+                    + " — stored plugin versions will not be available this session.");
         }
     }
 
@@ -51,7 +56,9 @@ public class VersionStore {
         storeFile.getParentFile().mkdirs();
         try (FileOutputStream out = new FileOutputStream(storeFile)) {
             props.store(out, null);
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            LOGGER.warning("Failed to save " + storeFile.getName() + ": " + e.getMessage()
+                    + " — plugin version data will not persist across restarts.");
         }
     }
 }

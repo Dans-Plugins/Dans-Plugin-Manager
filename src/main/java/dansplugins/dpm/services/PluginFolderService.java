@@ -17,9 +17,23 @@ public class PluginFolderService {
         this.pluginsFolder = pluginsFolder;
     }
 
-    /** Returns true if the managed JAR ({recordName}.jar) exists in the plugins folder. */
+    String getPluginsFolder() {
+        return pluginsFolder;
+    }
+
+    /**
+     * Returns true if any file in the plugins folder matches {recordName}.jar
+     * case-insensitively (mirrors the equalsIgnoreCase logic in findConflictingJars).
+     */
     public boolean isInstalled(ProjectRecord record) {
-        return new File(pluginsFolder, record.getName() + ".jar").exists();
+        String managedFilename = record.getName() + ".jar";
+        File pluginsDir = new File(pluginsFolder);
+        File[] files = pluginsDir.listFiles();
+        if (files == null) return false;
+        for (File f : files) {
+            if (f.getName().equalsIgnoreCase(managedFilename)) return true;
+        }
+        return false;
     }
 
     /**
