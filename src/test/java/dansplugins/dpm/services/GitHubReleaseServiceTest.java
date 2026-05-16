@@ -140,18 +140,27 @@ class GitHubReleaseServiceTest {
 
     @Test
     void setApiToken_nullTreatedAsEmpty() {
-        // Should not throw; null is coerced to empty string internally.
-        assertDoesNotThrow(() -> service.setApiToken(null));
+        service.setApiToken(null);
+        assertEquals("", service.getApiToken());
     }
 
     @Test
-    void setApiToken_emptyStringAccepted() {
-        assertDoesNotThrow(() -> service.setApiToken(""));
+    void setApiToken_emptyStringStoredAsEmpty() {
+        service.setApiToken("");
+        assertEquals("", service.getApiToken());
     }
 
     @Test
-    void setApiToken_validTokenAccepted() {
-        assertDoesNotThrow(() -> service.setApiToken("ghp_exampletoken123"));
+    void setApiToken_validTokenStored() {
+        service.setApiToken("ghp_exampletoken123");
+        assertEquals("ghp_exampletoken123", service.getApiToken());
+    }
+
+    @Test
+    void setApiToken_overwritesPreviousToken() {
+        service.setApiToken("first_token");
+        service.setApiToken("second_token");
+        assertEquals("second_token", service.getApiToken());
     }
 
     // -------------------------------------------------------------------------

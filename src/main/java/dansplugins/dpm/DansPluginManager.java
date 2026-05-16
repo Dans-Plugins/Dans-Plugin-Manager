@@ -48,7 +48,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public void onEnable() {
         initializeConfig();
-        gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubApiToken", ""));
+        gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubToken", ""));
         versionStore = new VersionStore(new File(getDataFolder(), "dpm-versions.properties"));
         downloadService = new DownloadService(logger, gitHubReleaseService, pluginFolderService, versionStore);
         initializeCommandService();

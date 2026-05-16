@@ -25,6 +25,10 @@ public class GitHubReleaseService {
         this.apiToken = token != null ? token : "";
     }
 
+    String getApiToken() {
+        return apiToken;
+    }
+
     /**
      * Returns a {@link ReleaseInfo} with the tag name and first .jar asset URL for the
      * latest release. Returns {@link ReleaseInfo#NO_RELEASE} when GitHub reports 404
