@@ -12,9 +12,8 @@ Thank you for your interest in contributing to Dans Plugin Manager! This guide w
 ## Requirements
 
 - A GitHub account
-- Git installed on your local machine
-- A Java IDE or text editor
-- A basic understanding of Java
+- Git
+- Java 9+ and Maven
 
 ## Getting Started
 
@@ -23,43 +22,30 @@ Thank you for your interest in contributing to Dans Plugin Manager! This guide w
 3. Clone your fork: `git clone https://github.com/<your-username>/Dans-Plugin-Manager.git`
 4. Open the project in your IDE.
 5. Build the plugin: `mvn clean package`
-   If you encounter errors, please open an issue.
 
 ## Identifying What to Work On
 
-### Issues
-
-Work items are tracked as [GitHub issues](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues).
-
-### Milestones
-
-Issues are grouped into [milestones](https://github.com/Dans-Plugins/Dans-Plugin-Manager/milestones) representing upcoming releases.
+Work items are tracked as [GitHub issues](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues), grouped into [milestones](https://github.com/Dans-Plugins/Dans-Plugin-Manager/milestones) representing upcoming releases.
 
 ## Making Changes
 
 1. Make sure an issue exists for the work. If not, create one.
-2. Switch to `main`: `git checkout main`
-3. Create a branch: `git checkout -b <branch-name>`
-4. Make your changes.
-5. Test your changes.
-6. Commit: `git commit -m "Description of changes"`
-7. Push: `git push origin <branch-name>`
-8. Open a pull request against `main`, link the related issue with `#<number>`.
-9. Address review feedback.
+2. Create a branch off `main`: `git checkout -b <branch-name>`
+3. Make and test your changes.
+4. Commit: `git commit -m "Description of changes"`
+5. Push: `git push origin <branch-name>`
+6. Open a pull request against `main`, linking the related issue with `#<number>`.
+7. Address review feedback.
 
 ## Testing
 
-Run the build with:
+Build and place the JAR into a local Spigot server's `plugins/` folder:
 
-Linux / macOS:
+```
+mvn clean package
+```
 
-    mvn clean package
-
-Windows:
-
-    mvn clean package
-
-For manual testing, place the built JAR from `target/` into a local Spigot server's `plugins` folder and restart the server.
+The built JAR is in `target/`.
 
 ## Questions
 

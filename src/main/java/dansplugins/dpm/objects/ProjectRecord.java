@@ -1,27 +1,29 @@
 package dansplugins.dpm.objects;
 
 public class ProjectRecord {
-    private String name;
-    private String link;
+    private final String name;
+    private final String owner;
+    private final String repo;
 
-    public ProjectRecord(String name, String link) {
+    private ProjectRecord(String name, String owner, String repo) {
         this.name = name;
-        this.link = link;
+        this.owner = owner;
+        this.repo = repo;
+    }
+
+    public static ProjectRecord forGitHub(String name, String owner, String repo) {
+        return new ProjectRecord(name, owner, repo);
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getOwner() {
+        return owner;
     }
 
-    public String getLink() {
-        return link;
-    }
-
-    public void setLink(String link) {
-        this.link = link;
+    public String getRepo() {
+        return repo;
     }
 }

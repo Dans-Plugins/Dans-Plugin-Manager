@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EphemeralData {
     private final ArrayList<ProjectRecord> projectRecords = new ArrayList<>();
@@ -31,6 +32,10 @@ public class EphemeralData {
         for (ProjectRecord projectRecord : projectRecords) {
             commandSender.sendMessage(ChatColor.AQUA + projectRecord.getName());
         }
+    }
+
+    public List<ProjectRecord> getAllProjectRecords() {
+        return new ArrayList<>(projectRecords);
     }
 
     public int getNumProjectRecords() {
