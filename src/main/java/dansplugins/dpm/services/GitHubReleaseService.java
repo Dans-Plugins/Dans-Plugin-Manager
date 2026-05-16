@@ -43,6 +43,7 @@ public class GitHubReleaseService {
             String tagName = parseTagName(json);
             String jarUrl = parseJarUrlFromAssets(json);
             if (jarUrl == null) {
+                logger.log("Release " + tagName + " for " + owner + "/" + repo + " has no .jar asset.");
                 return null;
             }
             return new ReleaseInfo(tagName, jarUrl);

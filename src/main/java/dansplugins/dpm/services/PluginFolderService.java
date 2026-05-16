@@ -29,7 +29,7 @@ public class PluginFolderService {
     public List<File> findConflictingJars(ProjectRecord record) {
         List<File> conflicts = new ArrayList<>();
         File pluginsDir = new File(pluginsFolder);
-        File[] jars = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar"));
+        File[] jars = pluginsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
         if (jars == null) return conflicts;
         String managedFilename = record.getName() + ".jar";
         for (File jar : jars) {
