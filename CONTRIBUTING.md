@@ -25,7 +25,7 @@ Thank you for your interest in contributing to Dans Plugin Manager! This guide w
 
 ## Identifying What to Work On
 
-Work items are tracked as [GitHub issues](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues), grouped into [milestones](https://github.com/Dans-Plugins/Dans-Plugin-Manager/milestones) representing upcoming releases.
+Work items are tracked as [GitHub issues](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues).
 
 ## Making Changes
 

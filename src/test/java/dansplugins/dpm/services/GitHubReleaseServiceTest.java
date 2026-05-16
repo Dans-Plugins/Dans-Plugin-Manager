@@ -135,6 +135,35 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // setApiToken()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void setApiToken_nullTreatedAsEmpty() {
+        service.setApiToken(null);
+        assertEquals("", service.getApiToken());
+    }
+
+    @Test
+    void setApiToken_emptyStringStoredAsEmpty() {
+        service.setApiToken("");
+        assertEquals("", service.getApiToken());
+    }
+
+    @Test
+    void setApiToken_validTokenStored() {
+        service.setApiToken("ghp_exampletoken123");
+        assertEquals("ghp_exampletoken123", service.getApiToken());
+    }
+
+    @Test
+    void setApiToken_overwritesPreviousToken() {
+        service.setApiToken("first_token");
+        service.setApiToken("second_token");
+        assertEquals("second_token", service.getApiToken());
+    }
+
+    // -------------------------------------------------------------------------
     // parseJarUrlFromAssets() — edge cases
     // -------------------------------------------------------------------------
 

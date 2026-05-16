@@ -15,9 +15,18 @@ public class GitHubReleaseService {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
 
     private final Logger logger;
+    private String apiToken = "";
 
     public GitHubReleaseService(Logger logger) {
         this.logger = logger;
+    }
+
+    public void setApiToken(String token) {
+        this.apiToken = token != null ? token : "";
+    }
+
+    String getApiToken() {
+        return apiToken;
     }
 
     /**
@@ -61,6 +70,9 @@ public class GitHubReleaseService {
         HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl).openConnection();
         connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setRequestProperty("User-Agent", "Dans-Plugin-Manager");
+        if (!apiToken.isEmpty()) {
+            connection.setRequestProperty("Authorization", "Bearer " + apiToken);
+        }
         connection.setConnectTimeout(5000);
         connection.setReadTimeout(5000);
         return connection;
