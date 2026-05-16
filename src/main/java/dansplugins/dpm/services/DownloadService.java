@@ -65,7 +65,7 @@ public class DownloadService {
         }
     }
 
-    private int readAndWrite(String link, String path) throws IOException {
+    int readAndWrite(String link, String path) throws IOException {
         File dest = new File(path);
         try (BufferedInputStream in = new BufferedInputStream(new URL(link).openStream());
              FileOutputStream out = new FileOutputStream(dest)) {
