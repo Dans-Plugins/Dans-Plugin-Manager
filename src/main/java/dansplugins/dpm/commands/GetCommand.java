@@ -12,7 +12,10 @@ import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GetCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
@@ -51,7 +54,7 @@ public class GetCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
             return false;
         }
-        warnMissingDependencies(sender, record);
+        warnMissingDependencies(sender, record, Collections.emptySet());
         sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + "...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             int result = downloadService.downloadLatest(record);
@@ -61,23 +64,34 @@ public class GetCommand extends AbstractPluginCommand {
     }
 
     private boolean executeBatch(CommandSender sender, String[] args) {
+        // First pass: resolve all names so the full batch set is known before warnings fire.
         List<ProjectRecord> records = new ArrayList<>();
+        int notFound = 0;
         for (String name : args) {
             ProjectRecord record = ephemeralData.getProjectRecord(name);
             if (record == null) {
                 sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + " — skipping.");
+                notFound++;
             } else {
-                warnMissingDependencies(sender, record);
                 records.add(record);
             }
         }
+
+        // Warn about missing deps, suppressing warnings for deps already in this batch.
+        Set<String> batchNames = new HashSet<>();
+        for (ProjectRecord r : records) batchNames.add(r.getName());
+        for (ProjectRecord record : records) {
+            warnMissingDependencies(sender, record, batchNames);
+        }
+
         if (records.isEmpty()) return false;
         sender.sendMessage(ChatColor.AQUA + "Fetching " + records.size() + " plugin(s)...");
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, records));
+        final int fn = notFound;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, records, fn));
         return true;
     }
 
-    private void runBatch(CommandSender sender, List<ProjectRecord> records) {
+    private void runBatch(CommandSender sender, List<ProjectRecord> records, int notFound) {
         int downloaded = 0, upToDate = 0, skipped = 0, failed = 0;
         for (ProjectRecord record : records) {
             int result = downloadService.downloadLatest(record);
@@ -108,6 +122,7 @@ public class GetCommand extends AbstractPluginCommand {
                    .append(ChatColor.AQUA).append(", ").append(fu).append(" already up to date");
             if (fs > 0) summary.append(ChatColor.AQUA).append(", ").append(fs).append(" skipped (no release)");
             if (ff > 0) summary.append(ChatColor.RED).append(", ").append(ff).append(" failed");
+            if (notFound > 0) summary.append(ChatColor.RED).append(", ").append(notFound).append(" not found");
             summary.append(ChatColor.AQUA).append(".");
             sender.sendMessage(summary.toString());
             if (fd > 0) {
@@ -132,8 +147,9 @@ public class GetCommand extends AbstractPluginCommand {
         }
     }
 
-    private void warnMissingDependencies(CommandSender sender, ProjectRecord record) {
+    private void warnMissingDependencies(CommandSender sender, ProjectRecord record, Set<String> batchNames) {
         for (String dep : record.getHardDependencies()) {
+            if (batchNames.contains(dep)) continue;
             ProjectRecord depRecord = ephemeralData.getProjectRecord(dep);
             if (depRecord == null || !pluginFolderService.isInstalled(depRecord)) {
                 sender.sendMessage(ChatColor.YELLOW + "Warning: " + record.getName()
