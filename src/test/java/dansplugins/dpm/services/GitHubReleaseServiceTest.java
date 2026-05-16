@@ -87,4 +87,16 @@ class GitHubReleaseServiceTest {
         // Should return the first .jar match
         assertEquals("https://example.com/Plugin-1.0-sources.jar", service.parseJarUrlFromAssets(json));
     }
+
+    @Test
+    void parseJarUrlFromAssets_emptyStringReturnsNull() {
+        assertNull(service.parseJarUrlFromAssets(""));
+    }
+
+    @Test
+    void parseJarUrlFromAssets_truncatedJsonReturnsNull() {
+        // No closing bracket — bracket-depth tracking should handle gracefully
+        String json = "{\"assets\":[{\"name\":\"Plugin-1.0.jar\",\"browser_download_url\":\"https://example.com/Plugin-1.0.jar\"";
+        assertNull(service.parseJarUrlFromAssets(json));
+    }
 }

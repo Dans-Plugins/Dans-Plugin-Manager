@@ -69,6 +69,30 @@ class PluginFolderServiceTest {
         assertEquals("currencies", service.normalize("Currencies.JAR"));
     }
 
+    @Test
+    void normalize_stripsSnapshotQualifier() {
+        assertEquals("plugin", service.normalize("Plugin-1.0-SNAPSHOT.jar"));
+    }
+
+    @Test
+    void normalize_stripsAlphaQualifier() {
+        // Real-world filename from MiniFactions release history
+        assertEquals("minifactions", service.normalize("MiniFactions-0.1-ALPHA-4-17-2022.jar"));
+    }
+
+    @Test
+    void normalize_stripsUnderscoreVersion() {
+        assertEquals("wildpets", service.normalize("Wild_Pets_1.4.jar"));
+    }
+
+    @Test
+    void normalize_preservesEmbeddedDigitsInName() {
+        // The '3' is part of the plugin name, not a version — it must not be stripped
+        String result = service.normalize("Dans3Essentials-2.0.jar");
+        assertTrue(result.contains("3"), "Embedded digit in name should be preserved, got: " + result);
+        assertFalse(result.contains("2"), "Version digit should be stripped, got: " + result);
+    }
+
     // -------------------------------------------------------------------------
     // findConflictingJars()
     // -------------------------------------------------------------------------
@@ -132,6 +156,28 @@ class PluginFolderServiceTest {
         createFile(tempDir, "Medieval-Factions-4.6.3.txt");
 
         PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+
+        assertTrue(svc.findConflictingJars(record).isEmpty());
+    }
+
+    @Test
+    void findConflictingJars_caseInsensitiveManagedFileExclusion(@TempDir Path tempDir) throws IOException {
+        // The managed file is in uppercase — it must still be recognised as the canonical copy
+        createFile(tempDir, "MEDIEVALFACTIONS.JAR");
+        createFile(tempDir, "Medieval-Factions-4.6.3.jar");
+
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+
+        List<File> conflicts = svc.findConflictingJars(record);
+        assertEquals(1, conflicts.size());
+        assertEquals("Medieval-Factions-4.6.3.jar", conflicts.get(0).getName());
+    }
+
+    @Test
+    void findConflictingJars_nonExistentFolderReturnsEmpty() {
+        PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
