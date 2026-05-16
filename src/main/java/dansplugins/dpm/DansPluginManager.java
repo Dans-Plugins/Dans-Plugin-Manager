@@ -87,6 +87,12 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             return TabCompleter.filterByPrefix(removeCommand.getInstalledPluginNames(), args[1]);
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("clean")) {
+            return TabCompleter.filterByPrefix(List.of("--confirm"), args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("remove")) {
+            return TabCompleter.filterByPrefix(List.of("--confirm"), args[2]);
+        }
         return Collections.emptyList();
     }
 

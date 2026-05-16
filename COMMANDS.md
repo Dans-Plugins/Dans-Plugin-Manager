@@ -7,9 +7,9 @@ All commands use `/dpm` or `/danspluginmanager` as the base.
 | `/dpm help` | View a list of commands. | `dpm.help` |
 | `/dpm list` | List DPC plugins, showing which are installed (with version tag when known). | `dpm.list` |
 | `/dpm get <plugin-name>` | Download a DPC plugin to the server. | `dpm.get` |
-| `/dpm clean` | Remove duplicate plugin JARs from the plugins folder. | `dpm.clean` |
+| `/dpm clean [--confirm]` | Preview duplicate plugin JARs, or delete them when `--confirm` is passed. | `dpm.clean` |
 | `/dpm stats` | View plugin statistics. | `dpm.stats` |
 | `/dpm update` | Update all installed managed plugins to their latest release. | `dpm.update` |
 | `/dpm info <plugin-name>` | Show GitHub owner, repo, latest release tag, publish date, and install status for a plugin. | `dpm.info` |
 | `/dpm reload` | Reload `config.yml` and re-apply settings (e.g. `githubToken`). | `dpm.reload` |
-| `/dpm remove <plugin-name>` | Remove an installed managed plugin from the plugins folder. | `dpm.remove` |
+| `/dpm remove <plugin-name> [--confirm]` | Preview removal of an installed plugin, or delete it when `--confirm` is passed. | `dpm.remove` |

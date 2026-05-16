@@ -22,12 +22,12 @@ public class HelpCommand extends AbstractPluginCommand {
         commandSender.sendMessage(ChatColor.AQUA + "/dpm help - View this list of commands.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm list - List plugins with install status.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm get <plugin-name> - Download a plugin.");
-        commandSender.sendMessage(ChatColor.AQUA + "/dpm clean - Remove duplicate plugin JARs.");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm clean [--confirm] - Preview or remove duplicate plugin JARs.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm stats - View plugin statistics.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm update - Update all installed plugins.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm info <plugin-name> - Show release and install info for a plugin.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm reload - Reload the DPM config.");
-        commandSender.sendMessage(ChatColor.AQUA + "/dpm remove <plugin-name> - Remove an installed plugin.");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm remove <plugin-name> [--confirm] - Preview or remove an installed plugin.");
         return true;
     }
 
