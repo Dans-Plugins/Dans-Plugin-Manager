@@ -2,7 +2,7 @@
 
 ## What is Dans Plugin Manager?
 
-Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse and download DPC plugins directly from within the game, without leaving the server.
+Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse and download DPC plugins in-game or from the server console.
 
 ## Installation
 
@@ -14,7 +14,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 
 1. Run `/dpm list` to see available plugins.
 2. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder.
-3. Restart or reload your server to activate the downloaded plugin.
+3. Restart the server to activate the downloaded plugin.
 
 ## Permissions
 

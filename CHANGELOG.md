@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Dynamic GitHub release retrieval — `/dpm get` now fetches the latest release JAR automatically via the GitHub API instead of relying on hardcoded versioned URLs
+- 10 additional public DPC plugin repos registered (Bluemap_MedievalFactions, Bookshelves-You-Can-Use, Conquest-Recipes, Dans-Set-Home, Democracy, FlyCommand, Herald, KDRTracker, Medieval-Cookery, MiniFactions)
+- Informative "no published release yet" message when a plugin has no GitHub release
+
+### Changed
+- Download runs asynchronously so it no longer blocks the main server thread
+
+### Removed
+- ChatHub (repo no longer exists)
+
 ## [0.4]
 
 ### Added

@@ -1,36 +1,26 @@
 # Dan's Plugin Manager
 
 ## Description
-This Minecraft plugin is intended to allow operators to easily download the community's plugins in-game or through a server console.
+This Minecraft plugin lets server operators download DPC plugins in-game or from the server console.
 
 ## Download
-You can download the plugin here:
 https://github.com/Dans-Plugins/Dans-Plugin-Manager/releases
 
 ## Usage
-- [User Guide](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Guide) (coming soon)
-- [List of Commands](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Commands) (coming soon)
-- [FAQ](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/FAQ) (coming soon)
+- [User Guide](USER_GUIDE.md)
+- [Commands](COMMANDS.md)
 
 ## Support
-You can find the support discord server [here](https://discord.gg/xXtuAQ2).
-
-### Experiencing a bug?
-Please fill out a bug report [here](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
-
-- [Known Bugs](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
+[Discord](https://discord.gg/xXtuAQ2) — [Bug reports](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 
 ## Contributing
-- [Notes for Developers](https://github.com/Dans-Plugins/Dans-Plugin-Manager/wiki/Developer-Notes) (coming soon)
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Authors and acknowledgement
-Name | Main Contributions
+## Authors
+Name | Contributions
 ------------ | -------------
 Daniel Stephenson | Creator
 Mr-Deej | Minor cleanup and fixes
 
 ## License
 MIT
-
-## Project Status
-This project is in active development.
