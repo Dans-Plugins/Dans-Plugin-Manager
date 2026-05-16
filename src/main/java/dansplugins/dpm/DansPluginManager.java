@@ -2,6 +2,7 @@ package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
 import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DownloadService;
@@ -10,6 +11,7 @@ import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
+import dansplugins.dpm.utils.TabCompleter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +22,8 @@ import preponderous.ponder.minecraft.bukkit.services.CommandService;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Daniel McCoy Stephenson
@@ -66,6 +70,21 @@ public final class DansPluginManager extends PonderBukkitPlugin {
      * @param args Arguments of the core command. Often sub-commands.
      * @return A boolean indicating whether the execution of the command was successful.
      */
+    @Override
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if (args.length == 1) {
+            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("get")) {
+            List<String> names = new ArrayList<>();
+            for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
+                names.add(record.getName());
+            }
+            return TabCompleter.filterByPrefix(names, args[1]);
+        }
+        return Collections.emptyList();
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 0) {
