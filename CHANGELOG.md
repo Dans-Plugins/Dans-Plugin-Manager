@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `/dpm remove <plugin-name> [--confirm]` — previews the JAR to be deleted; pass `--confirm` to actually remove it and clear the stored version tag
 - Tab-completion for `/dpm remove` offers installed plugin names at the first argument and `--confirm` at the second
 - Tab-completion for `/dpm clean` offers `--confirm` at the first argument
+- One-line descriptions added to all 28 registered plugins; shown by `/dpm info`
+- Dependency declarations on `ProjectRecord` — hard (`depend`) and soft (`softdepend`) DPC-to-DPC relationships sourced from each plugin's `plugin.yml`
+- `/dpm info` shows each dependency and whether it is currently installed
+- `/dpm get` warns when a required hard dependency is not yet installed (download still proceeds)
 
 ### Changed
 - `/dpm clean` now previews what would be deleted; pass `--confirm` to actually remove the files

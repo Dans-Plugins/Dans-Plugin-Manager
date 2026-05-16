@@ -13,4 +13,8 @@ public class ProjectRecordFactory {
     public void createGitHubRecord(String name, String owner, String repo) {
         ephemeralData.addProjectRecord(ProjectRecord.forGitHub(name, owner, repo));
     }
+
+    public void register(ProjectRecord record) {
+        ephemeralData.addProjectRecord(record);
+    }
 }

@@ -3,6 +3,7 @@ package dansplugins.dpm.commands;
 import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DownloadService;
+import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -16,14 +17,16 @@ import java.util.List;
 public class GetCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
     private final DownloadService downloadService;
+    private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
     private final Plugin plugin;
 
     public GetCommand(EphemeralData ephemeralData, DownloadService downloadService,
-                      VersionStore versionStore, Plugin plugin) {
+                      PluginFolderService pluginFolderService, VersionStore versionStore, Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.ephemeralData = ephemeralData;
         this.downloadService = downloadService;
+        this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
         this.plugin = plugin;
     }
@@ -34,6 +37,16 @@ public class GetCommand extends AbstractPluginCommand {
         return false;
     }
 
+    private void warnMissingDependencies(CommandSender sender, ProjectRecord record) {
+        for (String dep : record.getHardDependencies()) {
+            ProjectRecord depRecord = ephemeralData.getProjectRecord(dep);
+            if (depRecord == null || !pluginFolderService.isInstalled(depRecord)) {
+                sender.sendMessage(ChatColor.YELLOW + "Warning: " + record.getName()
+                        + " requires " + dep + ", which is not installed. Run /dpm get " + dep + " first.");
+            }
+        }
+    }
+
     @Override
     public boolean execute(CommandSender commandSender, String[] args) {
         String name = args[0];
@@ -42,6 +55,7 @@ public class GetCommand extends AbstractPluginCommand {
             commandSender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
             return false;
         }
+        warnMissingDependencies(commandSender, projectRecord);
         commandSender.sendMessage(ChatColor.AQUA + "Fetching " + projectRecord.getName() + "...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             int result = downloadService.downloadLatest(projectRecord);
