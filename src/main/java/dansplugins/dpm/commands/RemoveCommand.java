@@ -27,7 +27,7 @@ public class RemoveCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender sender) {
-        sender.sendMessage(ChatColor.RED + "Usage: /dpm remove <plugin-name>");
+        sender.sendMessage(ChatColor.RED + "Usage: /dpm remove <plugin-name> [--confirm]");
         return false;
     }
 
@@ -42,6 +42,12 @@ public class RemoveCommand extends AbstractPluginCommand {
         File jar = pluginFolderService.getInstalledFile(record);
         if (jar == null) {
             sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed.");
+            return true;
+        }
+        boolean confirmed = args.length >= 2 && args[1].equalsIgnoreCase("--confirm");
+        if (!confirmed) {
+            sender.sendMessage(ChatColor.YELLOW + "This will delete " + ChatColor.WHITE + jar.getName() + ChatColor.YELLOW + " from the plugins folder.");
+            sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm remove " + name + " --confirm" + ChatColor.YELLOW + " to proceed.");
             return true;
         }
         if (jar.delete()) {

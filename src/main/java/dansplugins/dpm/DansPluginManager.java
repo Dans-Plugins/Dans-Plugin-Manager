@@ -29,6 +29,8 @@ import java.util.List;
  * @author Daniel McCoy Stephenson
  */
 public final class DansPluginManager extends PonderBukkitPlugin {
+    private static final List<String> CONFIRM_COMPLETION = List.of("--confirm");
+
     private final String pluginVersion = "v" + getDescription().getVersion();
 
     private final CommandService commandService = new CommandService(getPonder());
@@ -86,6 +88,12 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             return TabCompleter.filterByPrefix(removeCommand.getInstalledPluginNames(), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("clean")) {
+            return TabCompleter.filterByPrefix(CONFIRM_COMPLETION, args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("remove")) {
+            return TabCompleter.filterByPrefix(CONFIRM_COMPLETION, args[2]);
         }
         return Collections.emptyList();
     }

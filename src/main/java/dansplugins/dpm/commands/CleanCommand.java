@@ -29,26 +29,24 @@ public class CleanCommand extends AbstractPluginCommand {
     }
 
     @Override
-    public boolean execute(CommandSender commandSender) {
-        commandSender.sendMessage(ChatColor.AQUA + "Scanning for duplicate plugin JARs...");
+    public boolean execute(CommandSender sender) {
+        sender.sendMessage(ChatColor.AQUA + "Scanning for duplicate plugin JARs...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> removed = new ArrayList<>();
+            List<String> conflicts = new ArrayList<>();
             for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
                 for (File conflict : pluginFolderService.findConflictingJars(record)) {
-                    if (conflict.delete()) {
-                        removed.add(conflict.getName() + " (" + record.getName() + ")");
-                    }
+                    conflicts.add(conflict.getName() + " (" + record.getName() + ")");
                 }
             }
             Bukkit.getScheduler().runTask(plugin, () -> {
-                if (removed.isEmpty()) {
-                    commandSender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
+                if (conflicts.isEmpty()) {
+                    sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
                 } else {
-                    commandSender.sendMessage(ChatColor.GREEN + "Removed " + removed.size() + " duplicate JAR(s):");
-                    for (String entry : removed) {
-                        commandSender.sendMessage(ChatColor.AQUA + "  - " + entry);
+                    sender.sendMessage(ChatColor.YELLOW + "Found " + conflicts.size() + " duplicate JAR(s) to remove:");
+                    for (String entry : conflicts) {
+                        sender.sendMessage(ChatColor.AQUA + "  - " + entry);
                     }
-                    commandSender.sendMessage(ChatColor.YELLOW + "Restart the server to apply changes.");
+                    sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm clean --confirm" + ChatColor.YELLOW + " to delete them.");
                 }
             });
         });
@@ -56,7 +54,44 @@ public class CleanCommand extends AbstractPluginCommand {
     }
 
     @Override
-    public boolean execute(CommandSender commandSender, String[] args) {
-        return execute(commandSender);
+    public boolean execute(CommandSender sender, String[] args) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("--confirm")) {
+            sender.sendMessage(ChatColor.AQUA + "Removing duplicate plugin JARs...");
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                List<String> removed = new ArrayList<>();
+                List<String> failed = new ArrayList<>();
+                for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
+                    for (File conflict : pluginFolderService.findConflictingJars(record)) {
+                        String label = conflict.getName() + " (" + record.getName() + ")";
+                        if (conflict.delete()) {
+                            removed.add(label);
+                        } else {
+                            failed.add(label);
+                        }
+                    }
+                }
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (removed.isEmpty() && failed.isEmpty()) {
+                        sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
+                        return;
+                    }
+                    if (!removed.isEmpty()) {
+                        sender.sendMessage(ChatColor.GREEN + "Removed " + removed.size() + " duplicate JAR(s):");
+                        for (String entry : removed) {
+                            sender.sendMessage(ChatColor.AQUA + "  - " + entry);
+                        }
+                        sender.sendMessage(ChatColor.YELLOW + "Restart the server to apply changes.");
+                    }
+                    if (!failed.isEmpty()) {
+                        sender.sendMessage(ChatColor.RED + "Failed to delete " + failed.size() + " JAR(s) — check server file permissions:");
+                        for (String entry : failed) {
+                            sender.sendMessage(ChatColor.RED + "  - " + entry);
+                        }
+                    }
+                });
+            });
+            return true;
+        }
+        return execute(sender);
     }
 }
