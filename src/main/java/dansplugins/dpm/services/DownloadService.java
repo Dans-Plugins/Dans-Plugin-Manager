@@ -66,16 +66,20 @@ public class DownloadService {
     }
 
     private int readAndWrite(String link, String path) throws IOException {
-        int totalBytes = 0;
-        BufferedInputStream inputStream = new BufferedInputStream(new URL(link).openStream());
-        FileOutputStream fileOutputStream = new FileOutputStream(path);
-        byte[] data = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = inputStream.read(data, 0, 1024)) != -1) {
-            totalBytes += bytesRead;
-            fileOutputStream.write(data, 0, bytesRead);
+        File dest = new File(path);
+        try (BufferedInputStream in = new BufferedInputStream(new URL(link).openStream());
+             FileOutputStream out = new FileOutputStream(dest)) {
+            int totalBytes = 0;
+            byte[] data = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(data, 0, 1024)) != -1) {
+                totalBytes += bytesRead;
+                out.write(data, 0, bytesRead);
+            }
+            return totalBytes;
+        } catch (IOException e) {
+            dest.delete();
+            throw e;
         }
-        fileOutputStream.close();
-        return totalBytes;
     }
 }
