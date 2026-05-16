@@ -79,12 +79,22 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         if (args.length == 1) {
             return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update", "info", "reload", "remove"), args[0]);
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("get") || args[0].equalsIgnoreCase("info"))) {
+        if (args.length >= 2 && args[0].equalsIgnoreCase("get")) {
+            List<String> names = new ArrayList<>();
+            for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
+                names.add(record.getName());
+            }
+            return TabCompleter.filterByPrefix(names, args[args.length - 1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("info")) {
             List<String> names = new ArrayList<>();
             for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
                 names.add(record.getName());
             }
             return TabCompleter.filterByPrefix(names, args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("list")) {
+            return TabCompleter.filterByPrefix(List.of("installed", "available"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             return TabCompleter.filterByPrefix(removeCommand.getInstalledPluginNames(), args[1]);

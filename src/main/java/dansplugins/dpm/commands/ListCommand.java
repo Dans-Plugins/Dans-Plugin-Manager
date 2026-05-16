@@ -9,7 +9,9 @@ import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ListCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
@@ -43,6 +45,42 @@ public class ListCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        return execute(sender);
+        String filter = args[0];
+        if (filter.equalsIgnoreCase("installed")) {
+            return executeInstalled(sender);
+        }
+        if (filter.equalsIgnoreCase("available")) {
+            return executeAvailable(sender);
+        }
+        sender.sendMessage(ChatColor.RED + "Unknown filter: " + filter + ". Use 'installed' or 'available'.");
+        return false;
+    }
+
+    private boolean executeInstalled(CommandSender sender) {
+        List<ProjectRecord> installed = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords());
+        sender.sendMessage(ChatColor.AQUA + "=== Installed Plugins (" + installed.size() + ") ===");
+        for (ProjectRecord record : installed) {
+            String tag = versionStore.getStoredTag(record.getName());
+            String version = tag != null ? " " + tag : "";
+            sender.sendMessage(ChatColor.GREEN + record.getName() + version);
+        }
+        return true;
+    }
+
+    private boolean executeAvailable(CommandSender sender) {
+        List<ProjectRecord> all = ephemeralData.getAllProjectRecords();
+        Set<String> installedNames = new HashSet<>();
+        for (ProjectRecord r : pluginFolderService.filterInstalled(all)) {
+            installedNames.add(r.getName());
+        }
+        List<ProjectRecord> available = new ArrayList<>();
+        for (ProjectRecord r : all) {
+            if (!installedNames.contains(r.getName())) available.add(r);
+        }
+        sender.sendMessage(ChatColor.AQUA + "=== Available Plugins (" + available.size() + ") ===");
+        for (ProjectRecord record : available) {
+            sender.sendMessage(ChatColor.GRAY + record.getName());
+        }
+        return true;
     }
 }

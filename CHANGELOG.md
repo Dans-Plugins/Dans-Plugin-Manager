@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Dependency declarations on `ProjectRecord` — hard (`depend`) and soft (`softdepend`) DPC-to-DPC relationships sourced from each plugin's `plugin.yml`
 - `/dpm info` shows each dependency and whether it is currently installed
 - `/dpm get` warns when a required hard dependency is not yet installed (download still proceeds)
+- `/dpm get` accepts multiple plugin names: `/dpm get plugin1 plugin2 ...` downloads all named plugins sequentially with per-plugin result lines and a summary
+- `/dpm list installed` shows only plugins whose JAR is present in the plugins folder
+- `/dpm list available` shows only plugins that are not currently installed
+- Tab-completion for `/dpm get` offers plugin names at every argument position
+- Tab-completion for `/dpm list` offers `installed` and `available`
 
 ### Changed
 - `/dpm clean` now previews what would be deleted; pass `--confirm` to actually remove the files
