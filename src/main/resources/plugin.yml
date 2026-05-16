@@ -18,3 +18,5 @@ permissions:
     default: op
   dpm.clean:
     default: op
+  dpm.update:
+    default: op

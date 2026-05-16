@@ -7,9 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
-- Tab-completion for `/dpm` sub-commands (`help`, `list`, `get`, `clean`, `stats`) and plugin names for `/dpm get`
+- Tab-completion for `/dpm` sub-commands (`help`, `list`, `get`, `clean`, `stats`, `update`) and plugin names for `/dpm get`
 - Version tracking — last-downloaded release tag is persisted in `dpm-versions.properties`; `/dpm get` skips re-download when already on the latest version and reports the current tag
 - `/dpm list` now shows installed plugins in green (with their version tag when known) and uninstalled plugins in grey
+- `/dpm update` — checks every installed managed plugin against the latest GitHub release and downloads any that are out of date; prints a per-plugin result and a summary line
 
 ## [0.4.0]
 

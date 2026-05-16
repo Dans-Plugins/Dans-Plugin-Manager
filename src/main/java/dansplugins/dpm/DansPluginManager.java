@@ -73,7 +73,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
-            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats"), args[0]);
+            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update"), args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("get")) {
             List<String> names = new ArrayList<>();
@@ -153,7 +153,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new GetCommand(ephemeralData, downloadService, versionStore, this),
                 new ListCommand(ephemeralData, pluginFolderService, versionStore),
                 new StatsCommand(ephemeralData),
-                new CleanCommand(ephemeralData, pluginFolderService, this)
+                new CleanCommand(ephemeralData, pluginFolderService, this),
+                new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }
