@@ -11,6 +11,7 @@ import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
+import dansplugins.dpm.utils.TabCompleter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -72,14 +73,14 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
-            return filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats"), args[0]);
+            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats"), args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("get")) {
             List<String> names = new ArrayList<>();
             for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
                 names.add(record.getName());
             }
-            return filterByPrefix(names, args[1]);
+            return TabCompleter.filterByPrefix(names, args[1]);
         }
         return Collections.emptyList();
     }
@@ -146,17 +147,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     /**
      * Initializes Ponder's command service with the plugin's commands.
      */
-    List<String> filterByPrefix(List<String> options, String partial) {
-        String lower = partial.toLowerCase();
-        List<String> result = new ArrayList<>();
-        for (String option : options) {
-            if (option.startsWith(lower)) {
-                result.add(option);
-            }
-        }
-        return result;
-    }
-
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),

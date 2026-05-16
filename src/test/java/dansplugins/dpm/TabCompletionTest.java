@@ -1,5 +1,6 @@
 package dansplugins.dpm;
 
+import dansplugins.dpm.utils.TabCompleter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -7,23 +8,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests the tab-completion helper in isolation without a running Bukkit server.
- * DansPluginManager is not instantiated — only filterByPrefix() is exercised.
- */
 class TabCompletionTest {
-
-    // Thin stand-in that exposes the package-private method without Bukkit.
-    private final DansPluginManager plugin = null;
-
-    private List<String> filter(List<String> options, String partial) {
-        String lower = partial.toLowerCase();
-        List<String> result = new java.util.ArrayList<>();
-        for (String option : options) {
-            if (option.startsWith(lower)) result.add(option);
-        }
-        return result;
-    }
 
     private static final List<String> SUBCOMMANDS =
             Arrays.asList("help", "list", "get", "clean", "stats");
@@ -34,29 +19,28 @@ class TabCompletionTest {
 
     @Test
     void filterByPrefix_emptyPartialReturnsAll() {
-        assertEquals(SUBCOMMANDS, filter(SUBCOMMANDS, ""));
+        assertEquals(SUBCOMMANDS, TabCompleter.filterByPrefix(SUBCOMMANDS, ""));
     }
 
     @Test
     void filterByPrefix_exactMatchReturnsOne() {
-        assertEquals(List.of("get"), filter(SUBCOMMANDS, "get"));
+        assertEquals(List.of("get"), TabCompleter.filterByPrefix(SUBCOMMANDS, "get"));
     }
 
     @Test
     void filterByPrefix_prefixMatchReturnsSubset() {
-        List<String> result = filter(SUBCOMMANDS, "l");
-        assertEquals(List.of("list"), result);
+        assertEquals(List.of("list"), TabCompleter.filterByPrefix(SUBCOMMANDS, "l"));
     }
 
     @Test
     void filterByPrefix_caseInsensitiveMatch() {
-        assertEquals(List.of("get"), filter(SUBCOMMANDS, "GET"));
-        assertEquals(List.of("clean"), filter(SUBCOMMANDS, "CL"));
+        assertEquals(List.of("get"), TabCompleter.filterByPrefix(SUBCOMMANDS, "GET"));
+        assertEquals(List.of("clean"), TabCompleter.filterByPrefix(SUBCOMMANDS, "CL"));
     }
 
     @Test
     void filterByPrefix_noMatchReturnsEmpty() {
-        assertTrue(filter(SUBCOMMANDS, "xyz").isEmpty());
+        assertTrue(TabCompleter.filterByPrefix(SUBCOMMANDS, "xyz").isEmpty());
     }
 
     // -------------------------------------------------------------------------
@@ -69,7 +53,7 @@ class TabCompletionTest {
                 "medievalfactions", "medievaleconomy", "medievalroleplayengine",
                 "currencies", "simpleskills"
         );
-        List<String> result = filter(plugins, "medieval");
+        List<String> result = TabCompleter.filterByPrefix(plugins, "medieval");
         assertEquals(3, result.size());
         assertTrue(result.containsAll(Arrays.asList(
                 "medievalfactions", "medievaleconomy", "medievalroleplayengine")));
@@ -78,7 +62,7 @@ class TabCompletionTest {
     @Test
     void filterByPrefix_singleCharacterNarrows() {
         List<String> plugins = Arrays.asList("currencies", "conquestrecipes", "simpleskills");
-        List<String> result = filter(plugins, "c");
-        assertEquals(List.of("currencies", "conquestrecipes"), result);
+        assertEquals(List.of("currencies", "conquestrecipes"),
+                TabCompleter.filterByPrefix(plugins, "c"));
     }
 }
