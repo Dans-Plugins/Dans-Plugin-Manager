@@ -16,3 +16,5 @@ permissions:
     default: true
   dpm.get:
     default: op
+  dpm.clean:
+    default: op

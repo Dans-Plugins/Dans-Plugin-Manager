@@ -24,6 +24,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 | `dpm.list` | `true` | List available plugins. |
 | `dpm.stats` | `true` | View plugin statistics. |
 | `dpm.get` | `op` | Download a plugin to the server. |
+| `dpm.clean` | `op` | Remove duplicate plugin JARs. |
 
 ## Support
 

@@ -14,9 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Dynamic GitHub release retrieval — `/dpm get` now fetches the latest release JAR automatically via the GitHub API instead of relying on hardcoded versioned URLs
 - 9 additional public DPC plugin repos registered (Bluemap_MedievalFactions, Bookshelves-You-Can-Use, Dans-Set-Home, Democracy, FlyCommand, Herald, KDRTracker, Medieval-Cookery, MiniFactions)
 - Informative "no published release yet" message when a plugin has no GitHub release
+- `/dpm clean` command to remove duplicate plugin JARs from the plugins folder
 
 ### Changed
 - Download runs asynchronously so it no longer blocks the main server thread
+- Conflicting JARs (e.g. manually installed versioned copies) are automatically removed before a new version is downloaded
 - Conquest-Recipes switched from Spigot direct-link to GitHub release retrieval
 
 ### Removed

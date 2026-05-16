@@ -6,6 +6,7 @@ import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.services.GitHubReleaseService;
+import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 import org.bukkit.command.Command;
@@ -32,7 +33,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final ConfigService configService = new ConfigService(this);
     private final Logger logger = new Logger(this);
     private final GitHubReleaseService gitHubReleaseService = new GitHubReleaseService(logger);
-    private final DownloadService downloadService = new DownloadService(logger, gitHubReleaseService);
+    private final PluginFolderService pluginFolderService = new PluginFolderService();
+    private final DownloadService downloadService = new DownloadService(logger, gitHubReleaseService, pluginFolderService);
 
     /**
      * This runs when the server starts.
@@ -127,7 +129,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new HelpCommand(),
                 new GetCommand(ephemeralData, downloadService, this),
                 new ListCommand(ephemeralData),
-                new StatsCommand(ephemeralData)
+                new StatsCommand(ephemeralData),
+                new CleanCommand(ephemeralData, pluginFolderService, this)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }
