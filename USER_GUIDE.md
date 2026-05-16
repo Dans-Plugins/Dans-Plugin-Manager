@@ -30,6 +30,20 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 | `dpm.update` | `op` | Update all installed managed plugins. |
 | `dpm.info` | `true` | View release and install info for a plugin. |
 
+## Configuration
+
+DPM generates a `config.yml` in `plugins/DansPluginManager/` on first run. See [CONFIG.md](CONFIG.md) for all options.
+
+The most useful option for operators running frequent updates is `githubToken`. GitHub limits unauthenticated API requests to 60 per hour. Setting a personal access token raises this to 5 000 per hour:
+
+1. Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate a new token with no scopes selected (public repo read access is granted by default)
+3. Add it to `config.yml`:
+   ```yaml
+   githubToken: "ghp_your_token_here"
+   ```
+4. Restart the server (or use `/dpm reload` once that command is available).
+
 ## Support
 
 Ask questions in the [Discord server](https://discord.gg/xXtuAQ2) or open a [GitHub issue](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues).
