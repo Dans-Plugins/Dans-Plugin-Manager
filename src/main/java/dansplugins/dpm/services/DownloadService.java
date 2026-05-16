@@ -1,6 +1,7 @@
 package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.utils.Logger;
 
 import java.io.BufferedInputStream;
@@ -13,36 +14,53 @@ import java.util.List;
 public class DownloadService {
     /** No published release found on GitHub for this plugin. */
     public static final int NO_RELEASE = -2;
-
-    private static final String PATH_TO_PLUGINS_FOLDER = "./plugins/";
+    /** The installed JAR is present and its version matches the latest release. */
+    public static final int ALREADY_UP_TO_DATE = -3;
 
     private final Logger logger;
     private final GitHubReleaseService gitHubReleaseService;
     private final PluginFolderService pluginFolderService;
+    private final VersionStore versionStore;
 
-    public DownloadService(Logger logger, GitHubReleaseService gitHubReleaseService, PluginFolderService pluginFolderService) {
+    public DownloadService(Logger logger, GitHubReleaseService gitHubReleaseService,
+                           PluginFolderService pluginFolderService, VersionStore versionStore) {
         this.logger = logger;
         this.gitHubReleaseService = gitHubReleaseService;
         this.pluginFolderService = pluginFolderService;
+        this.versionStore = versionStore;
     }
 
     /**
-     * Resolves the latest JAR URL via the GitHub API, removes any conflicting
-     * JARs already in the plugins folder, then downloads the new version.
-     * Returns bytes downloaded on success, {@link #NO_RELEASE} if no release
-     * has been published yet, or -1 on other errors.
+     * Resolves the latest release via the GitHub API. Returns {@link #ALREADY_UP_TO_DATE}
+     * if the stored tag matches the latest tag AND the managed JAR is present on disk.
+     * Otherwise removes conflicting JARs and downloads the new version.
+     * Returns bytes downloaded on success, {@link #NO_RELEASE} if no release has been
+     * published yet, or -1 on other errors.
      */
     public int downloadLatest(ProjectRecord projectRecord) {
-        String downloadUrl = gitHubReleaseService.getLatestJarDownloadUrl(projectRecord.getOwner(), projectRecord.getRepo());
-        if (GitHubReleaseService.NO_RELEASE.equals(downloadUrl)) {
+        ReleaseInfo release = gitHubReleaseService.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
+        if (release == ReleaseInfo.NO_RELEASE) {
             return NO_RELEASE;
         }
-        if (downloadUrl == null) {
-            logger.log("Could not resolve a download URL for " + projectRecord.getName() + ".");
+        if (release == null) {
+            logger.log("Could not resolve release info for " + projectRecord.getName() + ".");
             return -1;
         }
+
+        String latestTag = release.getTagName();
+        if (latestTag != null
+                && latestTag.equals(versionStore.getStoredTag(projectRecord.getName()))
+                && pluginFolderService.isInstalled(projectRecord)) {
+            return ALREADY_UP_TO_DATE;
+        }
+
         removeConflictingJars(projectRecord);
-        return downloadFromUrl(downloadUrl, PATH_TO_PLUGINS_FOLDER + projectRecord.getName() + ".jar");
+        String dest = pluginFolderService.getPluginsFolder() + projectRecord.getName() + ".jar";
+        int bytes = downloadFromUrl(release.getJarUrl(), dest);
+        if (bytes > 0 && latestTag != null) {
+            versionStore.setTag(projectRecord.getName(), latestTag);
+        }
+        return bytes;
     }
 
     private void removeConflictingJars(ProjectRecord projectRecord) {

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Version tracking — last-downloaded release tag is persisted in `dpm-versions.properties`; `/dpm get` skips re-download when already on the latest version and reports the current tag
+- `/dpm list` now shows installed plugins in green (with their version tag when known) and uninstalled plugins in grey
+
 ## [0.4.0]
 
 ### Added

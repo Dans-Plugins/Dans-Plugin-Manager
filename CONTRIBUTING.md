@@ -39,7 +39,13 @@ Work items are tracked as [GitHub issues](https://github.com/Dans-Plugins/Dans-P
 
 ## Testing
 
-Build and place the JAR into a local Spigot server's `plugins/` folder:
+Run the unit test suite:
+
+```
+mvn test
+```
+
+Build and place the JAR into a local Spigot server's `plugins/` folder to test in-game:
 
 ```
 mvn clean package

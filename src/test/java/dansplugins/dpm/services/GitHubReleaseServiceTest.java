@@ -88,6 +88,36 @@ class GitHubReleaseServiceTest {
         assertEquals("https://example.com/Plugin-1.0-sources.jar", service.parseJarUrlFromAssets(json));
     }
 
+    // -------------------------------------------------------------------------
+    // parseTagName()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void parseTagName_returnsTag() {
+        String json = "{\"tag_name\":\"v4.6.3\",\"assets\":[]}";
+        assertEquals("v4.6.3", service.parseTagName(json));
+    }
+
+    @Test
+    void parseTagName_returnsNullWhenMissing() {
+        assertNull(service.parseTagName("{\"assets\":[]}"));
+    }
+
+    @Test
+    void parseTagName_returnsNullForEmptyString() {
+        assertNull(service.parseTagName(""));
+    }
+
+    @Test
+    void parseTagName_handlesTagWithoutVPrefix() {
+        String json = "{\"tag_name\":\"4.6.3\",\"assets\":[]}";
+        assertEquals("4.6.3", service.parseTagName(json));
+    }
+
+    // -------------------------------------------------------------------------
+    // parseJarUrlFromAssets() — edge cases
+    // -------------------------------------------------------------------------
+
     @Test
     void parseJarUrlFromAssets_emptyStringReturnsNull() {
         assertNull(service.parseJarUrlFromAssets(""));

@@ -7,6 +7,7 @@ import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.services.GitHubReleaseService;
 import dansplugins.dpm.services.PluginFolderService;
+import dansplugins.dpm.services.VersionStore;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 import org.bukkit.command.Command;
@@ -34,7 +35,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final Logger logger = new Logger(this);
     private final GitHubReleaseService gitHubReleaseService = new GitHubReleaseService(logger);
     private final PluginFolderService pluginFolderService = new PluginFolderService();
-    private final DownloadService downloadService = new DownloadService(logger, gitHubReleaseService, pluginFolderService);
+    private VersionStore versionStore;
+    private DownloadService downloadService;
 
     /**
      * This runs when the server starts.
@@ -42,6 +44,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public void onEnable() {
         initializeConfig();
+        versionStore = new VersionStore(new File(getDataFolder(), "dpm-versions.properties"));
+        downloadService = new DownloadService(logger, gitHubReleaseService, pluginFolderService, versionStore);
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -127,8 +131,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
-                new GetCommand(ephemeralData, downloadService, this),
-                new ListCommand(ephemeralData),
+                new GetCommand(ephemeralData, downloadService, versionStore, this),
+                new ListCommand(ephemeralData, pluginFolderService, versionStore),
                 new StatsCommand(ephemeralData),
                 new CleanCommand(ephemeralData, pluginFolderService, this)
         ));

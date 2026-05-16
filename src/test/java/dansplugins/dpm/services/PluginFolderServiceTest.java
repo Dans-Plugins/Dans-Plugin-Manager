@@ -88,9 +88,7 @@ class PluginFolderServiceTest {
     @Test
     void normalize_preservesEmbeddedDigitsInName() {
         // The '3' is part of the plugin name, not a version — it must not be stripped
-        String result = service.normalize("Dans3Essentials-2.0.jar");
-        assertTrue(result.contains("3"), "Embedded digit in name should be preserved, got: " + result);
-        assertFalse(result.contains("2"), "Version digit should be stripped, got: " + result);
+        assertEquals("dans3essentials", service.normalize("Dans3Essentials-2.0.jar"));
     }
 
     // -------------------------------------------------------------------------
@@ -163,7 +161,8 @@ class PluginFolderServiceTest {
 
     @Test
     void findConflictingJars_caseInsensitiveManagedFileExclusion(@TempDir Path tempDir) throws IOException {
-        // The managed file is in uppercase — it must still be recognised as the canonical copy
+        // MEDIEVALFACTIONS.JAR normalizes to "medievalfactions" and matches equalsIgnoreCase —
+        // it must be excluded as the canonical copy, not returned as a conflict.
         createFile(tempDir, "MEDIEVALFACTIONS.JAR");
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
 
@@ -181,6 +180,34 @@ class PluginFolderServiceTest {
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
+    }
+
+    // -------------------------------------------------------------------------
+    // isInstalled()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void isInstalled_returnsTrueWhenManagedJarExists(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertTrue(svc.isInstalled(record));
+    }
+
+    @Test
+    void isInstalled_returnsFalseWhenManagedJarAbsent(@TempDir Path tempDir) {
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertFalse(svc.isInstalled(record));
+    }
+
+    @Test
+    void isInstalled_returnsFalseWhenOnlyVersionedJarPresent(@TempDir Path tempDir) throws IOException {
+        // The versioned copy is a conflict, not the managed file
+        createFile(tempDir, "Medieval-Factions-4.6.3.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertFalse(svc.isInstalled(record));
     }
 
     private void createFile(Path dir, String name) throws IOException {

@@ -22,7 +22,7 @@ public class StatsCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender commandSender) {
         commandSender.sendMessage(ChatColor.AQUA + "=== DPM Stats ===");
-        commandSender.sendMessage(ChatColor.AQUA + "Number of project records: " + ephemeralData.getNumProjectRecords());
+        commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + ephemeralData.getNumProjectRecords());
         return true;
     }
 

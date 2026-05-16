@@ -17,6 +17,25 @@ public class PluginFolderService {
         this.pluginsFolder = pluginsFolder;
     }
 
+    String getPluginsFolder() {
+        return pluginsFolder;
+    }
+
+    /**
+     * Returns true if any file in the plugins folder matches {recordName}.jar
+     * case-insensitively (mirrors the equalsIgnoreCase logic in findConflictingJars).
+     */
+    public boolean isInstalled(ProjectRecord record) {
+        String managedFilename = record.getName() + ".jar";
+        File pluginsDir = new File(pluginsFolder);
+        File[] files = pluginsDir.listFiles();
+        if (files == null) return false;
+        for (File f : files) {
+            if (f.getName().equalsIgnoreCase(managedFilename)) return true;
+        }
+        return false;
+    }
+
     /**
      * Returns all JARs in the plugins folder whose normalized name matches the record
      * but are not the managed file ({recordName}.jar).
@@ -24,7 +43,7 @@ public class PluginFolderService {
     public List<File> findConflictingJars(ProjectRecord record) {
         List<File> conflicts = new ArrayList<>();
         File pluginsDir = new File(pluginsFolder);
-        File[] jars = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar"));
+        File[] jars = pluginsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
         if (jars == null) return conflicts;
         String managedFilename = record.getName() + ".jar";
         for (File jar : jars) {

@@ -1,5 +1,6 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.utils.Logger;
 
 import java.io.BufferedReader;
@@ -13,9 +14,6 @@ import java.nio.charset.StandardCharsets;
 public class GitHubReleaseService {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
 
-    /** Returned when the repo exists but has no published (non-prerelease) release yet. */
-    public static final String NO_RELEASE = "__NO_RELEASE__";
-
     private final Logger logger;
 
     public GitHubReleaseService(Logger logger) {
@@ -23,18 +21,18 @@ public class GitHubReleaseService {
     }
 
     /**
-     * Returns the browser_download_url of the first .jar asset on the latest release.
-     * Returns {@link #NO_RELEASE} when GitHub reports 404 (no releases published yet).
-     * Returns null on network or other errors.
+     * Returns a {@link ReleaseInfo} with the tag name and first .jar asset URL for the
+     * latest release. Returns {@link ReleaseInfo#NO_RELEASE} when GitHub reports 404
+     * (no releases published yet). Returns null on network or other errors.
      */
-    public String getLatestJarDownloadUrl(String owner, String repo) {
+    public ReleaseInfo getLatestRelease(String owner, String repo) {
         String apiUrl = String.format(API_URL, owner, repo);
         HttpURLConnection connection = null;
         try {
             connection = openConnection(apiUrl);
             int responseCode = connection.getResponseCode();
             if (responseCode == 404) {
-                return NO_RELEASE;
+                return ReleaseInfo.NO_RELEASE;
             }
             if (responseCode != 200) {
                 String errorBody = readStream(connection.getErrorStream());
@@ -42,7 +40,13 @@ public class GitHubReleaseService {
                 return null;
             }
             String json = readStream(connection.getInputStream());
-            return parseJarUrlFromAssets(json);
+            String tagName = parseTagName(json);
+            String jarUrl = parseJarUrlFromAssets(json);
+            if (jarUrl == null) {
+                logger.log("Release " + tagName + " for " + owner + "/" + repo + " has no .jar asset.");
+                return null;
+            }
+            return new ReleaseInfo(tagName, jarUrl);
         } catch (IOException e) {
             logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
             return null;
@@ -75,6 +79,23 @@ public class GitHubReleaseService {
     }
 
     /**
+     * Extracts the value of the top-level "tag_name" field. Tag names are simple
+     * strings that never contain backslash escapes, so a direct quote scan suffices.
+     */
+    String parseTagName(String json) {
+        String key = "\"tag_name\"";
+        int keyIndex = json.indexOf(key);
+        if (keyIndex == -1) return null;
+        int colonIndex = json.indexOf(':', keyIndex + key.length());
+        if (colonIndex == -1) return null;
+        int openQuote = json.indexOf('"', colonIndex + 1);
+        if (openQuote == -1) return null;
+        int closeQuote = json.indexOf('"', openQuote + 1);
+        if (closeQuote == -1) return null;
+        return json.substring(openQuote + 1, closeQuote);
+    }
+
+    /**
      * Extracts the first .jar browser_download_url from within the assets array.
      * Uses bracket-depth tracking to bound the search strictly to the assets array,
      * and handles backslash-escaped characters within URL strings.
@@ -86,7 +107,6 @@ public class GitHubReleaseService {
         int arrayOpen = json.indexOf('[', assetsKeyIndex);
         if (arrayOpen == -1) return null;
 
-        // Find the matching closing bracket via depth tracking
         int depth = 0;
         int arrayClose = -1;
         for (int i = arrayOpen; i < json.length(); i++) {
@@ -112,7 +132,6 @@ public class GitHubReleaseService {
             if (colonIndex == -1) break;
             int openQuote = assetsJson.indexOf('"', colonIndex + 1);
             if (openQuote == -1) break;
-            // Walk characters, respecting backslash escapes
             StringBuilder url = new StringBuilder();
             int i = openQuote + 1;
             while (i < assetsJson.length()) {
