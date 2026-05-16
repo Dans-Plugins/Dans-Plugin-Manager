@@ -17,6 +17,11 @@ public class PluginFolderService {
         this.pluginsFolder = pluginsFolder;
     }
 
+    /** Returns true if the managed JAR ({recordName}.jar) exists in the plugins folder. */
+    public boolean isInstalled(ProjectRecord record) {
+        return new File(pluginsFolder, record.getName() + ".jar").exists();
+    }
+
     /**
      * Returns all JARs in the plugins folder whose normalized name matches the record
      * but are not the managed file ({recordName}.jar).

@@ -175,6 +175,34 @@ class PluginFolderServiceTest {
         assertEquals("Medieval-Factions-4.6.3.jar", conflicts.get(0).getName());
     }
 
+    // -------------------------------------------------------------------------
+    // isInstalled()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void isInstalled_returnsTrueWhenManagedJarExists(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertTrue(svc.isInstalled(record));
+    }
+
+    @Test
+    void isInstalled_returnsFalseWhenManagedJarAbsent(@TempDir Path tempDir) {
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertFalse(svc.isInstalled(record));
+    }
+
+    @Test
+    void isInstalled_returnsFalseWhenOnlyVersionedJarPresent(@TempDir Path tempDir) throws IOException {
+        // The versioned copy is a conflict, not the managed file
+        createFile(tempDir, "Medieval-Factions-4.6.3.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertFalse(svc.isInstalled(record));
+    }
+
     @Test
     void findConflictingJars_nonExistentFolderReturnsEmpty() {
         PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");

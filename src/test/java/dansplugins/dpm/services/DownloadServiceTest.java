@@ -12,8 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DownloadServiceTest {
 
-    // Logger, GitHubReleaseService, and PluginFolderService are unused by readAndWrite.
-    private final DownloadService service = new DownloadService(null, null, null);
+    // Only readAndWrite() is exercised here; the other dependencies are unused.
+    private final DownloadService service = new DownloadService(null, null, null, null);
 
     // -------------------------------------------------------------------------
     // readAndWrite()
