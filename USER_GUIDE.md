@@ -13,7 +13,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 ## Getting Started
 
 1. Run `/dpm list` to see available plugins.
-2. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder.
+2. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder. The name must match the one shown by `/dpm list` (e.g. `medievalfactions`).
 3. Restart the server to activate the downloaded plugin.
 
 ## Permissions
