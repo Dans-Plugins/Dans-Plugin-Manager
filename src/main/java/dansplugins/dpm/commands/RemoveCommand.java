@@ -56,10 +56,8 @@ public class RemoveCommand extends AbstractPluginCommand {
 
     public List<String> getInstalledPluginNames() {
         List<String> names = new ArrayList<>();
-        for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
-            if (pluginFolderService.isInstalled(record)) {
-                names.add(record.getName());
-            }
+        for (ProjectRecord record : pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords())) {
+            names.add(record.getName());
         }
         return names;
     }
