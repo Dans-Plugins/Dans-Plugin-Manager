@@ -4,7 +4,9 @@ import dansplugins.dpm.objects.ProjectRecord;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class PluginFolderService {
     private final String pluginsFolder;
@@ -21,19 +23,44 @@ public class PluginFolderService {
         return pluginsFolder;
     }
 
-    /**
-     * Returns true if any file in the plugins folder matches {recordName}.jar
-     * case-insensitively (mirrors the equalsIgnoreCase logic in findConflictingJars).
-     */
     public boolean isInstalled(ProjectRecord record) {
+        return getInstalledFile(record) != null;
+    }
+
+    /**
+     * Returns the installed JAR file for the record, or null if not found.
+     * Case-insensitive — all isInstalled() calls delegate here.
+     */
+    public File getInstalledFile(ProjectRecord record) {
         String managedFilename = record.getName() + ".jar";
         File pluginsDir = new File(pluginsFolder);
         File[] files = pluginsDir.listFiles();
-        if (files == null) return false;
+        if (files == null) return null;
         for (File f : files) {
-            if (f.getName().equalsIgnoreCase(managedFilename)) return true;
+            if (f.getName().equalsIgnoreCase(managedFilename)) return f;
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * Returns the subset of records whose managed JAR is present in the plugins folder.
+     * Scans the directory once regardless of how many records are provided.
+     */
+    public List<ProjectRecord> filterInstalled(List<ProjectRecord> records) {
+        File pluginsDir = new File(pluginsFolder);
+        File[] files = pluginsDir.listFiles();
+        if (files == null) return new ArrayList<>();
+        Set<String> presentLower = new HashSet<>();
+        for (File f : files) {
+            presentLower.add(f.getName().toLowerCase());
+        }
+        List<ProjectRecord> installed = new ArrayList<>();
+        for (ProjectRecord record : records) {
+            if (presentLower.contains(record.getName().toLowerCase() + ".jar")) {
+                installed.add(record);
+            }
+        }
+        return installed;
     }
 
     /**

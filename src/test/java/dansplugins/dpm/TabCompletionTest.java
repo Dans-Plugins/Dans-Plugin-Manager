@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TabCompletionTest {
 
     private static final List<String> SUBCOMMANDS =
-            Arrays.asList("help", "list", "get", "clean", "stats", "update", "info");
+            Arrays.asList("help", "list", "get", "clean", "stats", "update", "info", "reload", "remove");
 
     // -------------------------------------------------------------------------
     // sub-command completion
@@ -51,6 +51,13 @@ class TabCompletionTest {
     @Test
     void filterByPrefix_infoPrefixMatchesOnlyInfo() {
         assertEquals(List.of("info"), TabCompleter.filterByPrefix(SUBCOMMANDS, "i"));
+    }
+
+    @Test
+    void filterByPrefix_rePrefixMatchesReloadAndRemove() {
+        List<String> result = TabCompleter.filterByPrefix(SUBCOMMANDS, "re");
+        assertEquals(2, result.size());
+        assertTrue(result.containsAll(List.of("reload", "remove")));
     }
 
     // -------------------------------------------------------------------------

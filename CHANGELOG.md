@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- `/dpm reload` — reloads `config.yml` and re-applies live settings (e.g. `githubToken`) without a server restart
+- `/dpm remove <plugin-name>` — deletes the managed JAR from the plugins folder and clears the stored version tag
+
 ## [0.4.0]
 
 ### Added

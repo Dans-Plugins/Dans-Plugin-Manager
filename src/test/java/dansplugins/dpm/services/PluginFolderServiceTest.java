@@ -210,6 +210,35 @@ class PluginFolderServiceTest {
         assertFalse(svc.isInstalled(record));
     }
 
+    // -------------------------------------------------------------------------
+    // getInstalledFile()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void getInstalledFile_returnsFileWhenPresent(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        File result = svc.getInstalledFile(record);
+        assertNotNull(result);
+        assertEquals("medievalfactions.jar", result.getName());
+    }
+
+    @Test
+    void getInstalledFile_returnsNullWhenAbsent(@TempDir Path tempDir) {
+        PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertNull(svc.getInstalledFile(record));
+    }
+
+    @Test
+    void getInstalledFile_caseInsensitiveMatch(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "MedievalFactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
+        ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
+        assertNotNull(svc.getInstalledFile(record));
+    }
+
     private void createFile(Path dir, String name) throws IOException {
         new File(dir.toFile(), name).createNewFile();
     }

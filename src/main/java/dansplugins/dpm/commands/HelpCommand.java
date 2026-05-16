@@ -26,6 +26,8 @@ public class HelpCommand extends AbstractPluginCommand {
         commandSender.sendMessage(ChatColor.AQUA + "/dpm stats - View plugin statistics.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm update - Update all installed plugins.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm info <plugin-name> - Show release and install info for a plugin.");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm reload - Reload the DPM config.");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm remove <plugin-name> - Remove an installed plugin.");
         return true;
     }
 

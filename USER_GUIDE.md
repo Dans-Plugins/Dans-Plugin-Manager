@@ -29,6 +29,8 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 | `dpm.clean` | `op` | Remove duplicate plugin JARs. |
 | `dpm.update` | `op` | Update all installed managed plugins. |
 | `dpm.info` | `true` | View release and install info for a plugin. |
+| `dpm.reload` | `op` | Reload the DPM config. |
+| `dpm.remove` | `op` | Remove an installed managed plugin. |
 
 ## Configuration
 
@@ -42,7 +44,7 @@ The most useful option for operators running frequent updates is `githubToken`. 
    ```yaml
    githubToken: "ghp_your_token_here"
    ```
-4. Restart the server (or use `/dpm reload` once that command is available).
+4. Run `/dpm reload` to apply the change without restarting the server.
 
 ## Support
 
