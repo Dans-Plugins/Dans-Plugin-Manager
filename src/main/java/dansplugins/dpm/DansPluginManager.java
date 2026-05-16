@@ -41,6 +41,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final PluginFolderService pluginFolderService = new PluginFolderService();
     private VersionStore versionStore;
     private DownloadService downloadService;
+    private RemoveCommand removeCommand;
 
     /**
      * This runs when the server starts.
@@ -74,7 +75,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
-            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update", "info"), args[0]);
+            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update", "info", "reload", "remove"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("get") || args[0].equalsIgnoreCase("info"))) {
             List<String> names = new ArrayList<>();
@@ -82,6 +83,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 names.add(record.getName());
             }
             return TabCompleter.filterByPrefix(names, args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
+            return TabCompleter.filterByPrefix(removeCommand.getInstalledPluginNames(), args[1]);
         }
         return Collections.emptyList();
     }
@@ -125,6 +129,11 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         return configService.getBoolean("debugMode");
     }
 
+    public void reloadDpm() {
+        reloadConfig();
+        gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubToken", ""));
+    }
+
     private void initializeConfig() {
         if (configFileExists()) {
             performCompatibilityChecks();
@@ -156,7 +165,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new StatsCommand(ephemeralData),
                 new CleanCommand(ephemeralData, pluginFolderService, this),
                 new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
-                new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this)
+                new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),
+                new ReloadCommand(this),
+                removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }

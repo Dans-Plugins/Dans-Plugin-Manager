@@ -37,6 +37,21 @@ public class PluginFolderService {
     }
 
     /**
+     * Returns the installed JAR file for the record, or null if not found.
+     * Uses case-insensitive matching consistent with isInstalled().
+     */
+    public File getInstalledFile(ProjectRecord record) {
+        String managedFilename = record.getName() + ".jar";
+        File pluginsDir = new File(pluginsFolder);
+        File[] files = pluginsDir.listFiles();
+        if (files == null) return null;
+        for (File f : files) {
+            if (f.getName().equalsIgnoreCase(managedFilename)) return f;
+        }
+        return null;
+    }
+
+    /**
      * Returns all JARs in the plugins folder whose normalized name matches the record
      * but are not the managed file ({recordName}.jar).
      */
