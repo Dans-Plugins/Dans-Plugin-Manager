@@ -79,11 +79,61 @@ public class GitHubReleaseService {
     }
 
     /**
+     * Returns a {@link ReleaseInfo} with tag name and publish date for the latest release,
+     * without requiring a downloadable .jar asset. Returns {@link ReleaseInfo#NO_RELEASE}
+     * on 404, or null on network/other errors.
+     */
+    public ReleaseInfo getLatestReleaseMetadata(String owner, String repo) {
+        String apiUrl = String.format(API_URL, owner, repo);
+        HttpURLConnection connection = null;
+        try {
+            connection = openConnection(apiUrl);
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 404) {
+                return ReleaseInfo.NO_RELEASE;
+            }
+            if (responseCode != 200) {
+                String errorBody = readStream(connection.getErrorStream());
+                logger.log("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
+                return null;
+            }
+            String json = readStream(connection.getInputStream());
+            String tagName = parseTagName(json);
+            String publishedAt = parsePublishedAt(json);
+            return new ReleaseInfo(tagName, null, publishedAt);
+        } catch (IOException e) {
+            logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    /**
      * Extracts the value of the top-level "tag_name" field. Tag names are simple
      * strings that never contain backslash escapes, so a direct quote scan suffices.
      */
     String parseTagName(String json) {
         String key = "\"tag_name\"";
+        int keyIndex = json.indexOf(key);
+        if (keyIndex == -1) return null;
+        int colonIndex = json.indexOf(':', keyIndex + key.length());
+        if (colonIndex == -1) return null;
+        int openQuote = json.indexOf('"', colonIndex + 1);
+        if (openQuote == -1) return null;
+        int closeQuote = json.indexOf('"', openQuote + 1);
+        if (closeQuote == -1) return null;
+        return json.substring(openQuote + 1, closeQuote);
+    }
+
+    /**
+     * Extracts the value of the top-level "published_at" field (ISO 8601 date string).
+     * Uses the same quote-scan approach as parseTagName.
+     */
+    String parsePublishedAt(String json) {
+        String key = "\"published_at\"";
         int keyIndex = json.indexOf(key);
         if (keyIndex == -1) return null;
         int colonIndex = json.indexOf(':', keyIndex + key.length());

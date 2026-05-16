@@ -115,6 +115,26 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // parsePublishedAt()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void parsePublishedAt_returnsDate() {
+        String json = "{\"tag_name\":\"v1.0\",\"published_at\":\"2024-03-15T10:00:00Z\",\"assets\":[]}";
+        assertEquals("2024-03-15T10:00:00Z", service.parsePublishedAt(json));
+    }
+
+    @Test
+    void parsePublishedAt_returnsNullWhenMissing() {
+        assertNull(service.parsePublishedAt("{\"tag_name\":\"v1.0\",\"assets\":[]}"));
+    }
+
+    @Test
+    void parsePublishedAt_returnsNullForEmptyString() {
+        assertNull(service.parsePublishedAt(""));
+    }
+
+    // -------------------------------------------------------------------------
     // parseJarUrlFromAssets() — edge cases
     // -------------------------------------------------------------------------
 

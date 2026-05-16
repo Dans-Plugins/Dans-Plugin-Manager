@@ -49,7 +49,7 @@ public class InfoCommand extends AbstractPluginCommand {
         }
         sender.sendMessage(ChatColor.AQUA + "Fetching release info for " + record.getName() + "...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            ReleaseInfo release = gitHubReleaseService.getLatestRelease(record.getOwner(), record.getRepo());
+            ReleaseInfo release = gitHubReleaseService.getLatestReleaseMetadata(record.getOwner(), record.getRepo());
             Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, record, release));
         });
         return true;
@@ -57,6 +57,8 @@ public class InfoCommand extends AbstractPluginCommand {
 
     private void showInfo(CommandSender sender, ProjectRecord record, ReleaseInfo release) {
         sender.sendMessage(ChatColor.AQUA + "=== " + record.getName() + " ===");
+        sender.sendMessage(ChatColor.WHITE + "Owner: " + ChatColor.AQUA + record.getOwner());
+        sender.sendMessage(ChatColor.WHITE + "Repository: " + ChatColor.AQUA + record.getRepo());
 
         if (release == ReleaseInfo.NO_RELEASE) {
             sender.sendMessage(ChatColor.YELLOW + "Latest release: None published yet");
@@ -64,6 +66,9 @@ public class InfoCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.RED + "Latest release: (could not fetch — check console for details)");
         } else {
             sender.sendMessage(ChatColor.WHITE + "Latest release: " + ChatColor.GREEN + release.getTagName());
+            if (release.getPublishedAt() != null) {
+                sender.sendMessage(ChatColor.WHITE + "Published: " + ChatColor.AQUA + formatDate(release.getPublishedAt()));
+            }
         }
 
         boolean installed = pluginFolderService.isInstalled(record);
@@ -82,5 +87,11 @@ public class InfoCommand extends AbstractPluginCommand {
         } else {
             sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GRAY + "No");
         }
+    }
+
+    /** Trims the time component from an ISO 8601 timestamp, returning just the date. */
+    private String formatDate(String iso8601) {
+        int tIndex = iso8601.indexOf('T');
+        return tIndex > 0 ? iso8601.substring(0, tIndex) : iso8601;
     }
 }
