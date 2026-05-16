@@ -10,8 +10,11 @@ public class ProjectRecordFactory {
         this.ephemeralData = ephemeralData;
     }
 
-    public void createProjectRecord(String name, String link) {
-        ProjectRecord projectRecord = new ProjectRecord(name, link);
-        ephemeralData.addProjectRecord(projectRecord);
+    public void createGitHubRecord(String name, String owner, String repo) {
+        ephemeralData.addProjectRecord(new ProjectRecord(name, owner, repo));
+    }
+
+    public void createDirectLinkRecord(String name, String directLink) {
+        ephemeralData.addProjectRecord(new ProjectRecord(name, directLink));
     }
 }

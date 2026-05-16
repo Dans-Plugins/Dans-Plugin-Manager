@@ -37,7 +37,7 @@ public class GetCommand extends AbstractPluginCommand {
             commandSender.sendMessage(ChatColor.RED + "A project record wasn't found with that name.");
             return false;
         }
-        int bytesRead = downloadService.downloadFromLink(projectRecord);
+        int bytesRead = downloadService.downloadLatest(projectRecord);
         if (bytesRead == 0) {
             commandSender.sendMessage(ChatColor.RED + "No bytes were read.");
             return false;

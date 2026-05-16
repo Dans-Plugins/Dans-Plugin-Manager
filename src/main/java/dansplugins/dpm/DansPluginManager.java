@@ -5,6 +5,7 @@ import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DownloadService;
+import dansplugins.dpm.services.GitHubReleaseService;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 import org.bukkit.command.Command;
@@ -30,7 +31,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final ProjectRecordInitializer projectRecordInitializer = new ProjectRecordInitializer(projectRecordFactory);
     private final ConfigService configService = new ConfigService(this);
     private final Logger logger = new Logger(this);
-    private final DownloadService downloadService = new DownloadService(logger);
+    private final GitHubReleaseService gitHubReleaseService = new GitHubReleaseService(logger);
+    private final DownloadService downloadService = new DownloadService(logger, gitHubReleaseService);
 
     /**
      * This runs when the server starts.

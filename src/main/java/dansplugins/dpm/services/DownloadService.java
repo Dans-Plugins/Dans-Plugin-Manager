@@ -9,25 +9,39 @@ import java.io.IOException;
 import java.net.URL;
 
 public class DownloadService {
+    private static final String PATH_TO_PLUGINS_FOLDER = "./plugins/";
+
     private final Logger logger;
+    private final GitHubReleaseService gitHubReleaseService;
 
-    private final static String PATH_TO_PLUGINS_FOLDER = "./plugins/";
-
-    public DownloadService(Logger logger) {
+    public DownloadService(Logger logger, GitHubReleaseService gitHubReleaseService) {
         this.logger = logger;
+        this.gitHubReleaseService = gitHubReleaseService;
     }
 
-    public int downloadFromLink(ProjectRecord projectRecord) {
-        return downloadFromLink(projectRecord.getLink(), PATH_TO_PLUGINS_FOLDER + projectRecord.getName() + ".jar");
-    }
-
-    public int downloadFromLink(String link, String path) {
-        try {
-            return readAndWrite(link, path);
-        } catch (IOException e) {
-            logger.log("Something went wrong downloading from a link.");
+    public int downloadLatest(ProjectRecord projectRecord) {
+        String downloadUrl = resolveDownloadUrl(projectRecord);
+        if (downloadUrl == null) {
+            logger.log("Could not resolve a download URL for " + projectRecord.getName() + ".");
             return -1;
         }
+        return downloadFromUrl(downloadUrl, PATH_TO_PLUGINS_FOLDER + projectRecord.getName() + ".jar");
+    }
+
+    public int downloadFromUrl(String url, String path) {
+        try {
+            return readAndWrite(url, path);
+        } catch (IOException e) {
+            logger.log("Something went wrong downloading from " + url + ": " + e.getMessage());
+            return -1;
+        }
+    }
+
+    private String resolveDownloadUrl(ProjectRecord projectRecord) {
+        if (projectRecord.isGitHubHosted()) {
+            return gitHubReleaseService.getLatestJarDownloadUrl(projectRecord.getOwner(), projectRecord.getRepo());
+        }
+        return projectRecord.getDirectLink();
     }
 
     private int readAndWrite(String link, String path) throws IOException {

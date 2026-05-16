@@ -1,27 +1,42 @@
 package dansplugins.dpm.objects;
 
 public class ProjectRecord {
-    private String name;
-    private String link;
+    private final String name;
+    private final String owner;
+    private final String repo;
+    private final String directLink;
 
-    public ProjectRecord(String name, String link) {
+    public ProjectRecord(String name, String owner, String repo) {
         this.name = name;
-        this.link = link;
+        this.owner = owner;
+        this.repo = repo;
+        this.directLink = null;
+    }
+
+    public ProjectRecord(String name, String directLink) {
+        this.name = name;
+        this.owner = null;
+        this.repo = null;
+        this.directLink = directLink;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public boolean isGitHubHosted() {
+        return owner != null && repo != null;
     }
 
-    public String getLink() {
-        return link;
+    public String getOwner() {
+        return owner;
     }
 
-    public void setLink(String link) {
-        this.link = link;
+    public String getRepo() {
+        return repo;
+    }
+
+    public String getDirectLink() {
+        return directLink;
     }
 }
