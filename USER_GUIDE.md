@@ -13,8 +13,8 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 ## Getting Started
 
 1. Run `/dpm list` to see all DPC plugins. Green entries are installed (with version tag when known); grey entries are not yet installed.
-2. Run `/dpm info <plugin-name>` to see the GitHub owner, repository, latest release tag, publish date, and install status for a specific plugin before downloading.
-3. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder. The name must match the one shown by `/dpm list` (e.g. `medievalfactions`). If the plugin is already on the latest version, the download is skipped.
+2. Run `/dpm info <plugin-name>` to see a plugin's description, GitHub owner, repository, latest release tag, publish date, install status, and any required or optional dependencies.
+3. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder. The name must match the one shown by `/dpm list` (e.g. `medievalfactions`). If the plugin is already on the latest version, the download is skipped. If required dependencies are not installed, a warning is shown before the download begins.
 4. Run `/dpm update` to check every installed managed plugin against its latest GitHub release and download any that are out of date.
 5. Restart the server to activate downloaded or updated plugins.
 6. Run `/dpm clean` to preview duplicate plugin JARs (e.g. versioned copies left over from manual installs). Add `--confirm` to delete them.
@@ -30,7 +30,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 | `dpm.get` | `op` | Download a plugin to the server. |
 | `dpm.clean` | `op` | Preview or remove duplicate plugin JARs. |
 | `dpm.update` | `op` | Update all installed managed plugins. |
-| `dpm.info` | `true` | View release and install info for a plugin. |
+| `dpm.info` | `true` | View description, release info, install status, and dependencies for a plugin. |
 | `dpm.reload` | `op` | Reload the DPM config. |
 | `dpm.remove` | `op` | Preview or remove an installed managed plugin. |
 

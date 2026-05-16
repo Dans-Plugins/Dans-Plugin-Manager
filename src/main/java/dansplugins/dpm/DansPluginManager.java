@@ -168,7 +168,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
-                new GetCommand(ephemeralData, downloadService, versionStore, this),
+                new GetCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
                 new ListCommand(ephemeralData, pluginFolderService, versionStore),
                 new StatsCommand(ephemeralData),
                 new CleanCommand(ephemeralData, pluginFolderService, this),

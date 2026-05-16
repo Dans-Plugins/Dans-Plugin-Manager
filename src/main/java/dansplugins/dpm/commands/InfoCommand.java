@@ -57,6 +57,11 @@ public class InfoCommand extends AbstractPluginCommand {
 
     private void showInfo(CommandSender sender, ProjectRecord record, ReleaseInfo release) {
         sender.sendMessage(ChatColor.AQUA + "=== " + record.getName() + " ===");
+
+        if (record.getDescription() != null) {
+            sender.sendMessage(ChatColor.WHITE + record.getDescription());
+        }
+
         sender.sendMessage(ChatColor.WHITE + "Owner: " + ChatColor.AQUA + record.getOwner());
         sender.sendMessage(ChatColor.WHITE + "Repository: " + ChatColor.AQUA + record.getRepo());
 
@@ -86,6 +91,21 @@ public class InfoCommand extends AbstractPluginCommand {
             }
         } else {
             sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GRAY + "No");
+        }
+
+        showDependencies(sender, record.getHardDependencies(), "Requires");
+        showDependencies(sender, record.getSoftDependencies(), "Integrates with");
+    }
+
+    private void showDependencies(CommandSender sender, List<String> deps, String label) {
+        if (deps.isEmpty()) return;
+        for (String dep : deps) {
+            ProjectRecord depRecord = ephemeralData.getProjectRecord(dep);
+            boolean depInstalled = depRecord != null && pluginFolderService.isInstalled(depRecord);
+            String status = depInstalled
+                    ? ChatColor.GREEN + dep + " (installed)"
+                    : ChatColor.RED + dep + " (not installed)";
+            sender.sendMessage(ChatColor.WHITE + label + ": " + status);
         }
     }
 
