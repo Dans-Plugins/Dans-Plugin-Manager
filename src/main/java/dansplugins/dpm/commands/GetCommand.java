@@ -29,7 +29,7 @@ public class GetCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender commandSender) {
-        commandSender.sendMessage(ChatColor.RED + "Usage: /dpm get <project-record-name>");
+        commandSender.sendMessage(ChatColor.RED + "Usage: /dpm get <plugin-name>");
         return false;
     }
 
@@ -38,21 +38,21 @@ public class GetCommand extends AbstractPluginCommand {
         String name = args[0];
         ProjectRecord projectRecord = ephemeralData.getProjectRecord(name);
         if (projectRecord == null) {
-            commandSender.sendMessage(ChatColor.RED + "A project record wasn't found with that name.");
+            commandSender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
             return false;
         }
         commandSender.sendMessage(ChatColor.AQUA + "Fetching " + projectRecord.getName() + "...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             int result = downloadService.downloadLatest(projectRecord);
-            if (result == DownloadService.NO_RELEASE) {
-                commandSender.sendMessage(ChatColor.YELLOW + projectRecord.getName() + " has no published release yet. Try again later.");
-            } else if (result == 0) {
-                commandSender.sendMessage(ChatColor.RED + "No bytes were read.");
-            } else if (result < 0) {
-                commandSender.sendMessage(ChatColor.RED + "Something went wrong downloading " + projectRecord.getName() + ".");
-            } else {
-                commandSender.sendMessage(ChatColor.GREEN + "Success! " + result + " chunks retrieved. Restart the server to enable " + projectRecord.getName() + ".");
-            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (result == DownloadService.NO_RELEASE) {
+                    commandSender.sendMessage(ChatColor.YELLOW + projectRecord.getName() + " has no published release yet. Try again later.");
+                } else if (result <= 0) {
+                    commandSender.sendMessage(ChatColor.RED + "Something went wrong downloading " + projectRecord.getName() + ".");
+                } else {
+                    commandSender.sendMessage(ChatColor.GREEN + "Downloaded " + (result / 1024) + " KB. Restart the server to enable " + projectRecord.getName() + ".");
+                }
+            });
         });
         return true;
     }

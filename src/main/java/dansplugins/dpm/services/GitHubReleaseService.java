@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class GitHubReleaseService {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
@@ -64,7 +65,7 @@ public class GitHubReleaseService {
     private String readStream(InputStream stream) throws IOException {
         if (stream == null) return "";
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
@@ -74,30 +75,50 @@ public class GitHubReleaseService {
     }
 
     /**
-     * Scopes the browser_download_url search to within the "assets" array to avoid
-     * false matches in release body text. Returns the first .jar asset URL found.
+     * Extracts the first .jar browser_download_url from within the assets array.
+     * Uses bracket-depth tracking to bound the search strictly to the assets array,
+     * and handles backslash-escaped characters within URL strings.
      */
     private String parseJarUrlFromAssets(String json) {
-        int assetsStart = json.indexOf("\"assets\":");
-        if (assetsStart == -1) return null;
-        // Search only from the assets field onward
-        String assetsSection = json.substring(assetsStart);
+        int assetsKeyIndex = json.indexOf("\"assets\":");
+        if (assetsKeyIndex == -1) return null;
+
+        int arrayOpen = json.indexOf('[', assetsKeyIndex);
+        if (arrayOpen == -1) return null;
+
+        // Find the matching closing bracket via depth tracking
+        int depth = 0;
+        int arrayClose = -1;
+        for (int i = arrayOpen; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '[') depth++;
+            else if (c == ']') {
+                depth--;
+                if (depth == 0) {
+                    arrayClose = i;
+                    break;
+                }
+            }
+        }
+        if (arrayClose == -1) return null;
+
+        String assetsJson = json.substring(arrayOpen, arrayClose + 1);
         String key = "\"browser_download_url\"";
         int searchFrom = 0;
         while (true) {
-            int keyIndex = assetsSection.indexOf(key, searchFrom);
+            int keyIndex = assetsJson.indexOf(key, searchFrom);
             if (keyIndex == -1) break;
-            int colonIndex = assetsSection.indexOf(':', keyIndex + key.length());
+            int colonIndex = assetsJson.indexOf(':', keyIndex + key.length());
             if (colonIndex == -1) break;
-            int openQuote = assetsSection.indexOf('"', colonIndex + 1);
+            int openQuote = assetsJson.indexOf('"', colonIndex + 1);
             if (openQuote == -1) break;
-            // Collect characters until an unescaped closing quote
+            // Walk characters, respecting backslash escapes
             StringBuilder url = new StringBuilder();
             int i = openQuote + 1;
-            while (i < assetsSection.length()) {
-                char c = assetsSection.charAt(i);
+            while (i < assetsJson.length()) {
+                char c = assetsJson.charAt(i);
                 if (c == '\\') {
-                    i += 2; // skip escaped character
+                    i += 2;
                     continue;
                 }
                 if (c == '"') break;

@@ -23,12 +23,12 @@ public class DownloadService {
     }
 
     /**
-     * Resolves the download URL (querying GitHub if needed) and downloads the JAR.
-     * Returns the number of chunks read on success, {@link #NO_RELEASE} if no release
+     * Resolves the latest JAR URL via the GitHub API and downloads it.
+     * Returns bytes downloaded on success, {@link #NO_RELEASE} if no release
      * has been published yet, or -1 on other errors.
      */
     public int downloadLatest(ProjectRecord projectRecord) {
-        String downloadUrl = resolveDownloadUrl(projectRecord);
+        String downloadUrl = gitHubReleaseService.getLatestJarDownloadUrl(projectRecord.getOwner(), projectRecord.getRepo());
         if (GitHubReleaseService.NO_RELEASE.equals(downloadUrl)) {
             return NO_RELEASE;
         }
@@ -39,7 +39,7 @@ public class DownloadService {
         return downloadFromUrl(downloadUrl, PATH_TO_PLUGINS_FOLDER + projectRecord.getName() + ".jar");
     }
 
-    public int downloadFromUrl(String url, String path) {
+    private int downloadFromUrl(String url, String path) {
         try {
             return readAndWrite(url, path);
         } catch (IOException e) {
@@ -48,24 +48,17 @@ public class DownloadService {
         }
     }
 
-    private String resolveDownloadUrl(ProjectRecord projectRecord) {
-        if (projectRecord.isGitHubHosted()) {
-            return gitHubReleaseService.getLatestJarDownloadUrl(projectRecord.getOwner(), projectRecord.getRepo());
-        }
-        return projectRecord.getDirectLink();
-    }
-
     private int readAndWrite(String link, String path) throws IOException {
-        int bytesRead = 0;
+        int totalBytes = 0;
         BufferedInputStream inputStream = new BufferedInputStream(new URL(link).openStream());
         FileOutputStream fileOutputStream = new FileOutputStream(path);
         byte[] data = new byte[1024];
-        int byteContent;
-        while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
-            bytesRead++;
-            fileOutputStream.write(data, 0, byteContent);
+        int bytesRead;
+        while ((bytesRead = inputStream.read(data, 0, 1024)) != -1) {
+            totalBytes += bytesRead;
+            fileOutputStream.write(data, 0, bytesRead);
         }
         fileOutputStream.close();
-        return bytesRead;
+        return totalBytes;
     }
 }

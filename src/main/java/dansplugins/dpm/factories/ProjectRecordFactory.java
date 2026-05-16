@@ -13,8 +13,4 @@ public class ProjectRecordFactory {
     public void createGitHubRecord(String name, String owner, String repo) {
         ephemeralData.addProjectRecord(ProjectRecord.forGitHub(name, owner, repo));
     }
-
-    public void createDirectLinkRecord(String name, String directLink) {
-        ephemeralData.addProjectRecord(ProjectRecord.forDirectLink(name, directLink));
-    }
 }
