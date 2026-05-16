@@ -4,6 +4,7 @@ import dansplugins.dpm.utils.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -27,31 +28,43 @@ public class GitHubReleaseService {
      */
     public String getLatestJarDownloadUrl(String owner, String repo) {
         String apiUrl = String.format(API_URL, owner, repo);
+        HttpURLConnection connection = null;
         try {
-            HttpURLConnection connection = openConnection(apiUrl);
+            connection = openConnection(apiUrl);
             int responseCode = connection.getResponseCode();
             if (responseCode == 404) {
                 return NO_RELEASE;
             }
-            String json = readResponse(connection);
-            return parseJarUrl(json);
+            if (responseCode != 200) {
+                String errorBody = readStream(connection.getErrorStream());
+                logger.log("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
+                return null;
+            }
+            String json = readStream(connection.getInputStream());
+            return parseJarUrlFromAssets(json);
         } catch (IOException e) {
-            logger.log("Failed to fetch release info for " + owner + "/" + repo + ": " + e.getMessage());
+            logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
             return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
     private HttpURLConnection openConnection(String apiUrl) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl).openConnection();
         connection.setRequestProperty("Accept", "application/vnd.github+json");
+        connection.setRequestProperty("User-Agent", "Dans-Plugin-Manager");
         connection.setConnectTimeout(5000);
         connection.setReadTimeout(5000);
         return connection;
     }
 
-    private String readResponse(HttpURLConnection connection) throws IOException {
+    private String readStream(InputStream stream) throws IOException {
+        if (stream == null) return "";
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
@@ -61,26 +74,41 @@ public class GitHubReleaseService {
     }
 
     /**
-     * Minimal JSON extraction — finds the first "browser_download_url" whose value ends in ".jar".
-     * Avoids pulling in a JSON library so the plugin stays lightweight.
+     * Scopes the browser_download_url search to within the "assets" array to avoid
+     * false matches in release body text. Returns the first .jar asset URL found.
      */
-    private String parseJarUrl(String json) {
+    private String parseJarUrlFromAssets(String json) {
+        int assetsStart = json.indexOf("\"assets\":");
+        if (assetsStart == -1) return null;
+        // Search only from the assets field onward
+        String assetsSection = json.substring(assetsStart);
         String key = "\"browser_download_url\"";
         int searchFrom = 0;
         while (true) {
-            int keyIndex = json.indexOf(key, searchFrom);
+            int keyIndex = assetsSection.indexOf(key, searchFrom);
             if (keyIndex == -1) break;
-            int colonIndex = json.indexOf(':', keyIndex + key.length());
+            int colonIndex = assetsSection.indexOf(':', keyIndex + key.length());
             if (colonIndex == -1) break;
-            int openQuote = json.indexOf('"', colonIndex + 1);
+            int openQuote = assetsSection.indexOf('"', colonIndex + 1);
             if (openQuote == -1) break;
-            int closeQuote = json.indexOf('"', openQuote + 1);
-            if (closeQuote == -1) break;
-            String url = json.substring(openQuote + 1, closeQuote);
-            if (url.endsWith(".jar")) {
-                return url;
+            // Collect characters until an unescaped closing quote
+            StringBuilder url = new StringBuilder();
+            int i = openQuote + 1;
+            while (i < assetsSection.length()) {
+                char c = assetsSection.charAt(i);
+                if (c == '\\') {
+                    i += 2; // skip escaped character
+                    continue;
+                }
+                if (c == '"') break;
+                url.append(c);
+                i++;
             }
-            searchFrom = closeQuote + 1;
+            String downloadUrl = url.toString();
+            if (downloadUrl.endsWith(".jar")) {
+                return downloadUrl;
+            }
+            searchFrom = i + 1;
         }
         return null;
     }

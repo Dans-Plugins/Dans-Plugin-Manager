@@ -3,8 +3,10 @@ package dansplugins.dpm.commands;
 import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DownloadService;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
@@ -16,11 +18,13 @@ import java.util.List;
 public class GetCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
     private final DownloadService downloadService;
+    private final Plugin plugin;
 
-    public GetCommand(EphemeralData ephemeralData, DownloadService downloadService) {
+    public GetCommand(EphemeralData ephemeralData, DownloadService downloadService, Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.ephemeralData = ephemeralData;
         this.downloadService = downloadService;
+        this.plugin = plugin;
     }
 
     @Override
@@ -37,20 +41,19 @@ public class GetCommand extends AbstractPluginCommand {
             commandSender.sendMessage(ChatColor.RED + "A project record wasn't found with that name.");
             return false;
         }
-        int result = downloadService.downloadLatest(projectRecord);
-        if (result == DownloadService.NO_RELEASE) {
-            commandSender.sendMessage(ChatColor.YELLOW + projectRecord.getName() + " has no published release yet. Try again later.");
-            return false;
-        }
-        if (result == 0) {
-            commandSender.sendMessage(ChatColor.RED + "No bytes were read.");
-            return false;
-        }
-        if (result < 0) {
-            commandSender.sendMessage(ChatColor.RED + "Something went wrong downloading " + projectRecord.getName() + ".");
-            return false;
-        }
-        commandSender.sendMessage(ChatColor.GREEN + "Success! " + result + " chunks retrieved. Restart the server to enable " + projectRecord.getName() + ".");
+        commandSender.sendMessage(ChatColor.AQUA + "Fetching " + projectRecord.getName() + "...");
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            int result = downloadService.downloadLatest(projectRecord);
+            if (result == DownloadService.NO_RELEASE) {
+                commandSender.sendMessage(ChatColor.YELLOW + projectRecord.getName() + " has no published release yet. Try again later.");
+            } else if (result == 0) {
+                commandSender.sendMessage(ChatColor.RED + "No bytes were read.");
+            } else if (result < 0) {
+                commandSender.sendMessage(ChatColor.RED + "Something went wrong downloading " + projectRecord.getName() + ".");
+            } else {
+                commandSender.sendMessage(ChatColor.GREEN + "Success! " + result + " chunks retrieved. Restart the server to enable " + projectRecord.getName() + ".");
+            }
+        });
         return true;
     }
 }
