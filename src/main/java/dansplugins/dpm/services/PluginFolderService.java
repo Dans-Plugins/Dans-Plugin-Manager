@@ -7,7 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PluginFolderService {
-    private static final String PLUGINS_FOLDER = "./plugins/";
+    private final String pluginsFolder;
+
+    public PluginFolderService() {
+        this("./plugins/");
+    }
+
+    PluginFolderService(String pluginsFolder) {
+        this.pluginsFolder = pluginsFolder;
+    }
 
     /**
      * Returns all JARs in the plugins folder whose normalized name matches the record
@@ -15,7 +23,7 @@ public class PluginFolderService {
      */
     public List<File> findConflictingJars(ProjectRecord record) {
         List<File> conflicts = new ArrayList<>();
-        File pluginsDir = new File(PLUGINS_FOLDER);
+        File pluginsDir = new File(pluginsFolder);
         File[] jars = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar"));
         if (jars == null) return conflicts;
         String managedFilename = record.getName() + ".jar";
@@ -34,8 +42,8 @@ public class PluginFolderService {
      * (e.g. -4.6.3, -v1.0), strips hyphens and underscores, lowercases.
      *
      * Examples:
-     *   Medieval-Factions-4.6.3.jar -> medievalfactions
-     *   ActivityTracker-v1.0.jar    -> activitytracker
+     *   Medieval-Factions-4.6.3.jar  -> medievalfactions
+     *   ActivityTracker-v1.0.jar     -> activitytracker
      *   Bluemap_MedievalFactions.jar -> bluemapmedievalfactions
      */
     String normalize(String filename) {

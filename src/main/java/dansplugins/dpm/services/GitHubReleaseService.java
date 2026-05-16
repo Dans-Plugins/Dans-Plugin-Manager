@@ -79,7 +79,7 @@ public class GitHubReleaseService {
      * Uses bracket-depth tracking to bound the search strictly to the assets array,
      * and handles backslash-escaped characters within URL strings.
      */
-    private String parseJarUrlFromAssets(String json) {
+    String parseJarUrlFromAssets(String json) {
         int assetsKeyIndex = json.indexOf("\"assets\":");
         if (assetsKeyIndex == -1) return null;
 
