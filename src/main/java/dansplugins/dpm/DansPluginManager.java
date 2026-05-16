@@ -2,6 +2,7 @@ package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
 import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DownloadService;
@@ -20,6 +21,8 @@ import preponderous.ponder.minecraft.bukkit.services.CommandService;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Daniel McCoy Stephenson
@@ -66,6 +69,21 @@ public final class DansPluginManager extends PonderBukkitPlugin {
      * @param args Arguments of the core command. Often sub-commands.
      * @return A boolean indicating whether the execution of the command was successful.
      */
+    @Override
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if (args.length == 1) {
+            return filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("get")) {
+            List<String> names = new ArrayList<>();
+            for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
+                names.add(record.getName());
+            }
+            return filterByPrefix(names, args[1]);
+        }
+        return Collections.emptyList();
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 0) {
@@ -128,6 +146,17 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     /**
      * Initializes Ponder's command service with the plugin's commands.
      */
+    List<String> filterByPrefix(List<String> options, String partial) {
+        String lower = partial.toLowerCase();
+        List<String> result = new ArrayList<>();
+        for (String option : options) {
+            if (option.startsWith(lower)) {
+                result.add(option);
+            }
+        }
+        return result;
+    }
+
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
