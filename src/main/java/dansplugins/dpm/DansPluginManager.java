@@ -73,9 +73,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
-            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update"), args[0]);
+            return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update", "info"), args[0]);
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("get")) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("get") || args[0].equalsIgnoreCase("info"))) {
             List<String> names = new ArrayList<>();
             for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
                 names.add(record.getName());
@@ -154,7 +154,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new ListCommand(ephemeralData, pluginFolderService, versionStore),
                 new StatsCommand(ephemeralData),
                 new CleanCommand(ephemeralData, pluginFolderService, this),
-                new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this)
+                new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
+                new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }
