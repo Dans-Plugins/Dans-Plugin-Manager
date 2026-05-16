@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.net.URL;
 
 public class DownloadService {
+    /** No published release found on GitHub for this plugin. */
+    public static final int NO_RELEASE = -2;
+
     private static final String PATH_TO_PLUGINS_FOLDER = "./plugins/";
 
     private final Logger logger;
@@ -19,8 +22,16 @@ public class DownloadService {
         this.gitHubReleaseService = gitHubReleaseService;
     }
 
+    /**
+     * Resolves the download URL (querying GitHub if needed) and downloads the JAR.
+     * Returns the number of chunks read on success, {@link #NO_RELEASE} if no release
+     * has been published yet, or -1 on other errors.
+     */
     public int downloadLatest(ProjectRecord projectRecord) {
         String downloadUrl = resolveDownloadUrl(projectRecord);
+        if (GitHubReleaseService.NO_RELEASE.equals(downloadUrl)) {
+            return NO_RELEASE;
+        }
         if (downloadUrl == null) {
             logger.log("Could not resolve a download URL for " + projectRecord.getName() + ".");
             return -1;

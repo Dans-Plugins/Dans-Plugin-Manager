@@ -14,33 +14,35 @@ public class ProjectRecordInitializer {
     public void initializeProjectRecords() {
         gh("activitytracker",          "Activity-Tracker");
         gh("alternateaccountfinder",   "AlternateAccountFinder");
-        gh("chathub",                  "ChatHub");
+        gh("bluemapmedievalfactions",  "Bluemap_MedievalFactions");
+        gh("bookshelvesyoucanuse",     "Bookshelves-You-Can-Use");
+        gh("conquestrecipes",          "Conquest-Recipes");
         gh("currencies",               "Currencies");
         gh("dansessentials",           "Dans-Essentials");
+        gh("danssethome",              "Dans-Set-Home");
         gh("dansspawnsystem",          "Dans-Spawn-System");
-        gh("easylinks",               "Easy-Links");
+        gh("democracy",                "Democracy");
+        gh("easylinks",                "Easy-Links");
         gh("fiefs",                    "Fiefs");
+        gh("flycommand",               "FlyCommand");
         gh("foodspoilage",             "FoodSpoilage");
-        gh("mailboxes",               "Mailboxes");
+        gh("herald",                   "Herald");
+        gh("kdrtracker",               "KDRTracker");
+        gh("mailboxes",                "Mailboxes");
+        gh("medievalcookery",          "Medieval-Cookery");
         gh("medievaleconomy",          "Medieval-Economy");
         gh("medievalfactions",         "Medieval-Factions");
         gh("medievalroleplayengine",   "Medieval-Roleplay-Engine");
+        gh("minifactions",             "MiniFactions");
         gh("morerecipes",              "More-Recipes");
         gh("netheraccesscontroller",   "Nether-Access-Controller");
         gh("nomorecreepers",           "NoMoreCreepers");
-        gh("playerlore",              "PlayerLore");
+        gh("playerlore",               "PlayerLore");
         gh("simpleskills",             "SimpleSkills");
         gh("wildpets",                 "Wild-Pets");
-
-        // Spigot-hosted — no GitHub releases API available
-        link("conquestrecipes", "https://www.spigotmc.org/resources/conquest-recipes.83594/download?version=355341");
     }
 
     private void gh(String name, String repo) {
         projectRecordFactory.createGitHubRecord(name, DANS_PLUGINS, repo);
-    }
-
-    private void link(String name, String directLink) {
-        projectRecordFactory.createDirectLinkRecord(name, directLink);
     }
 }

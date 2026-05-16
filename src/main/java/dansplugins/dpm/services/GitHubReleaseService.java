@@ -11,6 +11,9 @@ import java.net.URL;
 public class GitHubReleaseService {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
 
+    /** Returned when the repo exists but has no published (non-prerelease) release yet. */
+    public static final String NO_RELEASE = "__NO_RELEASE__";
+
     private final Logger logger;
 
     public GitHubReleaseService(Logger logger) {
@@ -18,13 +21,19 @@ public class GitHubReleaseService {
     }
 
     /**
-     * Returns the browser_download_url of the first .jar asset on the latest release,
-     * or null if none could be found.
+     * Returns the browser_download_url of the first .jar asset on the latest release.
+     * Returns {@link #NO_RELEASE} when GitHub reports 404 (no releases published yet).
+     * Returns null on network or other errors.
      */
     public String getLatestJarDownloadUrl(String owner, String repo) {
         String apiUrl = String.format(API_URL, owner, repo);
         try {
-            String json = fetchJson(apiUrl);
+            HttpURLConnection connection = openConnection(apiUrl);
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 404) {
+                return NO_RELEASE;
+            }
+            String json = readResponse(connection);
             return parseJarUrl(json);
         } catch (IOException e) {
             logger.log("Failed to fetch release info for " + owner + "/" + repo + ": " + e.getMessage());
@@ -32,11 +41,15 @@ public class GitHubReleaseService {
         }
     }
 
-    private String fetchJson(String apiUrl) throws IOException {
+    private HttpURLConnection openConnection(String apiUrl) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl).openConnection();
         connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setConnectTimeout(5000);
         connection.setReadTimeout(5000);
+        return connection;
+    }
+
+    private String readResponse(HttpURLConnection connection) throws IOException {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String line;

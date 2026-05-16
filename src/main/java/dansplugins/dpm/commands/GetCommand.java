@@ -37,18 +37,20 @@ public class GetCommand extends AbstractPluginCommand {
             commandSender.sendMessage(ChatColor.RED + "A project record wasn't found with that name.");
             return false;
         }
-        int bytesRead = downloadService.downloadLatest(projectRecord);
-        if (bytesRead == 0) {
+        int result = downloadService.downloadLatest(projectRecord);
+        if (result == DownloadService.NO_RELEASE) {
+            commandSender.sendMessage(ChatColor.YELLOW + projectRecord.getName() + " has no published release yet. Try again later.");
+            return false;
+        }
+        if (result == 0) {
             commandSender.sendMessage(ChatColor.RED + "No bytes were read.");
             return false;
         }
-        else if (bytesRead == -1) {
-            commandSender.sendMessage(ChatColor.RED + "Something went wrong.");
+        if (result < 0) {
+            commandSender.sendMessage(ChatColor.RED + "Something went wrong downloading " + projectRecord.getName() + ".");
             return false;
         }
-        else {
-            commandSender.sendMessage(ChatColor.GREEN + "Success! " + bytesRead + " bytes were retrieved. Restart the server in order to enable " + projectRecord.getName() + ".");
-            return true;
-        }
+        commandSender.sendMessage(ChatColor.GREEN + "Success! " + result + " chunks retrieved. Restart the server to enable " + projectRecord.getName() + ".");
+        return true;
     }
 }
