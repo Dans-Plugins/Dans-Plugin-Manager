@@ -54,7 +54,8 @@ def send_command(cmd):
 
 
 def _log_tail(lines=100):
-    return _api("GET", f"/api/server/logs?lines={lines}").text
+    data = _api("GET", f"/api/server/logs?lines={lines}").json()
+    return "\n".join(data.get("lines", []))
 
 
 def assert_log_contains(expected, lines=100, retries=6, delay=5):

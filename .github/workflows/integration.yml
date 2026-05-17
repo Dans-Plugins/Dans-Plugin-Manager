@@ -68,6 +68,8 @@ jobs:
             echo "DISCORD_WEBHOOK_URL="
             echo "ALERT_MANAGER_ENABLED=false"
             echo "AGENT_ENABLED=false"
+            echo "LOGS_DIAGNOSTIC_ENABLED=true"
+            echo "LOGS_DIAGNOSTIC_MAX_LINES=200"
           } > omcsi/.env
 
       # Cache the compiled Spigot image layers so the 10–15 min first-run
