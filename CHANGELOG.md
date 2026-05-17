@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `/dpm stats` now shows available plugin count (registered minus installed) as a third stat line
 - `/dpm list available` now appends each plugin's description after its name, separated by an em-dash
 - `/dpm remove <plugin-name> --confirm` now prints a reinstall hint (`/dpm get <name>`) after the removal success message
+- `/dpm update` success message now shows the old and new version tag (e.g. `v4.5.0 → v4.6.3`) when a plugin was previously tagged; shows only the new tag if no prior tag was stored
+- All "Plugin not found" errors across `/dpm get`, `/dpm update`, `/dpm info`, and `/dpm remove` now append `Use /dpm search <keyword> to find the right name.`
 
 ## [0.5.0] - 2026-05-17
 

@@ -52,7 +52,7 @@ public class GetCommand extends AbstractPluginCommand {
     private boolean executeSingle(CommandSender sender, String name) {
         ProjectRecord record = ephemeralData.getProjectRecord(name);
         if (record == null) {
-            sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
+            sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
         }
 
@@ -91,7 +91,7 @@ public class GetCommand extends AbstractPluginCommand {
         for (String name : args) {
             ProjectRecord record = ephemeralData.getProjectRecord(name);
             if (record == null) {
-                sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + " — skipping.");
+                sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + " — skipping. Use /dpm search <keyword> to find the right name.");
                 notFound++;
             } else {
                 records.add(record);
