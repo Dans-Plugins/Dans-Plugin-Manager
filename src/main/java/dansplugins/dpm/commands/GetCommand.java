@@ -2,8 +2,8 @@ package dansplugins.dpm.commands;
 
 import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DownloadService;
-import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -12,24 +12,25 @@ import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GetCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
     private final DownloadService downloadService;
-    private final PluginFolderService pluginFolderService;
+    private final DependencyResolutionService dependencyResolutionService;
     private final VersionStore versionStore;
     private final Plugin plugin;
 
     public GetCommand(EphemeralData ephemeralData, DownloadService downloadService,
-                      PluginFolderService pluginFolderService, VersionStore versionStore, Plugin plugin) {
+                      DependencyResolutionService dependencyResolutionService,
+                      VersionStore versionStore, Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.ephemeralData = ephemeralData;
         this.downloadService = downloadService;
-        this.pluginFolderService = pluginFolderService;
+        this.dependencyResolutionService = dependencyResolutionService;
         this.versionStore = versionStore;
         this.plugin = plugin;
     }
@@ -54,17 +55,37 @@ public class GetCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
             return false;
         }
-        warnMissingDependencies(sender, record, Collections.emptySet());
-        sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + "...");
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            int result = downloadService.downloadLatest(record);
-            Bukkit.getScheduler().runTask(plugin, () -> reportSingleResult(sender, record, result));
-        });
+
+        List<ProjectRecord> depsToFetch = new ArrayList<>();
+        List<String> unknownDeps = new ArrayList<>();
+        Set<String> resolved = new HashSet<>();
+        resolved.add(record.getName().toLowerCase());
+        dependencyResolutionService.resolve(List.of(record), resolved, depsToFetch, unknownDeps);
+
+        for (String dep : unknownDeps) {
+            sender.sendMessage(ChatColor.YELLOW + "Warning: " + record.getName()
+                    + " requires " + dep + ", which is not installed and is not a managed DPC plugin.");
+        }
+
+        if (depsToFetch.isEmpty()) {
+            sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + "...");
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                int result = downloadService.downloadLatest(record);
+                Bukkit.getScheduler().runTask(plugin, () -> reportSingleResult(sender, record, result));
+            });
+        } else {
+            for (ProjectRecord dep : depsToFetch) {
+                sender.sendMessage(ChatColor.AQUA + "Info: Also downloading required dependency " + dep.getName() + ".");
+            }
+            List<ProjectRecord> allToFetch = new ArrayList<>(depsToFetch);
+            allToFetch.add(record);
+            sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)...");
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, allToFetch, 0));
+        }
         return true;
     }
 
     private boolean executeBatch(CommandSender sender, String[] args) {
-        // First pass: resolve all names so the full batch set is known before warnings fire.
         List<ProjectRecord> records = new ArrayList<>();
         int notFound = 0;
         for (String name : args) {
@@ -77,17 +98,28 @@ public class GetCommand extends AbstractPluginCommand {
             }
         }
 
-        // Warn about missing deps, suppressing warnings for deps already in this batch.
-        Set<String> batchNames = new HashSet<>();
-        for (ProjectRecord r : records) batchNames.add(r.getName());
-        for (ProjectRecord record : records) {
-            warnMissingDependencies(sender, record, batchNames);
+        Set<String> resolved = records.stream()
+                .map(r -> r.getName().toLowerCase())
+                .collect(Collectors.toCollection(HashSet::new));
+        List<ProjectRecord> depsToFetch = new ArrayList<>();
+        List<String> unknownDeps = new ArrayList<>();
+        dependencyResolutionService.resolve(records, resolved, depsToFetch, unknownDeps);
+
+        for (String dep : unknownDeps) {
+            sender.sendMessage(ChatColor.YELLOW + "Warning: required dependency '" + dep
+                    + "' is not installed and is not a managed DPC plugin.");
         }
 
-        if (records.isEmpty()) return false;
-        sender.sendMessage(ChatColor.AQUA + "Fetching " + records.size() + " plugin(s)...");
+        List<ProjectRecord> allToFetch = new ArrayList<>(depsToFetch);
+        for (ProjectRecord dep : depsToFetch) {
+            sender.sendMessage(ChatColor.AQUA + "Info: Also downloading required dependency " + dep.getName() + ".");
+        }
+        allToFetch.addAll(records);
+
+        if (allToFetch.isEmpty()) return false;
+        sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)...");
         final int fn = notFound;
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, records, fn));
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, allToFetch, fn));
         return true;
     }
 
@@ -144,17 +176,6 @@ public class GetCommand extends AbstractPluginCommand {
             String tag = versionStore.getStoredTag(record.getName());
             String version = tag != null ? " " + tag : "";
             sender.sendMessage(ChatColor.GREEN + "Downloaded" + version + " (" + (result / 1024) + " KB). Restart the server to enable " + record.getName() + ".");
-        }
-    }
-
-    private void warnMissingDependencies(CommandSender sender, ProjectRecord record, Set<String> batchNames) {
-        for (String dep : record.getHardDependencies()) {
-            if (batchNames.contains(dep)) continue;
-            ProjectRecord depRecord = ephemeralData.getProjectRecord(dep);
-            if (depRecord == null || !pluginFolderService.isInstalled(depRecord)) {
-                sender.sendMessage(ChatColor.YELLOW + "Warning: " + record.getName()
-                        + " requires " + dep + ", which is not installed. Run /dpm get " + dep + " first.");
-            }
         }
     }
 }
