@@ -26,9 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Daniel McCoy Stephenson
- */
 public final class DansPluginManager extends PonderBukkitPlugin {
     private static final List<String> CONFIRM_COMPLETION = List.of("--confirm");
 
@@ -48,9 +45,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
-    /**
-     * This runs when the server starts.
-     */
     @Override
     public void onEnable() {
         initializeConfig();
@@ -61,22 +55,11 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         projectRecordInitializer.initializeProjectRecords();
     }
 
-    /**
-     * This runs when the server stops.
-     */
     @Override
     public void onDisable() {
 
     }
 
-    /**
-     * This method handles commands sent to the minecraft server and interprets them if the label matches one of the core commands.
-     * @param sender The sender of the command.
-     * @param cmd The command that was sent. This is unused.
-     * @param label The core command that has been invoked.
-     * @param args Arguments of the core command. Often sub-commands.
-     * @return A boolean indicating whether the execution of the command was successful.
-     */
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
@@ -124,18 +107,10 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         return commandService.interpretAndExecuteCommand(sender, label, args);
     }
 
-    /**
-     * This can be used to get the version of the plugin.
-     * @return A string containing the version preceded by 'v'
-     */
     public String getVersion() {
         return pluginVersion;
     }
 
-    /**
-     * Checks if the version is mismatched.
-     * @return A boolean indicating if the version is mismatched.
-     */
     public boolean isVersionMismatched() {
         String configVersion = this.getConfig().getString("version");
         if (configVersion == null) {
@@ -145,10 +120,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         }
     }
 
-    /**
-     * Checks if debug is enabled.
-     * @return Whether debug is enabled.
-     */
     public boolean isDebugEnabled() {
         return configService.getBoolean("debugMode");
     }
@@ -179,9 +150,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         reloadConfig();
     }
 
-    /**
-     * Initializes Ponder's command service with the plugin's commands.
-     */
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
