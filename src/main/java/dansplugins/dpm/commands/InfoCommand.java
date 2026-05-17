@@ -13,7 +13,9 @@ import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class InfoCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
@@ -76,7 +78,8 @@ public class InfoCommand extends AbstractPluginCommand {
             }
         }
 
-        boolean installed = pluginFolderService.isInstalled(record);
+        Set<String> installedNames = installedNamesFor(record);
+        boolean installed = installedNames.contains(record.getName());
         String storedTag = versionStore.getStoredTag(record.getName());
 
         if (installed) {
@@ -93,16 +96,32 @@ public class InfoCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GRAY + "No");
         }
 
-        showDependencies(sender, record.getHardDependencies(), "Requires");
-        showDependencies(sender, record.getSoftDependencies(), "Integrates with");
+        showDependencies(sender, record.getHardDependencies(), "Requires", installedNames);
+        showDependencies(sender, record.getSoftDependencies(), "Integrates with", installedNames);
     }
 
-    private void showDependencies(CommandSender sender, List<String> deps, String label) {
+    private Set<String> installedNamesFor(ProjectRecord record) {
+        List<ProjectRecord> toScan = new ArrayList<>();
+        toScan.add(record);
+        for (String dep : record.getHardDependencies()) {
+            ProjectRecord r = ephemeralData.getProjectRecord(dep);
+            if (r != null) toScan.add(r);
+        }
+        for (String dep : record.getSoftDependencies()) {
+            ProjectRecord r = ephemeralData.getProjectRecord(dep);
+            if (r != null) toScan.add(r);
+        }
+        Set<String> names = new HashSet<>();
+        for (ProjectRecord r : pluginFolderService.filterInstalled(toScan)) {
+            names.add(r.getName());
+        }
+        return names;
+    }
+
+    private void showDependencies(CommandSender sender, List<String> deps, String label, Set<String> installedNames) {
         if (deps.isEmpty()) return;
         for (String dep : deps) {
-            ProjectRecord depRecord = ephemeralData.getProjectRecord(dep);
-            boolean depInstalled = depRecord != null && pluginFolderService.isInstalled(depRecord);
-            String status = depInstalled
+            String status = installedNames.contains(dep)
                     ? ChatColor.GREEN + dep + " (installed)"
                     : ChatColor.RED + dep + " (not installed)";
             sender.sendMessage(ChatColor.WHITE + label + ": " + status);

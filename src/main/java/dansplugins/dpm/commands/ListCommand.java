@@ -29,10 +29,13 @@ public class ListCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender sender) {
         List<ProjectRecord> records = ephemeralData.getAllProjectRecords();
+        Set<String> installedNames = new HashSet<>();
+        for (ProjectRecord r : pluginFolderService.filterInstalled(records)) {
+            installedNames.add(r.getName());
+        }
         sender.sendMessage(ChatColor.AQUA + "=== Plugins (" + records.size() + ") ===");
         for (ProjectRecord record : records) {
-            boolean installed = pluginFolderService.isInstalled(record);
-            if (installed) {
+            if (installedNames.contains(record.getName())) {
                 String tag = versionStore.getStoredTag(record.getName());
                 String version = tag != null ? " " + tag : "";
                 sender.sendMessage(ChatColor.GREEN + record.getName() + version);
