@@ -7,9 +7,6 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Daniel McCoy Stephenson
- */
 public class HelpCommand extends AbstractPluginCommand {
 
     public HelpCommand() {

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Removed
+- Multi-line Javadoc blocks from `HelpCommand`, `DansPluginManager`, `Logger`, and `TabCompleter` (CLAUDE.md violation)
+
 ### Changed
 - `/dpm stats` now shows available plugin count (registered minus installed) as a third stat line
 - `/dpm list available` now appends each plugin's description after its name, separated by an em-dash
