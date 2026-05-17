@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - integration-test-ci
   schedule:
     - cron: '0 2 * * *'  # 02:00 UTC daily
@@ -29,6 +30,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
 
       - name: Build DPM JAR
         run: mvn package -DskipTests -q
@@ -70,8 +72,8 @@ jobs:
             echo "AGENT_ENABLED=false"
           } > omcsi/.env
 
-      # Cache the compiled Spigot image layers so the 10–15 min first-run
-      # compilation is skipped on subsequent runs with the same Dockerfiles.
+      # On cache hit: load images and skip the 10–15 min Spigot compilation entirely.
+      # On cache miss: build from scratch and save the result for next time.
       - name: Cache OMCSI Docker images
         id: docker-cache
         uses: actions/cache@v4
@@ -85,6 +87,7 @@ jobs:
         run: docker load < /tmp/omcsi-images.tar
 
       - name: Build OMCSI Docker stack
+        if: steps.docker-cache.outputs.cache-hit != 'true'
         working-directory: omcsi
         env:
           DOCKER_BUILDKIT: '1'
@@ -101,7 +104,7 @@ jobs:
 
       - name: Start OMCSI stack
         working-directory: omcsi
-        run: docker compose up -d
+        run: docker compose up -d ${{ steps.docker-cache.outputs.cache-hit == 'true' && '--no-build' || '' }}
 
       - name: Run integration tests
         env:
