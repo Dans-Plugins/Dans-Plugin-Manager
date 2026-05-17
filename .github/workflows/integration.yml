@@ -95,7 +95,7 @@ jobs:
         if: steps.docker-cache.outputs.cache-hit != 'true'
         working-directory: omcsi
         run: |
-          docker compose images -q \
+          docker compose config --images \
             | sort -u \
             | xargs docker save > /tmp/omcsi-images.tar
 
