@@ -60,8 +60,10 @@ public class CleanCommand extends AbstractPluginCommand {
                     for (File conflict : entry.getValue()) {
                         String label = conflict.getName() + " (" + pluginName + ")";
                         if (conflict.delete()) {
+                            plugin.getLogger().info("[DPM] Cleaned duplicate JAR: " + label);
                             removed.add(label);
                         } else {
+                            plugin.getLogger().warning("[DPM] Failed to delete duplicate JAR: " + label + " — check file permissions.");
                             failed.add(label);
                         }
                     }

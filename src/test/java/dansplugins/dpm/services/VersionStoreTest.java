@@ -1,10 +1,13 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,6 +63,26 @@ class VersionStoreTest {
     }
 
     // -------------------------------------------------------------------------
+    // load failure warning
+    // -------------------------------------------------------------------------
+
+    @Test
+    void load_emitsWarn_whenStoreFileIsUnreadable(@TempDir Path tempDir) {
+        // A directory at the expected file path causes FileInputStream to throw
+        File notAFile = tempDir.resolve("dpm-versions.properties").toFile();
+        notAFile.mkdir();
+
+        List<String> warnings = new ArrayList<>();
+        Logger capturing = new Logger(null) {
+            @Override public void log(String m) {}
+            @Override public void warn(String m) { warnings.add(m); }
+        };
+        new VersionStore(notAFile, capturing);
+        assertFalse(warnings.isEmpty(), "load failure must emit a warn");
+        assertTrue(warnings.get(0).contains("version store"), "warn must mention version store");
+    }
+
+    // -------------------------------------------------------------------------
     // persistence across instances
     // -------------------------------------------------------------------------
 
@@ -67,9 +90,9 @@ class VersionStoreTest {
     void tagsPersistedToDisk_survivesNewInstance(@TempDir Path tempDir) {
         File storeFile = tempDir.resolve("dpm-versions.properties").toFile();
 
-        new VersionStore(storeFile).setTag("currencies", "v2.1.0");
+        new VersionStore(storeFile, noOpLogger()).setTag("currencies", "v2.1.0");
 
-        assertEquals("v2.1.0", new VersionStore(storeFile).getStoredTag("currencies"));
+        assertEquals("v2.1.0", new VersionStore(storeFile, noOpLogger()).getStoredTag("currencies"));
     }
 
     // -------------------------------------------------------------------------
@@ -77,6 +100,13 @@ class VersionStoreTest {
     // -------------------------------------------------------------------------
 
     private VersionStore store(Path tempDir) {
-        return new VersionStore(tempDir.resolve("dpm-versions.properties").toFile());
+        return new VersionStore(tempDir.resolve("dpm-versions.properties").toFile(), noOpLogger());
+    }
+
+    private Logger noOpLogger() {
+        return new Logger(null) {
+            @Override public void log(String m) {}
+            @Override public void warn(String m) {}
+        };
     }
 }

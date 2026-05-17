@@ -280,7 +280,11 @@ class DownloadServiceTest {
     // -------------------------------------------------------------------------
 
     private VersionStore versionStore(Path tempDir) {
-        return new VersionStore(tempDir.resolve("dpm-versions.properties").toFile());
+        Logger noOp = new Logger(null) {
+            @Override public void log(String m) {}
+            @Override public void warn(String m) {}
+        };
+        return new VersionStore(tempDir.resolve("dpm-versions.properties").toFile(), noOp);
     }
 
     private GitHubReleaseService fakeRelease(String tag, String jarUrl) {

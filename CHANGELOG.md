@@ -8,8 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - `Logger.warn()` — always prints to the console regardless of `debugMode`, used for operator-visible error messages (#80)
+- Server-console audit trail: `plugin.getLogger().info()` is emitted on success and `.warning()` on failure for `/dpm get`, `/dpm update`, `/dpm remove`, and `/dpm clean --confirm` (#81, #87)
 
 ### Fixed
+- `VersionStore` now uses the injected `dansplugins.dpm.utils.Logger` instead of a static JUL logger; load and save failures emit a clearly prefixed warning that always appears in the server console (#82)
 - GitHub rate-limit responses (HTTP 429 and HTTP 403 with `X-RateLimit-Remaining: 0`) now produce a specific warning advising to configure a `githubToken`; previously they were logged as generic API errors (#79)
 - GitHub API authentication failures (HTTP 401) now produce a specific warning identifying the token as the cause; previously folded into the generic non-200 path (#88)
 - Network errors, JAR download failures, and missing `.jar` releases now use `Logger.warn()` so they always appear in the server console, even when `debugMode` is off (#80)
