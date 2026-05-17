@@ -137,6 +137,56 @@ class DownloadServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // downloadLatest(record, physicallyInstalled)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void downloadLatest_withTrueHint_returnsAlreadyUpToDate_withoutDirectoryScan(@TempDir Path tempDir) {
+        VersionStore versionStore = versionStore(tempDir);
+        versionStore.setTag("testplugin", "v1.0.0");
+
+        // PluginFolderService with a non-existent folder — isInstalled() would return false
+        // if called, but the hint bypasses the scan entirely.
+        PluginFolderService noScanService = new PluginFolderService("/this/path/does/not/exist");
+        DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", "http://unused"),
+                noScanService, versionStore);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record, true));
+    }
+
+    @Test
+    void downloadLatest_withFalseHint_downloadsEvenWhenTagMatches(@TempDir Path tempDir) throws IOException {
+        VersionStore versionStore = versionStore(tempDir);
+        versionStore.setTag("testplugin", "v1.0.0");
+
+        File src = tempDir.resolve("source.jar").toFile();
+        Files.write(src.toPath(), new byte[]{1, 2, 3});
+
+        PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
+        DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", src.toURI().toString()),
+                pluginFolderService, versionStore);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertTrue(svc.downloadLatest(record, false) > 0,
+                "physicallyInstalled=false must trigger download even when tag matches");
+    }
+
+    @Test
+    void downloadLatest_noArgOverload_callsIsInstalledViaScan(@TempDir Path tempDir) throws IOException {
+        VersionStore versionStore = versionStore(tempDir);
+        versionStore.setTag("testplugin", "v1.0.0");
+        Files.write(tempDir.resolve("testplugin.jar"), new byte[]{1});
+
+        PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
+        DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", "http://unused"),
+                pluginFolderService, versionStore);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record));
+    }
+
+    // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------
 

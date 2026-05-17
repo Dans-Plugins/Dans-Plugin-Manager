@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Tab-completion for `/dpm list` offers `installed` and `available`
 
 ### Changed
+- `PluginFolderService`: added `findAllConflictingJars(List<ProjectRecord>)` that does a single directory scan for any number of records; `CleanCommand` (preview and `--confirm`) now uses this instead of calling `findConflictingJars()` in a loop, reducing N scans to 1
+- `DownloadService`: added `downloadLatest(ProjectRecord, boolean physicallyInstalled)` overload; `UpdateCommand.runUpdates()` passes `true` since records are pre-confirmed installed via `filterInstalled()`, eliminating one `isInstalled()` scan per plugin per update run
 - `GitHubReleaseService`: extracted `parseStringField` to eliminate duplicated JSON-parsing logic shared by `parseTagName` and `parsePublishedAt`
 - Removed remaining multi-line Javadoc blocks from `GitHubReleaseService`, `DownloadService`, and `StatsCommand`; kept non-obvious algorithm notes as single `//` lines
 - `UpdateCommand` selective path replaced per-plugin `isInstalled()` calls with a single `filterInstalled()` scan

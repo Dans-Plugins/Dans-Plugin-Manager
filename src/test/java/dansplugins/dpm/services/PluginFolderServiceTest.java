@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -301,6 +302,84 @@ class PluginFolderServiceTest {
         PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         assertNotNull(svc.getInstalledFile(record));
+    }
+
+    // -------------------------------------------------------------------------
+    // findAllConflictingJars()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void findAllConflictingJars_returnsConflictsForAffectedPlugin(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "Medieval-Factions-4.6.3.jar");
+        createFile(tempDir, "medievalfactions.jar");
+
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
+                ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
+        );
+
+        Map<String, List<File>> result = svc.findAllConflictingJars(records);
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("medievalfactions"));
+        assertEquals(1, result.get("medievalfactions").size());
+        assertEquals("Medieval-Factions-4.6.3.jar", result.get("medievalfactions").get(0).getName());
+    }
+
+    @Test
+    void findAllConflictingJars_emptyWhenNoConflicts(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
+        );
+
+        assertTrue(svc.findAllConflictingJars(records).isEmpty());
+    }
+
+    @Test
+    void findAllConflictingJars_handlesMultiplePluginsWithConflicts(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "Medieval-Factions-4.6.3.jar");
+        createFile(tempDir, "medievalfactions.jar");
+        createFile(tempDir, "Currencies-2.1.jar");
+        createFile(tempDir, "currencies.jar");
+
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
+                ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
+        );
+
+        Map<String, List<File>> result = svc.findAllConflictingJars(records);
+        assertEquals(2, result.size());
+        assertEquals(1, result.get("medievalfactions").size());
+        assertEquals(1, result.get("currencies").size());
+    }
+
+    @Test
+    void findAllConflictingJars_emptyFolder(@TempDir Path tempDir) {
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
+        );
+        assertTrue(svc.findAllConflictingJars(records).isEmpty());
+    }
+
+    @Test
+    void findAllConflictingJars_nonExistentFolderReturnsEmpty() {
+        PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
+        );
+        assertTrue(svc.findAllConflictingJars(records).isEmpty());
+    }
+
+    @Test
+    void findAllConflictingJars_emptyInputReturnsEmpty(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "Medieval-Factions-4.6.3.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        assertTrue(svc.findAllConflictingJars(List.of()).isEmpty());
     }
 
     private void createFile(Path dir, String name) throws IOException {

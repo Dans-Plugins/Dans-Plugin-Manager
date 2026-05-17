@@ -31,6 +31,12 @@ public class DownloadService {
     }
 
     public int downloadLatest(ProjectRecord projectRecord) {
+        return downloadLatest(projectRecord, pluginFolderService.isInstalled(projectRecord));
+    }
+
+    // physicallyInstalled lets callers that have already confirmed the JAR is present (e.g. via
+    // filterInstalled()) skip the per-call isInstalled() directory scan.
+    public int downloadLatest(ProjectRecord projectRecord, boolean physicallyInstalled) {
         ReleaseInfo release = gitHubReleaseService.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
         if (release == ReleaseInfo.NO_RELEASE) {
             return NO_RELEASE;
@@ -43,7 +49,7 @@ public class DownloadService {
         String latestTag = release.getTagName();
         if (latestTag != null
                 && latestTag.equals(versionStore.getStoredTag(projectRecord.getName()))
-                && pluginFolderService.isInstalled(projectRecord)) {
+                && physicallyInstalled) {
             return ALREADY_UP_TO_DATE;
         }
 

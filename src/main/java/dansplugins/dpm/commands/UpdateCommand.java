@@ -94,7 +94,7 @@ public class UpdateCommand extends AbstractPluginCommand {
         int failed = 0;
 
         for (ProjectRecord record : records) {
-            int result = downloadService.downloadLatest(record);
+            int result = downloadService.downloadLatest(record, true);
             final String msg;
             if (result == DownloadService.ALREADY_UP_TO_DATE) {
                 upToDate++;
