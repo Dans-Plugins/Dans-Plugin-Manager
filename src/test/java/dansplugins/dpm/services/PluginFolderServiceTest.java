@@ -211,6 +211,70 @@ class PluginFolderServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // filterInstalled()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void filterInstalled_returnsOnlyInstalledRecords(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
+                ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
+        );
+        List<ProjectRecord> result = svc.filterInstalled(records);
+        assertEquals(1, result.size());
+        assertEquals("medievalfactions", result.get(0).getName());
+    }
+
+    @Test
+    void filterInstalled_returnsAllWhenAllInstalled(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+        createFile(tempDir, "currencies.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
+                ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
+        );
+        assertEquals(2, svc.filterInstalled(records).size());
+    }
+
+    @Test
+    void filterInstalled_returnsEmptyWhenNoneInstalled(@TempDir Path tempDir) {
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
+        );
+        assertTrue(svc.filterInstalled(records).isEmpty());
+    }
+
+    @Test
+    void filterInstalled_returnsEmptyForEmptyInput(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "medievalfactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        assertTrue(svc.filterInstalled(List.of()).isEmpty());
+    }
+
+    @Test
+    void filterInstalled_isCaseInsensitive(@TempDir Path tempDir) throws IOException {
+        createFile(tempDir, "MedievalFactions.jar");
+        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
+        );
+        assertEquals(1, svc.filterInstalled(records).size());
+    }
+
+    @Test
+    void filterInstalled_nonExistentFolderReturnsEmpty() {
+        PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");
+        List<ProjectRecord> records = List.of(
+                ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
+        );
+        assertTrue(svc.filterInstalled(records).isEmpty());
+    }
+
+    // -------------------------------------------------------------------------
     // getInstalledFile()
     // -------------------------------------------------------------------------
 

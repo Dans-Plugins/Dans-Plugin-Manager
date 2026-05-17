@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `/dpm stats` now shows installed plugin count alongside the total registered count
 - `/dpm reload` — reloads `config.yml` and re-applies live settings (e.g. `githubToken`) without a server restart
 - `/dpm remove <plugin-name> [--confirm]` — previews the JAR to be deleted; pass `--confirm` to actually remove it and clear the stored version tag
 - Tab-completion for `/dpm remove` offers installed plugin names at the first argument and `--confirm` at the second
@@ -22,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Tab-completion for `/dpm list` offers `installed` and `available`
 
 ### Changed
+- `UpdateCommand` replaced O(N×M) per-record `isInstalled()` loop with a single `filterInstalled()` call
 - `/dpm clean` now previews what would be deleted; pass `--confirm` to actually remove the files
 - `/dpm clean --confirm` now distinguishes deletion failures (permission errors) from "no duplicates found"
 
