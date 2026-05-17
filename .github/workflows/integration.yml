@@ -2,6 +2,9 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - integration-test-ci
   schedule:
     - cron: '0 2 * * *'  # 02:00 UTC daily
 
