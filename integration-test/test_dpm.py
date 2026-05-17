@@ -5,14 +5,16 @@ Deploys the DPM JAR to a live OMCSI Spigot server via REST API and
 asserts that key commands produce the expected console output.
 
 Required environment variables:
-  OMCSI_DEPLOY_TOKEN  Bearer token accepted by the OMCSI REST API
-  DPM_JAR_PATH        Path to the built DansPluginManager-*.jar
+  OMCSI_DEPLOY_TOKEN    Bearer token accepted by the OMCSI REST API
+  DPM_JAR_PATH          Path to the built DansPluginManager-*.jar
 
 Optional:
-  OMCSI_API_BASE      Base URL of the OMCSI REST API (default: http://localhost:8092)
+  OMCSI_API_BASE        Base URL of the OMCSI REST API (default: http://localhost:8092)
+  OMCSI_CONTAINER_NAME  Docker container name for log reading (default: open-mc-server)
 """
 
 import os
+import subprocess
 import sys
 import time
 
@@ -21,6 +23,7 @@ import requests
 API_BASE = os.getenv("OMCSI_API_BASE", "http://localhost:8092")
 TOKEN = os.environ["OMCSI_DEPLOY_TOKEN"]
 JAR_PATH = os.environ["DPM_JAR_PATH"]
+CONTAINER = os.getenv("OMCSI_CONTAINER_NAME", "open-mc-server")
 
 _HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 
@@ -53,27 +56,32 @@ def send_command(cmd):
     print(f"  > {cmd}")
 
 
-def _log_tail(lines=100):
-    data = _api("GET", f"/api/server/logs?lines={lines}").json()
-    return "\n".join(data.get("lines", []))
+def _docker_logs(tail=200):
+    """Read recent container log lines via docker logs."""
+    result = subprocess.run(
+        ["docker", "logs", "--tail", str(tail), CONTAINER],
+        capture_output=True, text=True, timeout=15,
+    )
+    # Minecraft server output may appear on either stream depending on the wrapper
+    return result.stdout + result.stderr
 
 
-def assert_log_contains(expected, lines=100, retries=6, delay=5):
+def assert_log_contains(expected, tail=200, retries=6, delay=5):
     for attempt in range(1, retries + 1):
-        if expected in _log_tail(lines):
+        if expected in _docker_logs(tail):
             print(f"  PASS: found {expected!r}")
             return
         if attempt < retries:
             print(f"  attempt {attempt}: {expected!r} not in logs yet, retrying in {delay}s...")
             time.sleep(delay)
-    print("--- log tail ---")
-    print(_log_tail(lines))
+    print("--- last container logs ---")
+    print(_docker_logs(tail))
     sys.exit(f"FAIL: {expected!r} not found after {retries} attempts")
 
 
-def assert_log_contains_any(candidates, lines=100, retries=6, delay=5):
+def assert_log_contains_any(candidates, tail=200, retries=6, delay=5):
     for attempt in range(1, retries + 1):
-        log = _log_tail(lines)
+        log = _docker_logs(tail)
         for expected in candidates:
             if expected in log:
                 print(f"  PASS: found {expected!r}")
@@ -81,8 +89,8 @@ def assert_log_contains_any(candidates, lines=100, retries=6, delay=5):
         if attempt < retries:
             print(f"  attempt {attempt}: none of {candidates!r} in logs yet, retrying in {delay}s...")
             time.sleep(delay)
-    print("--- log tail ---")
-    print(_log_tail(lines))
+    print("--- last container logs ---")
+    print(_docker_logs(tail))
     sys.exit(f"FAIL: none of {candidates!r} found after {retries} attempts")
 
 

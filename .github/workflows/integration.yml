@@ -61,7 +61,7 @@ jobs:
             echo "DIFFICULTY=peaceful"
             echo "GAMEMODE=creative"
             echo "PVP_ENABLED=false"
-            echo "JAVA_OPTS=-Xmx2G -Xms1G -Dlogs.diagnostic.enabled=true -Dlogs.diagnostic.max-lines=200"
+            echo "JAVA_OPTS=-Xmx2G -Xms1G"
             echo "DEPLOY_AUTH_TOKEN=${{ secrets.OMCSI_DEPLOY_TOKEN }}"
             echo "RCON_PASSWORD=${{ secrets.OMCSI_RCON_PASSWORD }}"
             echo "DISCORD_ENABLED=false"
