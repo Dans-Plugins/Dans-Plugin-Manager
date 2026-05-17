@@ -1,7 +1,6 @@
 package dansplugins.dpm.commands;
 
 import dansplugins.dpm.data.EphemeralData;
-import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -12,6 +11,7 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CleanCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
@@ -29,12 +29,8 @@ public class CleanCommand extends AbstractPluginCommand {
     public boolean execute(CommandSender sender) {
         sender.sendMessage(ChatColor.AQUA + "Scanning for duplicate plugin JARs...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> conflicts = new ArrayList<>();
-            for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
-                for (File conflict : pluginFolderService.findConflictingJars(record)) {
-                    conflicts.add(conflict.getName() + " (" + record.getName() + ")");
-                }
-            }
+            List<String> conflicts = buildConflictLabels(
+                    pluginFolderService.findAllConflictingJars(ephemeralData.getAllProjectRecords()));
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (conflicts.isEmpty()) {
                     sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
@@ -55,11 +51,14 @@ public class CleanCommand extends AbstractPluginCommand {
         if (args.length > 0 && args[0].equalsIgnoreCase("--confirm")) {
             sender.sendMessage(ChatColor.AQUA + "Removing duplicate plugin JARs...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                Map<String, List<File>> conflictMap =
+                        pluginFolderService.findAllConflictingJars(ephemeralData.getAllProjectRecords());
                 List<String> removed = new ArrayList<>();
                 List<String> failed = new ArrayList<>();
-                for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
-                    for (File conflict : pluginFolderService.findConflictingJars(record)) {
-                        String label = conflict.getName() + " (" + record.getName() + ")";
+                for (Map.Entry<String, List<File>> entry : conflictMap.entrySet()) {
+                    String pluginName = entry.getKey();
+                    for (File conflict : entry.getValue()) {
+                        String label = conflict.getName() + " (" + pluginName + ")";
                         if (conflict.delete()) {
                             removed.add(label);
                         } else {
@@ -90,5 +89,15 @@ public class CleanCommand extends AbstractPluginCommand {
             return true;
         }
         return execute(sender);
+    }
+
+    private List<String> buildConflictLabels(Map<String, List<File>> conflictMap) {
+        List<String> labels = new ArrayList<>();
+        for (Map.Entry<String, List<File>> entry : conflictMap.entrySet()) {
+            for (File f : entry.getValue()) {
+                labels.add(f.getName() + " (" + entry.getKey() + ")");
+            }
+        }
+        return labels;
     }
 }

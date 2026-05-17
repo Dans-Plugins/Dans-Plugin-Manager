@@ -5,7 +5,9 @@ import dansplugins.dpm.objects.ProjectRecord;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class PluginFolderService {
@@ -68,6 +70,27 @@ public class PluginFolderService {
             }
         }
         return conflicts;
+    }
+
+    public Map<String, List<File>> findAllConflictingJars(List<ProjectRecord> records) {
+        Map<String, List<File>> result = new LinkedHashMap<>();
+        File pluginsDir = new File(pluginsFolder);
+        File[] jars = pluginsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
+        if (jars == null) return result;
+        for (ProjectRecord record : records) {
+            String managedFilename = record.getName() + ".jar";
+            List<File> conflicts = new ArrayList<>();
+            for (File jar : jars) {
+                if (jar.getName().equalsIgnoreCase(managedFilename)) continue;
+                if (normalize(jar.getName()).equals(record.getName())) {
+                    conflicts.add(jar);
+                }
+            }
+            if (!conflicts.isEmpty()) {
+                result.put(record.getName(), conflicts);
+            }
+        }
+        return result;
     }
 
     // strips .jar, trailing version suffix (-4.6.3, -v1.0), hyphens/underscores, lowercases
