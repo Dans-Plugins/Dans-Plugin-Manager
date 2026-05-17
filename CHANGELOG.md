@@ -25,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Tab-completion for `/dpm list` offers `installed` and `available`
 
 ### Changed
+- `UpdateCommand` selective path replaced per-plugin `isInstalled()` calls with a single `filterInstalled()` scan
+- `USER_GUIDE.md` `dpm.list` permission description now covers `/dpm search` (both commands share this node)
+- Removed multi-line Javadoc blocks from `PluginFolderService`, `VersionStore`, `CleanCommand`, and `DefaultCommand` per CLAUDE.md style rule
 - `ListCommand` (show-all path) and `InfoCommand` (dependency display) replaced O(N×M) `isInstalled()` calls with a single `filterInstalled()` scan
 - `DansPluginManager.onTabComplete` — extracted `allPluginNames()` helper to remove duplicated plugin-name list building for `get` and `info` tab-completion branches
 - `UpdateCommand` replaced O(N×M) per-record `isInstalled()` loop with a single `filterInstalled()` call

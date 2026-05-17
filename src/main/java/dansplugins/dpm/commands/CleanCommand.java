@@ -13,9 +13,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Daniel McCoy Stephenson
- */
 public class CleanCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
     private final PluginFolderService pluginFolderService;
