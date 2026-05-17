@@ -13,3 +13,4 @@ All commands use `/dpm` or `/danspluginmanager` as the base.
 | `/dpm info <plugin-name>` | Show description, GitHub owner, repo, latest release tag, publish date, install status, and dependency status for a plugin. | `dpm.info` |
 | `/dpm reload` | Reload `config.yml` and re-apply settings (e.g. `githubToken`). | `dpm.reload` |
 | `/dpm remove <plugin-name> [--confirm]` | Preview removal of an installed plugin, or delete it when `--confirm` is passed. | `dpm.remove` |
+| `/dpm search <keyword>` | Search registered plugins by name or description. Results show install status and version. | `dpm.list` |

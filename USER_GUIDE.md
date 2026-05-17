@@ -17,8 +17,9 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 3. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder. The name must match the one shown by `/dpm list` (e.g. `medievalfactions`). Multiple names are accepted: `/dpm get plugin1 plugin2`. If a plugin is already on the latest version, the download is skipped. If required dependencies are not installed, a warning is shown before the download begins.
 4. Run `/dpm update` to check every installed managed plugin against its latest GitHub release and download any that are out of date. Pass one or more plugin names to update only those: `/dpm update medievalfactions`.  
 5. Restart the server to activate downloaded or updated plugins.
-6. Run `/dpm clean` to preview duplicate plugin JARs (e.g. versioned copies left over from manual installs). Add `--confirm` to delete them.
-7. Run `/dpm remove <plugin-name>` to preview which JAR would be deleted. Add `--confirm` to remove it and clear its stored version tag.
+6. Run `/dpm search <keyword>` to find plugins by name or description (e.g. `/dpm search faction`). Green results are installed; grey are not.
+7. Run `/dpm clean` to preview duplicate plugin JARs (e.g. versioned copies left over from manual installs). Add `--confirm` to delete them.
+8. Run `/dpm remove <plugin-name>` to preview which JAR would be deleted. Add `--confirm` to remove it and clear its stored version tag.
 
 ## Permissions
 

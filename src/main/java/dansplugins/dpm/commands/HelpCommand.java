@@ -28,6 +28,7 @@ public class HelpCommand extends AbstractPluginCommand {
         commandSender.sendMessage(ChatColor.AQUA + "/dpm info <plugin-name> - Show description, release info, install status, and dependencies for a plugin.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm reload - Reload the DPM config.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm remove <plugin-name> [--confirm] - Preview or remove an installed plugin.");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm search <keyword> - Search plugins by name or description.");
         return true;
     }
 
