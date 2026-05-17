@@ -25,6 +25,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | 9 | `dpm get medievalfactions` | `Downloaded` or `already up to date` — confirms real GitHub API call and file write |
 | 10 | `dpm search faction` | `=== Search Results` — confirms registry search |
 | 11 | `dpm get nonexistentplugin` | `Plugin not found: nonexistentplugin` — confirms error path doesn't crash the server |
+| 12 | `dpm stats` | `Available plugins:` — confirms available count line renders after 0.6.0 stat addition |
 
 ## What is not yet covered
 
@@ -33,7 +34,6 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | `dpm update` / `dpm update <name>` | Exercises the same download path as `dpm get` but with version comparison; low incremental value |
 | `dpm clean [--confirm]` | Requires duplicate JARs to be present; hard to set up reliably in CI |
 | `dpm info <name>` | Mainly a display command; low regression risk |
-| `dpm stats` | Low regression risk |
 | `dpm reload` | Would confirm `githubToken` config reloads without server restart |
 | `dpm get <multiple names>` | Batch mode not tested; same download code path as single |
 | Permission enforcement | Console has all permissions; player-level permission checks cannot be exercised without a player login |
