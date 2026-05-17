@@ -46,7 +46,7 @@ public class InfoCommand extends AbstractPluginCommand {
         String name = args[0];
         ProjectRecord record = ephemeralData.getProjectRecord(name);
         if (record == null) {
-            sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
+            sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
         }
         sender.sendMessage(ChatColor.AQUA + "Fetching release info for " + record.getName() + "...");

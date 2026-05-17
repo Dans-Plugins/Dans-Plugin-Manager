@@ -57,7 +57,7 @@ public class UpdateCommand extends AbstractPluginCommand {
         for (String name : names) {
             ProjectRecord record = ephemeralData.getProjectRecord(name);
             if (record == null) {
-                sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
+                sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             } else {
                 candidates.add(record);
             }
@@ -94,20 +94,22 @@ public class UpdateCommand extends AbstractPluginCommand {
         int failed = 0;
 
         for (ProjectRecord record : records) {
+            String oldTag = versionStore.getStoredTag(record.getName());
             int result = downloadService.downloadLatest(record, true);
             final String msg;
             if (result == DownloadService.ALREADY_UP_TO_DATE) {
                 upToDate++;
-                String tag = versionStore.getStoredTag(record.getName());
-                msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
+                msg = ChatColor.GREEN + record.getName() + (oldTag != null ? " " + oldTag : "") + " already up to date.";
             } else if (result == DownloadService.NO_RELEASE) {
                 skipped++;
                 msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
             } else if (result > 0) {
                 updated++;
-                String tag = versionStore.getStoredTag(record.getName());
-                String version = tag != null ? " " + tag : "";
-                msg = ChatColor.GREEN + "Updated " + record.getName() + version + ".";
+                String newTag = versionStore.getStoredTag(record.getName());
+                String versionDiff = oldTag != null && newTag != null
+                        ? " " + oldTag + " → " + newTag
+                        : newTag != null ? " " + newTag : "";
+                msg = ChatColor.GREEN + "Updated " + record.getName() + versionDiff + ".";
             } else {
                 failed++;
                 msg = ChatColor.RED + "Failed to update " + record.getName() + ".";
