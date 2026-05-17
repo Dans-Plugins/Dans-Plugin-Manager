@@ -1,8 +1,16 @@
 package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -249,6 +257,66 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // doFetch() — HTTP error code distinction (#79, #88)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void doFetch_returnsNull_andWarns_onHttp401() throws IOException {
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return fakeConnection(401, null);
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertTrue(warnings.stream().anyMatch(m -> m.contains("token") && m.contains("org/repo")),
+                "401 must produce a token-specific warning");
+    }
+
+    @Test
+    void doFetch_returnsNull_andWarns_onHttp429RateLimit() throws IOException {
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return fakeConnection(429, null);
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertTrue(warnings.stream().anyMatch(m -> m.contains("rate limit") && m.contains("org/repo")),
+                "429 must produce a rate-limit warning");
+    }
+
+    @Test
+    void doFetch_returnsNull_andWarns_onHttp403WithZeroRateLimitRemaining() throws IOException {
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return fakeConnection(403, "0");
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertTrue(warnings.stream().anyMatch(m -> m.contains("rate limit") && m.contains("org/repo")),
+                "403 + X-RateLimit-Remaining: 0 must produce a rate-limit warning");
+    }
+
+    @Test
+    void doFetch_returnsNull_andWarns_onGenericNon200() throws IOException {
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return fakeConnection(500, null);
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertTrue(warnings.stream().anyMatch(m -> m.contains("500")),
+                "Generic non-200 must warn with the HTTP status code");
+    }
+
+    // -------------------------------------------------------------------------
     // parseJarUrlFromAssets() — edge cases
     // -------------------------------------------------------------------------
 
@@ -262,5 +330,35 @@ class GitHubReleaseServiceTest {
         // No closing bracket — bracket-depth tracking should handle gracefully
         String json = "{\"assets\":[{\"name\":\"Plugin-1.0.jar\",\"browser_download_url\":\"https://example.com/Plugin-1.0.jar\"";
         assertNull(service.parseJarUrlFromAssets(json));
+    }
+
+    // -------------------------------------------------------------------------
+    // helpers
+    // -------------------------------------------------------------------------
+
+    private Logger capturingLogger(List<String> warnings) {
+        return new Logger(null) {
+            @Override public void log(String m) {}
+            @Override public void warn(String m) { warnings.add(m); }
+        };
+    }
+
+    @SuppressWarnings("resource")
+    private HttpURLConnection fakeConnection(int statusCode, String rateLimitRemaining) throws IOException {
+        return new HttpURLConnection(new URL("http://fake.invalid")) {
+            @Override public void connect() {}
+            @Override public void disconnect() {}
+            @Override public boolean usingProxy() { return false; }
+            @Override public int getResponseCode() { return statusCode; }
+            @Override
+            public String getHeaderField(String name) {
+                if ("X-RateLimit-Remaining".equals(name)) return rateLimitRemaining;
+                return null;
+            }
+            @Override public InputStream getErrorStream() { return new ByteArrayInputStream(new byte[0]); }
+            @Override public InputStream getInputStream() throws IOException {
+                throw new IOException("not used in error-path tests");
+            }
+        };
     }
 }

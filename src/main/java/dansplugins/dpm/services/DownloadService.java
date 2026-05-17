@@ -47,7 +47,7 @@ public class DownloadService {
             return NO_RELEASE;
         }
         if (release == null) {
-            logger.log("Could not resolve release info for " + projectRecord.getName() + ".");
+            logger.warn("Could not resolve release info for " + projectRecord.getName() + ".");
             return NETWORK_ERROR;
         }
 
@@ -85,7 +85,7 @@ public class DownloadService {
         try {
             stream = openNetworkStream(url);
         } catch (IOException e) {
-            logger.log("Network error reaching " + url + ": " + e.getMessage());
+            logger.warn("Network error reaching " + url + ": " + e.getMessage());
             return NETWORK_ERROR;
         }
         File dest = new File(path);
@@ -93,7 +93,7 @@ public class DownloadService {
             return writeStreamToFile(stream, dest);
         } catch (IOException e) {
             dest.delete();
-            logger.log("File write error to " + path + ": " + e.getMessage());
+            logger.warn("File write error to " + path + ": " + e.getMessage());
             return FILE_ERROR;
         }
     }

@@ -42,13 +42,13 @@ public class GitHubReleaseService {
         ReleaseInfo release = fetchRelease(owner, repo);
         if (release == null || release == ReleaseInfo.NO_RELEASE) return release;
         if (release.getJarUrl() == null) {
-            logger.log("Release " + release.getTagName() + " for " + owner + "/" + repo + " has no .jar asset.");
+            logger.warn("Release " + release.getTagName() + " for " + owner + "/" + repo + " has no .jar asset.");
             return null;
         }
         return release;
     }
 
-    private HttpURLConnection openConnection(String apiUrl) throws IOException {
+    HttpURLConnection openConnection(String apiUrl) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl).openConnection();
         connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setRequestProperty("User-Agent", "Dans-Plugin-Manager");
@@ -100,15 +100,26 @@ public class GitHubReleaseService {
             if (responseCode == 404) {
                 return ReleaseInfo.NO_RELEASE;
             }
+            if (responseCode == 401) {
+                logger.warn("GitHub API rejected the configured token for " + owner + "/" + repo
+                        + " — verify or clear githubToken in config.yml.");
+                return null;
+            }
+            if (responseCode == 429
+                    || (responseCode == 403 && "0".equals(connection.getHeaderField("X-RateLimit-Remaining")))) {
+                logger.warn("GitHub rate limit reached for " + owner + "/" + repo
+                        + " — configure a githubToken in config.yml to raise the limit.");
+                return null;
+            }
             if (responseCode != 200) {
                 String errorBody = readStream(connection.getErrorStream());
-                logger.log("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
+                logger.warn("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
                 return null;
             }
             String json = readStream(connection.getInputStream());
             return new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
         } catch (IOException e) {
-            logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
+            logger.warn("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
             return null;
         } finally {
             if (connection != null) {

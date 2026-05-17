@@ -15,4 +15,8 @@ public class Logger {
         }
     }
 
+    public void warn(String message) {
+        System.out.println("[DPM] " + message);
+    }
+
 }
