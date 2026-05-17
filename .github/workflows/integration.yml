@@ -20,7 +20,7 @@ jobs:
       - name: Checkout OMCSI
         uses: actions/checkout@v4
         with:
-          repository: dmccoystephenson/omcsi
+          repository: dmccoystephenson/open-mc-server-infrastructure
           token: ${{ secrets.OMCSI_GITHUB_TOKEN }}
           path: omcsi
 

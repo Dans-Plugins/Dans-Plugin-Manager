@@ -1,6 +1,6 @@
 # Integration Tests
 
-End-to-end tests that deploy DPM to a live Spigot server (via [OMCSI](https://github.com/dmccoystephenson/omcsi)) and assert that key commands produce the expected output.
+End-to-end tests that deploy DPM to a live Spigot server (via [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure)) and assert that key commands produce the expected output.
 
 ## What the tests cover
 
@@ -13,7 +13,7 @@ End-to-end tests that deploy DPM to a live Spigot server (via [OMCSI](https://gi
 ## Prerequisites
 
 - Docker with Compose v2 (`docker compose`)
-- Access to the [OMCSI](https://github.com/dmccoystephenson/omcsi) repository
+- Access to the [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) repository
 - Python 3.9+ and `pip install requests`
 - A built DPM JAR (`mvn package -DskipTests`)
 
@@ -22,7 +22,7 @@ End-to-end tests that deploy DPM to a live Spigot server (via [OMCSI](https://gi
 **1. Clone OMCSI** next to this repo (or anywhere):
 
 ```bash
-git clone https://github.com/dmccoystephenson/omcsi ../omcsi
+git clone https://github.com/dmccoystephenson/open-mc-server-infrastructure ../omcsi
 ```
 
 **2. Create `../omcsi/.env`** with the following values:
