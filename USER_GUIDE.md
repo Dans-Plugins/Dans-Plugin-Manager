@@ -15,7 +15,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 1. Run `/dpm list` to see all DPC plugins. Green entries are installed (with version tag when known); grey entries are not yet installed. Pass `installed` or `available` to filter the list.
 2. Run `/dpm info <plugin-name>` to see a plugin's description, GitHub owner, repository, latest release tag, publish date, install status, and any required or optional dependencies.
 3. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder. The name must match the one shown by `/dpm list` (e.g. `medievalfactions`). Multiple names are accepted: `/dpm get plugin1 plugin2`. If a plugin is already on the latest version, the download is skipped. If required dependencies are not installed, a warning is shown before the download begins.
-4. Run `/dpm update` to check every installed managed plugin against its latest GitHub release and download any that are out of date.
+4. Run `/dpm update` to check every installed managed plugin against its latest GitHub release and download any that are out of date. Pass one or more plugin names to update only those: `/dpm update medievalfactions`.  
 5. Restart the server to activate downloaded or updated plugins.
 6. Run `/dpm clean` to preview duplicate plugin JARs (e.g. versioned copies left over from manual installs). Add `--confirm` to delete them.
 7. Run `/dpm remove <plugin-name>` to preview which JAR would be deleted. Add `--confirm` to remove it and clear its stored version tag.
@@ -29,7 +29,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 | `dpm.stats` | `true` | View plugin statistics. |
 | `dpm.get` | `op` | Download one or more plugins to the server. |
 | `dpm.clean` | `op` | Preview or remove duplicate plugin JARs. |
-| `dpm.update` | `op` | Update all installed managed plugins. |
+| `dpm.update` | `op` | Update all installed managed plugins, or specific ones by name. |
 | `dpm.info` | `true` | View description, release info, install status, and dependencies for a plugin. |
 | `dpm.reload` | `op` | Reload the DPM config. |
 | `dpm.remove` | `op` | Preview or remove an installed managed plugin. |
