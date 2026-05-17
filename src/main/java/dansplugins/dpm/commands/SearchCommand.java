@@ -20,7 +20,7 @@ public class SearchCommand extends AbstractPluginCommand {
 
     public SearchCommand(EphemeralData ephemeralData, PluginFolderService pluginFolderService,
                          VersionStore versionStore) {
-        super(new ArrayList<>(List.of("search")), new ArrayList<>(List.of("dpm.search")));
+        super(new ArrayList<>(List.of("search")), new ArrayList<>(List.of("dpm.list")));
         this.ephemeralData = ephemeralData;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
