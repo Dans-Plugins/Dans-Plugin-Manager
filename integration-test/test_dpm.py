@@ -52,7 +52,12 @@ def wait_until_running(timeout=300, poll_interval=10, label="server"):
 
 
 def send_command(cmd):
-    _api("POST", "/api/server/command", json={"command": cmd})
+    requests.post(
+        f"{API_BASE}/api/server/command",
+        headers={**_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+        data=cmd.encode("utf-8"),
+        timeout=30,
+    ).raise_for_status()
     print(f"  > {cmd}")
 
 
@@ -66,7 +71,7 @@ def _docker_logs(tail=200):
     return result.stdout + result.stderr
 
 
-def assert_log_contains(expected, tail=200, retries=6, delay=5):
+def assert_log_contains(expected, tail=500, retries=6, delay=5):
     for attempt in range(1, retries + 1):
         if expected in _docker_logs(tail):
             print(f"  PASS: found {expected!r}")
@@ -79,7 +84,7 @@ def assert_log_contains(expected, tail=200, retries=6, delay=5):
     sys.exit(f"FAIL: {expected!r} not found after {retries} attempts")
 
 
-def assert_log_contains_any(candidates, tail=200, retries=6, delay=5):
+def assert_log_contains_any(candidates, tail=500, retries=6, delay=5):
     for attempt in range(1, retries + 1):
         log = _docker_logs(tail)
         for expected in candidates:
