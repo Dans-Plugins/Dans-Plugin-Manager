@@ -7,7 +7,7 @@ mvn test          # run unit tests
 mvn clean package # build the JAR (output in target/)
 ```
 
-Tests must pass before merging. There is no CI; run `mvn test` locally after every non-trivial change.
+Tests must pass before merging. GitHub Actions runs `mvn clean package` (which includes tests) on every push to `main` and every PR targeting `main`. Run `mvn test` locally before pushing to catch failures early.
 
 ## Documentation — the four sources of truth
 
@@ -15,7 +15,7 @@ Every command is described in four places. All four must be updated together whe
 
 | File | What to update |
 |------|----------------|
-| `src/.../commands/HelpCommand.java` | The line(s) printed by `/dpm help` |
+| `src/main/java/dansplugins/dpm/commands/HelpCommand.java` | The line(s) printed by `/dpm help` |
 | `COMMANDS.md` | The command reference table |
 | `USER_GUIDE.md` | The Getting Started steps and permissions table |
 | `CHANGELOG.md` | The `[Unreleased]` Added/Changed/Removed entry |
