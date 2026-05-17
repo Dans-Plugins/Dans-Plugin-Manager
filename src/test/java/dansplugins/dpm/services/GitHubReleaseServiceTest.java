@@ -135,6 +135,23 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // clearCache()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void clearCache_doesNotThrowWhenCacheIsEmpty() {
+        assertDoesNotThrow(() -> service.clearCache());
+    }
+
+    @Test
+    void clearCache_doesNotThrowWhenCalledRepeatedly() {
+        assertDoesNotThrow(() -> {
+            service.clearCache();
+            service.clearCache();
+        });
+    }
+
+    // -------------------------------------------------------------------------
     // setApiToken()
     // -------------------------------------------------------------------------
 

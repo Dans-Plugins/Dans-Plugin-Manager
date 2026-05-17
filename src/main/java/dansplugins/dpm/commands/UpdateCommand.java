@@ -61,21 +61,24 @@ public class UpdateCommand extends AbstractPluginCommand {
 
         for (ProjectRecord record : records) {
             int result = downloadService.downloadLatest(record);
+            final String msg;
             if (result == DownloadService.ALREADY_UP_TO_DATE) {
                 upToDate++;
+                String tag = versionStore.getStoredTag(record.getName());
+                msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
             } else if (result == DownloadService.NO_RELEASE) {
                 skipped++;
+                msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
             } else if (result > 0) {
                 updated++;
                 String tag = versionStore.getStoredTag(record.getName());
                 String version = tag != null ? " " + tag : "";
-                final String msg = ChatColor.GREEN + "Updated " + record.getName() + version + ".";
-                Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
+                msg = ChatColor.GREEN + "Updated " + record.getName() + version + ".";
             } else {
                 failed++;
-                final String msg = ChatColor.RED + "Failed to update " + record.getName() + ".";
-                Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
+                msg = ChatColor.RED + "Failed to update " + record.getName() + ".";
             }
+            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
         }
 
         final int finalUpdated = updated;

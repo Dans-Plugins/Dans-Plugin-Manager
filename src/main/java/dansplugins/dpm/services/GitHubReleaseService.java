@@ -10,12 +10,15 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GitHubReleaseService {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
 
     private final Logger logger;
     private String apiToken = "";
+    private final Map<String, ReleaseInfo> releaseCache = new HashMap<>();
 
     public GitHubReleaseService(Logger logger) {
         this.logger = logger;
@@ -25,6 +28,10 @@ public class GitHubReleaseService {
         this.apiToken = token != null ? token : "";
     }
 
+    public void clearCache() {
+        releaseCache.clear();
+    }
+
     String getApiToken() {
         return apiToken;
     }
@@ -32,38 +39,17 @@ public class GitHubReleaseService {
     /**
      * Returns a {@link ReleaseInfo} with the tag name and first .jar asset URL for the
      * latest release. Returns {@link ReleaseInfo#NO_RELEASE} when GitHub reports 404
-     * (no releases published yet). Returns null on network or other errors.
+     * (no releases published yet). Returns null when no .jar asset exists or on network errors.
+     * Results are cached for the session; call {@link #clearCache()} to force a fresh fetch.
      */
     public ReleaseInfo getLatestRelease(String owner, String repo) {
-        String apiUrl = String.format(API_URL, owner, repo);
-        HttpURLConnection connection = null;
-        try {
-            connection = openConnection(apiUrl);
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 404) {
-                return ReleaseInfo.NO_RELEASE;
-            }
-            if (responseCode != 200) {
-                String errorBody = readStream(connection.getErrorStream());
-                logger.log("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
-                return null;
-            }
-            String json = readStream(connection.getInputStream());
-            String tagName = parseTagName(json);
-            String jarUrl = parseJarUrlFromAssets(json);
-            if (jarUrl == null) {
-                logger.log("Release " + tagName + " for " + owner + "/" + repo + " has no .jar asset.");
-                return null;
-            }
-            return new ReleaseInfo(tagName, jarUrl);
-        } catch (IOException e) {
-            logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
+        ReleaseInfo release = fetchRelease(owner, repo);
+        if (release == null || release == ReleaseInfo.NO_RELEASE) return release;
+        if (release.getJarUrl() == null) {
+            logger.log("Release " + release.getTagName() + " for " + owner + "/" + repo + " has no .jar asset.");
             return null;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
+        return release;
     }
 
     private HttpURLConnection openConnection(String apiUrl) throws IOException {
@@ -94,14 +80,29 @@ public class GitHubReleaseService {
      * Returns a {@link ReleaseInfo} with tag name and publish date for the latest release,
      * without requiring a downloadable .jar asset. Returns {@link ReleaseInfo#NO_RELEASE}
      * on 404, or null on network/other errors.
+     * Results are cached for the session; call {@link #clearCache()} to force a fresh fetch.
      */
     public ReleaseInfo getLatestReleaseMetadata(String owner, String repo) {
+        return fetchRelease(owner, repo);
+    }
+
+    /**
+     * Fetches and caches the full release info (tag, jar URL, publish date) for the given repo.
+     * On 404 caches and returns {@link ReleaseInfo#NO_RELEASE}. Network errors return null and
+     * are not cached so the next call can retry.
+     */
+    private ReleaseInfo fetchRelease(String owner, String repo) {
+        String key = owner + "/" + repo;
+        ReleaseInfo cached = releaseCache.get(key);
+        if (cached != null) return cached;
+
         String apiUrl = String.format(API_URL, owner, repo);
         HttpURLConnection connection = null;
         try {
             connection = openConnection(apiUrl);
             int responseCode = connection.getResponseCode();
             if (responseCode == 404) {
+                releaseCache.put(key, ReleaseInfo.NO_RELEASE);
                 return ReleaseInfo.NO_RELEASE;
             }
             if (responseCode != 200) {
@@ -110,9 +111,9 @@ public class GitHubReleaseService {
                 return null;
             }
             String json = readStream(connection.getInputStream());
-            String tagName = parseTagName(json);
-            String publishedAt = parsePublishedAt(json);
-            return new ReleaseInfo(tagName, null, publishedAt);
+            ReleaseInfo release = new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
+            releaseCache.put(key, release);
+            return release;
         } catch (IOException e) {
             logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
             return null;
