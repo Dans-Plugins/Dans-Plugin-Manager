@@ -9,9 +9,6 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Daniel McCoy Stephenson
- */
 public class StatsCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
     private final PluginFolderService pluginFolderService;
