@@ -145,7 +145,7 @@ def main():
 
     print("\n[6] /dpm remove medievalfactions --confirm — confirm file deletion...")
     cursor = send_command("dpm remove medievalfactions --confirm")
-    assert_log_contains("Removed MedievalFactions", cursor=cursor)
+    assert_log_contains("Removed medievalfactions", cursor=cursor)
 
     print("\n[7] /dpm list installed — confirm filter shows only installed plugins...")
     cursor = send_command("dpm list installed")

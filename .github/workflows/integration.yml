@@ -86,25 +86,24 @@ jobs:
         if: steps.docker-cache.outputs.cache-hit == 'true'
         run: docker load < /tmp/omcsi-images.tar
 
-      - name: Build OMCSI Docker stack
+      # Only build/start minecraft-wrapper (Spigot + REST API) and its declared
+      # dependency alert-manager. The webapp, nginx, backup-manager, and agent-manager
+      # services are not needed for CI and add unnecessary build and startup time.
+      - name: Build OMCSI services
         if: steps.docker-cache.outputs.cache-hit != 'true'
         working-directory: omcsi
         env:
           DOCKER_BUILDKIT: '1'
           BUILDKIT_PROGRESS: plain
-        run: docker compose build
+        run: docker compose build minecraft-wrapper alert-manager
 
       - name: Save Docker images to cache
         if: steps.docker-cache.outputs.cache-hit != 'true'
-        working-directory: omcsi
-        run: |
-          docker compose config --images \
-            | sort -u \
-            | xargs docker save > /tmp/omcsi-images.tar
+        run: docker save open-mc-server open-mc-server-alert-manager > /tmp/omcsi-images.tar
 
-      - name: Start OMCSI stack
+      - name: Start minecraft-wrapper
         working-directory: omcsi
-        run: docker compose up -d ${{ steps.docker-cache.outputs.cache-hit == 'true' && '--no-build' || '' }}
+        run: docker compose up -d ${{ steps.docker-cache.outputs.cache-hit == 'true' && '--no-build' || '' }} minecraft-wrapper
 
       - name: Run integration tests
         env:
