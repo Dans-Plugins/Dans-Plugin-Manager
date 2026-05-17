@@ -19,10 +19,7 @@ public class DependencyResolutionService {
         this.pluginFolderService = pluginFolderService;
     }
 
-    /**
-     * Returns names of installed plugins that declare a hard dependency on {@code targetName}.
-     * Uses a single filterInstalled() scan regardless of registry size.
-     */
+    // Caller supplies the pre-filtered installed list so no extra directory scan happens here.
     public List<String> findDependents(String targetName, List<ProjectRecord> installedRecords) {
         String targetLower = targetName.toLowerCase();
         List<String> dependents = new ArrayList<>();
