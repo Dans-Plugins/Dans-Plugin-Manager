@@ -41,7 +41,7 @@ public class VersionStore {
         try (FileInputStream in = new FileInputStream(storeFile)) {
             props.load(in);
         } catch (IOException e) {
-            logger.warn("[DPM] Could not load version store (" + e.getMessage()
+            logger.warn("Could not load version store (" + e.getMessage()
                     + ") — all plugins will be treated as unversioned this session.");
         }
     }
@@ -51,7 +51,7 @@ public class VersionStore {
         try (FileOutputStream out = new FileOutputStream(storeFile)) {
             props.store(out, null);
         } catch (IOException e) {
-            logger.warn("[DPM] Could not save version store (" + e.getMessage()
+            logger.warn("Could not save version store (" + e.getMessage()
                     + ") — plugin version data will not persist across restarts.");
         }
     }
