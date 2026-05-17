@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `discordWebhook` config key — when set, DPM posts a summary notification to the specified Discord channel after each `/dpm update` run (with per-plugin version diffs) and on any download failure from `/dpm get` (#83)
+- `DiscordNotificationService` — sends optional Discord webhook notifications; exceptions are silently swallowed so a failed webhook never affects the command result (#83)
+- Single retry with a 2-second delay on transient network failures: `GitHubReleaseService.doFetch()` retries once on `IOException` or 5xx responses; `DownloadService.openNetworkStream()` retries once on `IOException`; 4xx responses are not retried (#85)
 - `Logger.warn()` — always prints to the console regardless of `debugMode`, used for operator-visible error messages (#80)
 - Server-console audit trail: `plugin.getLogger().info()` is emitted on success and `.warning()` on failure for `/dpm get`, `/dpm update`, `/dpm remove`, and `/dpm clean --confirm` (#81, #87)
 

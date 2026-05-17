@@ -317,6 +317,97 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // doFetch() — retry on transient failures (#85)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void doFetch_retriesOnce_afterIoException() throws IOException {
+        int[] callCount = {0};
+        String successJson = "{\"tag_name\":\"v1.0\",\"published_at\":\"2024-01-01T00:00:00Z\"," +
+                "\"assets\":[{\"browser_download_url\":\"https://example.com/plugin.jar\"}]}";
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override void sleepMs(long ms) {}
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                if (callCount[0]++ == 0) throw new IOException("transient network error");
+                return fakeConnection(200, null, successJson);
+            }
+        };
+        ReleaseInfo result = svc.doFetch("org", "repo");
+        assertNotNull(result, "Second attempt must succeed after transient IOException");
+        assertEquals("v1.0", result.getTagName());
+        assertEquals(2, callCount[0], "openConnection must be called exactly twice");
+    }
+
+    @Test
+    void doFetch_retriesOnce_after5xxResponse() throws IOException {
+        int[] callCount = {0};
+        String successJson = "{\"tag_name\":\"v2.0\",\"published_at\":\"2024-01-01T00:00:00Z\"," +
+                "\"assets\":[{\"browser_download_url\":\"https://example.com/plugin.jar\"}]}";
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override void sleepMs(long ms) {}
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return callCount[0]++ == 0 ? fakeConnection(503, null, null) : fakeConnection(200, null, successJson);
+            }
+        };
+        ReleaseInfo result = svc.doFetch("org", "repo");
+        assertNotNull(result, "Second attempt must succeed after transient 5xx response");
+        assertEquals("v2.0", result.getTagName());
+        assertEquals(2, callCount[0], "openConnection must be called exactly twice");
+    }
+
+    @Test
+    void doFetch_doesNotRetryOn4xxClientError() throws IOException {
+        int[] callCount = {0};
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override void sleepMs(long ms) {}
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                callCount[0]++;
+                return fakeConnection(401, null);
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertEquals(1, callCount[0], "4xx must not be retried — only one connection attempt");
+    }
+
+    @Test
+    void doFetch_returnsNull_afterBothAttemptsFailWithIoException() throws IOException {
+        int[] callCount = {0};
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override void sleepMs(long ms) {}
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                callCount[0]++;
+                throw new IOException("persistent failure");
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertEquals(2, callCount[0], "Both attempts must be made before giving up");
+        assertFalse(warnings.isEmpty(), "Warning must be emitted after both attempts fail");
+    }
+
+    @Test
+    void doFetch_returnsNull_afterBoth5xxAttemptsFail() throws IOException {
+        int[] callCount = {0};
+        List<String> warnings = new ArrayList<>();
+        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+            @Override void sleepMs(long ms) {}
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                callCount[0]++;
+                return fakeConnection(503, null);
+            }
+        };
+        assertNull(svc.doFetch("org", "repo"));
+        assertEquals(2, callCount[0], "Both attempts must be made before giving up on persistent 5xx");
+        assertFalse(warnings.isEmpty(), "Warning must be emitted after both 5xx attempts fail");
+    }
+
+    // -------------------------------------------------------------------------
     // parseJarUrlFromAssets() — edge cases
     // -------------------------------------------------------------------------
 
@@ -345,6 +436,12 @@ class GitHubReleaseServiceTest {
 
     @SuppressWarnings("resource")
     private HttpURLConnection fakeConnection(int statusCode, String rateLimitRemaining) throws IOException {
+        return fakeConnection(statusCode, rateLimitRemaining, null);
+    }
+
+    @SuppressWarnings("resource")
+    private HttpURLConnection fakeConnection(int statusCode, String rateLimitRemaining, String responseBody) throws IOException {
+        byte[] bodyBytes = responseBody != null ? responseBody.getBytes(java.nio.charset.StandardCharsets.UTF_8) : new byte[0];
         return new HttpURLConnection(new URL("http://fake.invalid")) {
             @Override public void connect() {}
             @Override public void disconnect() {}
@@ -357,7 +454,8 @@ class GitHubReleaseServiceTest {
             }
             @Override public InputStream getErrorStream() { return new ByteArrayInputStream(new byte[0]); }
             @Override public InputStream getInputStream() throws IOException {
-                throw new IOException("not used in error-path tests");
+                if (statusCode != 200) throw new IOException("not used in error-path tests");
+                return new ByteArrayInputStream(bodyBytes);
             }
         };
     }

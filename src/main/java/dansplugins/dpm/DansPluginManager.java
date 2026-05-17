@@ -6,6 +6,7 @@ import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DependencyResolutionService;
+import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.services.GitHubReleaseService;
 import dansplugins.dpm.services.PluginFolderService;
@@ -40,6 +41,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final GitHubReleaseService gitHubReleaseService = new GitHubReleaseService(logger);
     private final PluginFolderService pluginFolderService = new PluginFolderService();
     private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(ephemeralData, pluginFolderService);
+    private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configService);
     private VersionStore versionStore;
     private DownloadService downloadService;
     private RemoveCommand removeCommand;
@@ -153,11 +155,11 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
-                new GetCommand(ephemeralData, downloadService, dependencyResolutionService, versionStore, this),
+                new GetCommand(ephemeralData, downloadService, dependencyResolutionService, versionStore, discordNotificationService, this),
                 new ListCommand(ephemeralData, pluginFolderService, versionStore),
                 new StatsCommand(ephemeralData, pluginFolderService),
                 new CleanCommand(ephemeralData, pluginFolderService, this),
-                updateCommand = new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
+                updateCommand = new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, discordNotificationService, this),
                 new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),
                 new ReloadCommand(this),
                 removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore, dependencyResolutionService, this),

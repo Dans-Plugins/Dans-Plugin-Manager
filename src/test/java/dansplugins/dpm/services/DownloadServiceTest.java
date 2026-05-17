@@ -6,6 +6,7 @@ import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,7 +18,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class DownloadServiceTest {
 
     // Only readAndWrite() is exercised here; the other dependencies are unused.
-    private final DownloadService service = new DownloadService(null, null, null, null);
+    // sleepMs is overridden to a no-op so retry tests don't add real delays.
+    private final DownloadService service = noSleepService(null, null, null, null);
+
+    private static DownloadService noSleepService(Logger logger, GitHubReleaseService ghrs,
+                                                   PluginFolderService pfs, VersionStore vs) {
+        return new DownloadService(logger, ghrs, pfs, vs) {
+            @Override void sleepMs(long ms) {}
+        };
+    }
 
     // -------------------------------------------------------------------------
     // readAndWrite()
@@ -82,7 +91,7 @@ class DownloadServiceTest {
 
         VersionStore versionStore = versionStore(tempDir);
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
-        DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", src.toURI().toString()),
+        DownloadService svc = noSleepService(null, fakeRelease("v1.0.0", src.toURI().toString()),
                 pluginFolderService, versionStore);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
@@ -202,7 +211,7 @@ class DownloadServiceTest {
             @Override public void warn(String message) {}
         };
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
-        DownloadService svc = new DownloadService(noOpLogger,
+        DownloadService svc = noSleepService(noOpLogger,
                 fakeRelease("v2.0.0", "http://localhost:1/nonexistent.jar"),
                 pluginFolderService, versionStore(tempDir));
 
@@ -244,7 +253,7 @@ class DownloadServiceTest {
             @Override public void warn(String message) {}
         };
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
-        DownloadService svc = new DownloadService(noOpLogger,
+        DownloadService svc = noSleepService(noOpLogger,
                 fakeRelease("v1.0.0", "http://localhost:1/nonexistent.jar"),
                 pluginFolderService, versionStore(tempDir));
 
@@ -273,6 +282,45 @@ class DownloadServiceTest {
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.FILE_ERROR, svc.downloadLatest(record));
+    }
+
+    // -------------------------------------------------------------------------
+    // openNetworkStream() — retry on transient failure
+    // -------------------------------------------------------------------------
+
+    @Test
+    void openNetworkStream_retriesOnce_afterIoException(@TempDir Path tempDir) throws IOException {
+        byte[] content = {1, 2, 3};
+        File src = tempDir.resolve("source.jar").toFile();
+        Files.write(src.toPath(), content);
+
+        int[] callCount = {0};
+        DownloadService svc = new DownloadService(null, null, null, null) {
+            @Override void sleepMs(long ms) {}
+            @Override BufferedInputStream doOpenNetworkStream(String url) throws IOException {
+                if (callCount[0]++ == 0) throw new IOException("transient failure");
+                return super.doOpenNetworkStream(url);
+            }
+        };
+        File dest = tempDir.resolve("dest.jar").toFile();
+        int bytes = svc.readAndWrite(src.toURI().toString(), dest.getAbsolutePath());
+        assertEquals(content.length, bytes, "Second attempt must succeed after transient failure");
+        assertEquals(2, callCount[0], "doOpenNetworkStream must be called exactly twice");
+    }
+
+    @Test
+    void openNetworkStream_throwsAfterBothAttemptsFail(@TempDir Path tempDir) {
+        int[] callCount = {0};
+        DownloadService svc = new DownloadService(null, null, null, null) {
+            @Override void sleepMs(long ms) {}
+            @Override BufferedInputStream doOpenNetworkStream(String url) throws IOException {
+                callCount[0]++;
+                throw new IOException("persistent failure");
+            }
+        };
+        File dest = tempDir.resolve("dest.jar").toFile();
+        assertThrows(IOException.class, () -> svc.readAndWrite("http://example.invalid/test.jar", dest.getAbsolutePath()));
+        assertEquals(2, callCount[0], "doOpenNetworkStream must be called exactly twice before giving up");
     }
 
     // -------------------------------------------------------------------------
