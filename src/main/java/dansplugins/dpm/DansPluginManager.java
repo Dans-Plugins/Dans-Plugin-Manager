@@ -180,7 +180,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new HelpCommand(),
                 new GetCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
                 new ListCommand(ephemeralData, pluginFolderService, versionStore),
-                new StatsCommand(ephemeralData),
+                new StatsCommand(ephemeralData, pluginFolderService),
                 new CleanCommand(ephemeralData, pluginFolderService, this),
                 new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
                 new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),

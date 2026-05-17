@@ -50,13 +50,7 @@ public class UpdateCommand extends AbstractPluginCommand {
     }
 
     private List<ProjectRecord> getInstalledPlugins() {
-        List<ProjectRecord> installed = new ArrayList<>();
-        for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
-            if (pluginFolderService.isInstalled(record)) {
-                installed.add(record);
-            }
-        }
-        return installed;
+        return pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords());
     }
 
     private void runUpdates(CommandSender sender, List<ProjectRecord> records) {
