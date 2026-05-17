@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Tab-completion for `/dpm list` offers `installed` and `available`
 
 ### Changed
+- `ListCommand` (show-all path) and `InfoCommand` (dependency display) replaced O(N×M) `isInstalled()` calls with a single `filterInstalled()` scan
+- `DansPluginManager.onTabComplete` — extracted `allPluginNames()` helper to remove duplicated plugin-name list building for `get` and `info` tab-completion branches
 - `UpdateCommand` replaced O(N×M) per-record `isInstalled()` loop with a single `filterInstalled()` call
 - `/dpm update` now emits a per-plugin result line for every outcome including already-up-to-date and no-release, consistent with `/dpm get` batch mode
 - `GitHubReleaseService` caches release responses for the session; repeated calls for the same repo make only one HTTP request. `/dpm reload` clears the cache
