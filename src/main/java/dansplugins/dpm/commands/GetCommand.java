@@ -135,7 +135,13 @@ public class GetCommand extends AbstractPluginCommand {
                 upToDate++;
                 String tag = versionStore.getStoredTag(record.getName());
                 msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
-            } else if (result <= 0) {
+            } else if (result == DownloadService.NETWORK_ERROR) {
+                failed++;
+                msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not reach GitHub — check console for details).";
+            } else if (result == DownloadService.FILE_ERROR) {
+                failed++;
+                msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not write to plugins folder — check server file permissions).";
+            } else if (result < 0) {
                 failed++;
                 msg = ChatColor.RED + "Failed to download " + record.getName() + ".";
             } else {
@@ -170,7 +176,11 @@ public class GetCommand extends AbstractPluginCommand {
             String tag = versionStore.getStoredTag(record.getName());
             String version = tag != null ? " (" + tag + ")" : "";
             sender.sendMessage(ChatColor.GREEN + record.getName() + " is already up to date" + version + ".");
-        } else if (result <= 0) {
+        } else if (result == DownloadService.NETWORK_ERROR) {
+            sender.sendMessage(ChatColor.RED + "Could not reach GitHub when downloading " + record.getName() + " — check console for details.");
+        } else if (result == DownloadService.FILE_ERROR) {
+            sender.sendMessage(ChatColor.RED + "Could not write " + record.getName() + " to the plugins folder — check server file permissions.");
+        } else if (result < 0) {
             sender.sendMessage(ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
         } else {
             String tag = versionStore.getStoredTag(record.getName());

@@ -4,6 +4,7 @@ import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -16,6 +17,21 @@ public class DependencyResolutionService {
     public DependencyResolutionService(EphemeralData ephemeralData, PluginFolderService pluginFolderService) {
         this.ephemeralData = ephemeralData;
         this.pluginFolderService = pluginFolderService;
+    }
+
+    // Caller supplies the pre-filtered installed list so no extra directory scan happens here.
+    public List<String> findDependents(String targetName, List<ProjectRecord> installedRecords) {
+        String targetLower = targetName.toLowerCase();
+        List<String> dependents = new ArrayList<>();
+        for (ProjectRecord installed : installedRecords) {
+            for (String dep : installed.getHardDependencies()) {
+                if (dep.equalsIgnoreCase(targetLower)) {
+                    dependents.add(installed.getName());
+                    break;
+                }
+            }
+        }
+        return dependents;
     }
 
     // resolved must be pre-seeded with lowercase names already in the batch; prevents circular re-processing

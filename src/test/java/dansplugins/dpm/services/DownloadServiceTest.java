@@ -2,6 +2,7 @@ package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -11,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class DownloadServiceTest {
 
@@ -184,6 +186,46 @@ class DownloadServiceTest {
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record));
+    }
+
+    // -------------------------------------------------------------------------
+    // downloadFromUrl — error code distinction
+    // -------------------------------------------------------------------------
+
+    @Test
+    void downloadLatest_returnsNetworkError_whenUrlUnreachable(@TempDir Path tempDir) {
+        Logger noOpLogger = new Logger(null) {
+            @Override public void log(String message) {}
+        };
+        PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
+        DownloadService svc = new DownloadService(noOpLogger,
+                fakeRelease("v1.0.0", "http://localhost:1/nonexistent.jar"),
+                pluginFolderService, versionStore(tempDir));
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.NETWORK_ERROR, svc.downloadLatest(record));
+    }
+
+    @Test
+    void downloadLatest_returnsFileError_whenDestinationUnwritable(@TempDir Path tempDir) throws IOException {
+        File src = tempDir.resolve("source.jar").toFile();
+        Files.write(src.toPath(), new byte[]{1, 2, 3});
+
+        File readOnlyDir = tempDir.resolve("readonly").toFile();
+        readOnlyDir.mkdir();
+        // setWritable(false) is a no-op when running as root (common in some CI environments).
+        assumeTrue(readOnlyDir.setWritable(false), "Skipped: cannot make directory read-only");
+
+        Logger noOpLogger = new Logger(null) {
+            @Override public void log(String message) {}
+        };
+        PluginFolderService pluginFolderService = new PluginFolderService(readOnlyDir.getAbsolutePath() + "/");
+        DownloadService svc = new DownloadService(noOpLogger,
+                fakeRelease("v1.0.0", src.toURI().toString()),
+                pluginFolderService, versionStore(tempDir));
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.FILE_ERROR, svc.downloadLatest(record));
     }
 
     // -------------------------------------------------------------------------

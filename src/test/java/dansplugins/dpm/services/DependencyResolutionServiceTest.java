@@ -143,6 +143,58 @@ class DependencyResolutionServiceTest {
         assertTrue(unknownDeps.isEmpty());
     }
 
+    // -------------------------------------------------------------------------
+    // findDependents()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void findDependents_returnsEmptyWhenNoDependentsInstalled() throws IOException {
+        installJar("standalone");
+        ProjectRecord standalone = registerRecord("standalone", List.of());
+        List<ProjectRecord> installed = List.of(standalone);
+
+        List<String> dependents = service.findDependents("targetplugin", installed);
+
+        assertTrue(dependents.isEmpty());
+    }
+
+    @Test
+    void findDependents_returnsInstalledPluginThatDependsOnTarget() throws IOException {
+        installJar("consumer");
+        ProjectRecord consumer = registerRecord("consumer", List.of("targetplugin"));
+        List<ProjectRecord> installed = List.of(consumer);
+
+        List<String> dependents = service.findDependents("targetplugin", installed);
+
+        assertEquals(List.of("consumer"), dependents);
+    }
+
+    @Test
+    void findDependents_isCaseInsensitive() throws IOException {
+        installJar("consumer");
+        ProjectRecord consumer = registerRecord("consumer", List.of("TargetPlugin"));
+        List<ProjectRecord> installed = List.of(consumer);
+
+        List<String> dependents = service.findDependents("targetplugin", installed);
+
+        assertEquals(List.of("consumer"), dependents);
+    }
+
+    @Test
+    void findDependents_returnsMultipleDependents() throws IOException {
+        installJar("alpha");
+        installJar("beta");
+        ProjectRecord alpha = registerRecord("alpha", List.of("targetplugin"));
+        ProjectRecord beta = registerRecord("beta", List.of("targetplugin"));
+        List<ProjectRecord> installed = List.of(alpha, beta);
+
+        List<String> dependents = service.findDependents("targetplugin", installed);
+
+        assertEquals(2, dependents.size());
+        assertTrue(dependents.contains("alpha"));
+        assertTrue(dependents.contains("beta"));
+    }
+
     @Test
     void resolve_handlesCircularDependenciesWithoutInfiniteLoop() {
         // A depends on B, B depends on A
