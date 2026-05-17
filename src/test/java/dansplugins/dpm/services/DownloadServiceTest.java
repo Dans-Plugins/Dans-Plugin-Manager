@@ -199,6 +199,7 @@ class DownloadServiceTest {
 
         Logger noOpLogger = new Logger(null) {
             @Override public void log(String message) {}
+            @Override public void warn(String message) {}
         };
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(noOpLogger,
@@ -220,6 +221,7 @@ class DownloadServiceTest {
 
         Logger noOpLogger = new Logger(null) {
             @Override public void log(String message) {}
+            @Override public void warn(String message) {}
         };
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(noOpLogger,
@@ -239,6 +241,7 @@ class DownloadServiceTest {
     void downloadLatest_returnsNetworkError_whenUrlUnreachable(@TempDir Path tempDir) {
         Logger noOpLogger = new Logger(null) {
             @Override public void log(String message) {}
+            @Override public void warn(String message) {}
         };
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(noOpLogger,
@@ -261,6 +264,7 @@ class DownloadServiceTest {
 
         Logger noOpLogger = new Logger(null) {
             @Override public void log(String message) {}
+            @Override public void warn(String message) {}
         };
         PluginFolderService pluginFolderService = new PluginFolderService(readOnlyDir.getAbsolutePath() + "/");
         DownloadService svc = new DownloadService(noOpLogger,
