@@ -3,6 +3,7 @@ package dansplugins.dpm.commands;
 import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DependencyResolutionService;
+import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.services.VersionStore;
 import org.bukkit.Bukkit;
@@ -22,16 +23,19 @@ public class GetCommand extends AbstractPluginCommand {
     private final DownloadService downloadService;
     private final DependencyResolutionService dependencyResolutionService;
     private final VersionStore versionStore;
+    private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
     public GetCommand(EphemeralData ephemeralData, DownloadService downloadService,
                       DependencyResolutionService dependencyResolutionService,
-                      VersionStore versionStore, Plugin plugin) {
+                      VersionStore versionStore, DiscordNotificationService discordNotificationService,
+                      Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.ephemeralData = ephemeralData;
         this.downloadService = downloadService;
         this.dependencyResolutionService = dependencyResolutionService;
         this.versionStore = versionStore;
+        this.discordNotificationService = discordNotificationService;
         this.plugin = plugin;
     }
 
@@ -71,6 +75,11 @@ public class GetCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + "...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 int result = downloadService.downloadLatest(record);
+                if (result == DownloadService.NETWORK_ERROR) {
+                    discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": network error");
+                } else if (result == DownloadService.FILE_ERROR) {
+                    discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": file write error");
+                }
                 Bukkit.getScheduler().runTask(plugin, () -> reportSingleResult(sender, record, result));
             });
         } else {
@@ -138,10 +147,12 @@ public class GetCommand extends AbstractPluginCommand {
             } else if (result == DownloadService.NETWORK_ERROR) {
                 failed++;
                 plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not reach GitHub.");
+                discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": network error");
                 msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not reach GitHub — check console for details).";
             } else if (result == DownloadService.FILE_ERROR) {
                 failed++;
                 plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not write to plugins folder.");
+                discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": file write error");
                 msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not write to plugins folder — check server file permissions).";
             } else if (result < 0) {
                 failed++;

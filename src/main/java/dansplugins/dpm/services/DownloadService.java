@@ -99,6 +99,20 @@ public class DownloadService {
     }
 
     BufferedInputStream openNetworkStream(String url) throws IOException {
+        IOException lastError = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            if (attempt > 0) sleepMs(2000);
+            try {
+                return doOpenNetworkStream(url);
+            } catch (IOException e) {
+                lastError = e;
+            }
+        }
+        throw lastError;
+    }
+
+    // package-private so tests can override via anonymous subclass
+    BufferedInputStream doOpenNetworkStream(String url) throws IOException {
         URL u = new URL(url);
         String protocol = u.getProtocol();
         if ("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)) {
@@ -108,6 +122,14 @@ public class DownloadService {
             return new BufferedInputStream(connection.getInputStream());
         }
         return new BufferedInputStream(u.openStream());
+    }
+
+    void sleepMs(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private int writeStreamToFile(BufferedInputStream in, File dest) throws IOException {

@@ -26,6 +26,9 @@ public class ConfigService {
         if (!isSet("githubToken")) {
             getConfig().set("githubToken", "");
         }
+        if (!isSet("discordWebhook")) {
+            getConfig().set("discordWebhook", "");
+        }
         getConfig().options().copyDefaults(true);
         dansPluginManager.saveConfig();
     }
@@ -56,6 +59,9 @@ public class ConfigService {
         String token = getConfig().getString("githubToken");
         String tokenDisplay = (token != null && !token.isEmpty()) ? "(set)" : "(not set)";
         sender.sendMessage(ChatColor.AQUA + "githubToken: " + tokenDisplay);
+        String webhook = getConfig().getString("discordWebhook");
+        String webhookDisplay = (webhook != null && !webhook.isEmpty()) ? "(set)" : "(not set)";
+        sender.sendMessage(ChatColor.AQUA + "discordWebhook: " + webhookDisplay);
     }
 
     public boolean hasBeenAltered() {

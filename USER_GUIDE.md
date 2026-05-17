@@ -49,6 +49,8 @@ The most useful option for operators running frequent updates is `githubToken`. 
    ```
 4. Run `/dpm reload` to apply the change without restarting the server.
 
+To receive Discord notifications when `/dpm update` completes or when a download fails, set `discordWebhook` in `config.yml` to a Discord webhook URL and run `/dpm reload`. Create a webhook in your Discord server under channel settings → Integrations → Webhooks. Leave the value empty to disable notifications.
+
 ## Support
 
 Ask questions in the [Discord server](https://discord.gg/xXtuAQ2) or open a [GitHub issue](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues).

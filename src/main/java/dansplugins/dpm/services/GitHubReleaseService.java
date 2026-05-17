@@ -93,38 +93,57 @@ public class GitHubReleaseService {
     // package-private so tests can override via anonymous subclass without hitting the network
     ReleaseInfo doFetch(String owner, String repo) {
         String apiUrl = String.format(API_URL, owner, repo);
-        HttpURLConnection connection = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            if (attempt > 0) sleepMs(2000);
+            HttpURLConnection connection = null;
+            try {
+                connection = openConnection(apiUrl);
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 404) {
+                    return ReleaseInfo.NO_RELEASE;
+                }
+                if (responseCode == 401) {
+                    logger.warn("GitHub API rejected the configured token for " + owner + "/" + repo
+                            + " — verify or clear githubToken in config.yml.");
+                    return null;
+                }
+                if (responseCode == 429
+                        || (responseCode == 403 && "0".equals(connection.getHeaderField("X-RateLimit-Remaining")))) {
+                    logger.warn("GitHub rate limit reached for " + owner + "/" + repo
+                            + " — configure a githubToken in config.yml to raise the limit.");
+                    return null;
+                }
+                if (responseCode >= 500) {
+                    if (attempt == 0) continue;
+                    String errorBody = readStream(connection.getErrorStream());
+                    logger.warn("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
+                    return null;
+                }
+                if (responseCode != 200) {
+                    String errorBody = readStream(connection.getErrorStream());
+                    logger.warn("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
+                    return null;
+                }
+                String json = readStream(connection.getInputStream());
+                return new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
+            } catch (IOException e) {
+                if (attempt == 0) continue;
+                logger.warn("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
+                return null;
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }
+        return null;
+    }
+
+    void sleepMs(long ms) {
         try {
-            connection = openConnection(apiUrl);
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 404) {
-                return ReleaseInfo.NO_RELEASE;
-            }
-            if (responseCode == 401) {
-                logger.warn("GitHub API rejected the configured token for " + owner + "/" + repo
-                        + " — verify or clear githubToken in config.yml.");
-                return null;
-            }
-            if (responseCode == 429
-                    || (responseCode == 403 && "0".equals(connection.getHeaderField("X-RateLimit-Remaining")))) {
-                logger.warn("GitHub rate limit reached for " + owner + "/" + repo
-                        + " — configure a githubToken in config.yml to raise the limit.");
-                return null;
-            }
-            if (responseCode != 200) {
-                String errorBody = readStream(connection.getErrorStream());
-                logger.warn("GitHub API returned HTTP " + responseCode + " for " + owner + "/" + repo + ": " + errorBody);
-                return null;
-            }
-            String json = readStream(connection.getInputStream());
-            return new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
-        } catch (IOException e) {
-            logger.warn("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
-            return null;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

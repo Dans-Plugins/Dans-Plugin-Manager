@@ -7,3 +7,4 @@ A `config.yml` is generated in `plugins/DansPluginManager/` on first run.
 | `version` | String | *(plugin version)* | Plugin version. Do not edit manually. |
 | `debugMode` | Boolean | `false` | Enables verbose debug logging to the console. |
 | `githubToken` | String | `""` | Personal access token for the GitHub API. When set, raises the rate limit from 60 to 5 000 requests per hour. Generate one at GitHub → Settings → Developer settings → Personal access tokens (no scopes required for public repos). |
+| `discordWebhook` | String | `""` | Discord webhook URL. When set, DPM posts a summary to the channel after each `/dpm update` run and on any download failure from `/dpm get`. Leave empty to disable. Create one in your Discord server under channel settings → Integrations → Webhooks. |

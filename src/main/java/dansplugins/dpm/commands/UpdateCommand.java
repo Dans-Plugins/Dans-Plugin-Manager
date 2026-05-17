@@ -2,6 +2,7 @@ package dansplugins.dpm.commands;
 
 import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
@@ -21,16 +22,18 @@ public class UpdateCommand extends AbstractPluginCommand {
     private final DownloadService downloadService;
     private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
+    private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
     public UpdateCommand(EphemeralData ephemeralData, DownloadService downloadService,
                          PluginFolderService pluginFolderService, VersionStore versionStore,
-                         Plugin plugin) {
+                         DiscordNotificationService discordNotificationService, Plugin plugin) {
         super(new ArrayList<>(List.of("update")), new ArrayList<>(List.of("dpm.update")));
         this.ephemeralData = ephemeralData;
         this.downloadService = downloadService;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
+        this.discordNotificationService = discordNotificationService;
         this.plugin = plugin;
     }
 
@@ -92,6 +95,7 @@ public class UpdateCommand extends AbstractPluginCommand {
         int upToDate = 0;
         int skipped = 0;
         int failed = 0;
+        List<String> versionDiffs = new ArrayList<>();
 
         for (ProjectRecord record : records) {
             String oldTag = versionStore.getStoredTag(record.getName());
@@ -109,6 +113,7 @@ public class UpdateCommand extends AbstractPluginCommand {
                 String versionDiff = oldTag != null && newTag != null
                         ? " " + oldTag + " → " + newTag
                         : newTag != null ? " " + newTag : "";
+                versionDiffs.add(record.getName() + versionDiff);
                 plugin.getLogger().info("[DPM] Updated " + record.getName() + versionDiff + ".");
                 msg = ChatColor.GREEN + "Updated " + record.getName() + versionDiff + ".";
             } else if (result == DownloadService.NETWORK_ERROR) {
@@ -126,6 +131,8 @@ public class UpdateCommand extends AbstractPluginCommand {
             }
             Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
         }
+
+        sendUpdateNotification(updated, upToDate, skipped, failed, versionDiffs);
 
         final int finalUpdated = updated;
         final int finalUpToDate = upToDate;
@@ -148,5 +155,14 @@ public class UpdateCommand extends AbstractPluginCommand {
                 sender.sendMessage(ChatColor.YELLOW + "Restart the server to load updated plugins.");
             }
         });
+    }
+
+    private void sendUpdateNotification(int updated, int upToDate, int skipped, int failed, List<String> versionDiffs) {
+        StringBuilder msg = new StringBuilder("[DPM] Update complete: ")
+                .append(updated).append(" updated, ").append(upToDate).append(" already up to date");
+        if (skipped > 0) msg.append(", ").append(skipped).append(" skipped");
+        if (failed > 0) msg.append(", ").append(failed).append(" failed");
+        for (String diff : versionDiffs) msg.append("\n• ").append(diff);
+        discordNotificationService.send(msg.toString());
     }
 }
