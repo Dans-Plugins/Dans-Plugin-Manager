@@ -53,6 +53,26 @@ Filesystem tests use `@TempDir Path tempDir` and construct a `PluginFolderServic
 - Command classes depend on Bukkit and cannot be unit tested here. Cover the underlying services instead.
 - When a bug is fixed, add a regression test that would have caught it.
 
+## Integration test suite
+
+`integration-test/test_dpm.py` runs DPM commands against a live Spigot server and asserts on console output. See `integration-test/README.md` for the full coverage picture.
+
+**Before closing any PR**, ask: does this change affect a command's output, a new command, a new code path, or a bug fix that was caught by the integration tests? If yes, update the harness.
+
+Specifically, add or extend a test step when:
+- A **new command** is added — add a step that sends it and asserts its expected output string
+- An **existing command's output changes** — update the assertion string to match
+- A **new flag or subcommand** is added (e.g. `dpm list installed`) — add a step exercising it
+- A **bug is fixed** that unit tests couldn't have caught (real filesystem, real GitHub API, real Bukkit routing) — add a regression step
+- A **new error path** is reachable from the console — assert the error message so it can't silently break
+
+Do **not** add an integration test step for:
+- Pure display/formatting tweaks with no logic change
+- Changes fully covered by the existing unit test suite
+- Paths that require a player login or real server state that can't be reproduced in CI
+
+After editing the harness, update the coverage table in `integration-test/README.md` to keep "What the tests cover" and "What is not yet covered" accurate.
+
 ## Code patterns
 
 **Avoid O(N×M) directory scans** — `PluginFolderService.isInstalled()` scans the directory on every call. Never call it inside a loop over plugin records; use `filterInstalled(records)` instead, which does one scan for any number of records. `RemoveCommand` was fixed this way; `UpdateCommand` still uses the loop pattern and is tracked in issue #37.
