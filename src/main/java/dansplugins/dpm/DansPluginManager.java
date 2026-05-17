@@ -150,6 +150,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     public void reloadDpm() {
         reloadConfig();
         gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubToken", ""));
+        gitHubReleaseService.clearCache();
     }
 
     private void initializeConfig() {

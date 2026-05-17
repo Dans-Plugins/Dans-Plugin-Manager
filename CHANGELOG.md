@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - `UpdateCommand` replaced O(N×M) per-record `isInstalled()` loop with a single `filterInstalled()` call
+- `/dpm update` now emits a per-plugin result line for every outcome including already-up-to-date and no-release, consistent with `/dpm get` batch mode
+- `GitHubReleaseService` caches release responses for the session; repeated calls for the same repo make only one HTTP request. `/dpm reload` clears the cache
 - `/dpm clean` now previews what would be deleted; pass `--confirm` to actually remove the files
 - `/dpm clean --confirm` now distinguishes deletion failures (permission errors) from "no duplicates found"
 
