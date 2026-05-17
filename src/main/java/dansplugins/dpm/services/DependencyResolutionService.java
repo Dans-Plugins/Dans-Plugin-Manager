@@ -4,7 +4,6 @@ import dansplugins.dpm.data.EphemeralData;
 import dansplugins.dpm.objects.ProjectRecord;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -19,17 +18,7 @@ public class DependencyResolutionService {
         this.pluginFolderService = pluginFolderService;
     }
 
-    /**
-     * Resolves all missing hard dependencies for the given records, recursively.
-     *
-     * Populates depsToFetch with DPC plugins that need to be downloaded, and unknownDeps
-     * with dependency names that are not registered DPC plugins (cannot be auto-downloaded).
-     *
-     * The resolved set must be pre-populated with the lowercase names of records already
-     * in the download batch — this prevents re-processing and handles circular chains.
-     *
-     * The directory is scanned once regardless of how many records are processed.
-     */
+    // resolved must be pre-seeded with lowercase names already in the batch; prevents circular re-processing
     public void resolve(List<ProjectRecord> toProcess, Set<String> resolved,
                         List<ProjectRecord> depsToFetch, List<String> unknownDeps) {
         Set<String> installedLower = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords())
