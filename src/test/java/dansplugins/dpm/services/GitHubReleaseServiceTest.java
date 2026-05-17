@@ -1,6 +1,9 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.objects.ReleaseInfo;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -135,20 +138,85 @@ class GitHubReleaseServiceTest {
     }
 
     // -------------------------------------------------------------------------
-    // clearCache()
+    // cache behaviour (via doFetch override)
     // -------------------------------------------------------------------------
 
     @Test
-    void clearCache_doesNotThrowWhenCacheIsEmpty() {
-        assertDoesNotThrow(() -> service.clearCache());
+    void getLatestRelease_returnsCachedResultOnSecondCall() {
+        AtomicInteger fetchCount = new AtomicInteger(0);
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                fetchCount.incrementAndGet();
+                return new ReleaseInfo("v1.0", "https://example.com/plugin.jar", "2024-01-01T00:00:00Z");
+            }
+        };
+        svc.getLatestRelease("org", "repo");
+        svc.getLatestRelease("org", "repo");
+        assertEquals(1, fetchCount.get(), "Second call for same repo should use cache");
     }
 
     @Test
-    void clearCache_doesNotThrowWhenCalledRepeatedly() {
-        assertDoesNotThrow(() -> {
-            service.clearCache();
-            service.clearCache();
-        });
+    void clearCache_causesRefetchOnNextCall() {
+        AtomicInteger fetchCount = new AtomicInteger(0);
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                fetchCount.incrementAndGet();
+                return new ReleaseInfo("v1.0", "https://example.com/plugin.jar", "2024-01-01T00:00:00Z");
+            }
+        };
+        svc.getLatestRelease("org", "repo");
+        svc.clearCache();
+        svc.getLatestRelease("org", "repo");
+        assertEquals(2, fetchCount.get(), "Call after clearCache should refetch");
+    }
+
+    @Test
+    void differentRepos_eachFetchedOnce() {
+        AtomicInteger fetchCount = new AtomicInteger(0);
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                fetchCount.incrementAndGet();
+                return new ReleaseInfo("v1.0", "https://example.com/" + repo + ".jar", null);
+            }
+        };
+        svc.getLatestRelease("org", "repo-a");
+        svc.getLatestRelease("org", "repo-a");
+        svc.getLatestRelease("org", "repo-b");
+        svc.getLatestRelease("org", "repo-b");
+        assertEquals(2, fetchCount.get(), "Each distinct repo should be fetched once");
+    }
+
+    @Test
+    void noRelease_isCached() {
+        AtomicInteger fetchCount = new AtomicInteger(0);
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                fetchCount.incrementAndGet();
+                return ReleaseInfo.NO_RELEASE;
+            }
+        };
+        svc.getLatestReleaseMetadata("org", "repo");
+        svc.getLatestReleaseMetadata("org", "repo");
+        assertEquals(1, fetchCount.get(), "NO_RELEASE should be cached to avoid repeated 404 requests");
+    }
+
+    @Test
+    void networkError_isNotCached() {
+        AtomicInteger fetchCount = new AtomicInteger(0);
+        GitHubReleaseService svc = new GitHubReleaseService(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                fetchCount.incrementAndGet();
+                return null;
+            }
+        };
+        svc.getLatestReleaseMetadata("org", "repo");
+        svc.getLatestReleaseMetadata("org", "repo");
+        assertEquals(2, fetchCount.get(), "Network errors must not be cached so the next call can retry");
     }
 
     // -------------------------------------------------------------------------

@@ -10,15 +10,16 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GitHubReleaseService {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
 
     private final Logger logger;
     private String apiToken = "";
-    private final Map<String, ReleaseInfo> releaseCache = new HashMap<>();
+    private final ConcurrentHashMap<String, ReleaseInfo> releaseCache = new ConcurrentHashMap<>();
+    private final AtomicInteger cacheGeneration = new AtomicInteger(0);
 
     public GitHubReleaseService(Logger logger) {
         this.logger = logger;
@@ -29,6 +30,7 @@ public class GitHubReleaseService {
     }
 
     public void clearCache() {
+        cacheGeneration.incrementAndGet();
         releaseCache.clear();
     }
 
@@ -87,22 +89,35 @@ public class GitHubReleaseService {
     }
 
     /**
-     * Fetches and caches the full release info (tag, jar URL, publish date) for the given repo.
-     * On 404 caches and returns {@link ReleaseInfo#NO_RELEASE}. Network errors return null and
-     * are not cached so the next call can retry.
+     * Returns the cached entry or fetches it. Network errors (null) are never cached so
+     * the next call can retry. The generation counter prevents a fetch that started before
+     * a {@link #clearCache()} from repopulating the cache with pre-reload data.
      */
     private ReleaseInfo fetchRelease(String owner, String repo) {
         String key = owner + "/" + repo;
         ReleaseInfo cached = releaseCache.get(key);
         if (cached != null) return cached;
 
+        int generation = cacheGeneration.get();
+        ReleaseInfo fetched = doFetch(owner, repo);
+        if (fetched != null && cacheGeneration.get() == generation) {
+            releaseCache.putIfAbsent(key, fetched);
+        }
+        return fetched;
+    }
+
+    /**
+     * Makes the HTTP request and parses the response. Returns {@link ReleaseInfo#NO_RELEASE}
+     * on 404, null on network/other errors, and a fully-populated {@link ReleaseInfo} on success.
+     * Package-private so tests can override it via anonymous subclass.
+     */
+    ReleaseInfo doFetch(String owner, String repo) {
         String apiUrl = String.format(API_URL, owner, repo);
         HttpURLConnection connection = null;
         try {
             connection = openConnection(apiUrl);
             int responseCode = connection.getResponseCode();
             if (responseCode == 404) {
-                releaseCache.put(key, ReleaseInfo.NO_RELEASE);
                 return ReleaseInfo.NO_RELEASE;
             }
             if (responseCode != 200) {
@@ -111,9 +126,7 @@ public class GitHubReleaseService {
                 return null;
             }
             String json = readStream(connection.getInputStream());
-            ReleaseInfo release = new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
-            releaseCache.put(key, release);
-            return release;
+            return new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
         } catch (IOException e) {
             logger.log("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
             return null;
