@@ -137,17 +137,21 @@ public class GetCommand extends AbstractPluginCommand {
                 msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
             } else if (result == DownloadService.NETWORK_ERROR) {
                 failed++;
+                plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not reach GitHub.");
                 msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not reach GitHub — check console for details).";
             } else if (result == DownloadService.FILE_ERROR) {
                 failed++;
+                plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not write to plugins folder.");
                 msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not write to plugins folder — check server file permissions).";
             } else if (result < 0) {
                 failed++;
+                plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + ".");
                 msg = ChatColor.RED + "Failed to download " + record.getName() + ".";
             } else {
                 downloaded++;
                 String tag = versionStore.getStoredTag(record.getName());
                 String version = tag != null ? " " + tag : "";
+                plugin.getLogger().info("[DPM] Installed " + record.getName() + version + ".");
                 msg = ChatColor.GREEN + "Downloaded " + record.getName() + version + " (" + (result / 1024) + " KB).";
             }
             Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
@@ -177,14 +181,18 @@ public class GetCommand extends AbstractPluginCommand {
             String version = tag != null ? " (" + tag + ")" : "";
             sender.sendMessage(ChatColor.GREEN + record.getName() + " is already up to date" + version + ".");
         } else if (result == DownloadService.NETWORK_ERROR) {
+            plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not reach GitHub.");
             sender.sendMessage(ChatColor.RED + "Could not reach GitHub when downloading " + record.getName() + " — check console for details.");
         } else if (result == DownloadService.FILE_ERROR) {
+            plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not write to plugins folder.");
             sender.sendMessage(ChatColor.RED + "Could not write " + record.getName() + " to the plugins folder — check server file permissions.");
         } else if (result < 0) {
+            plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + ".");
             sender.sendMessage(ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
         } else {
             String tag = versionStore.getStoredTag(record.getName());
             String version = tag != null ? " " + tag : "";
+            plugin.getLogger().info("[DPM] Installed " + record.getName() + version + ".");
             sender.sendMessage(ChatColor.GREEN + "Downloaded" + version + " (" + (result / 1024) + " KB). Restart the server to enable " + record.getName() + ".");
         }
     }

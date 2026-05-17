@@ -49,7 +49,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     public void onEnable() {
         initializeConfig();
         gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubToken", ""));
-        versionStore = new VersionStore(new File(getDataFolder(), "dpm-versions.properties"));
+        versionStore = new VersionStore(new File(getDataFolder(), "dpm-versions.properties"), logger);
         downloadService = new DownloadService(logger, gitHubReleaseService, pluginFolderService, versionStore);
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
@@ -160,7 +160,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 updateCommand = new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
                 new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),
                 new ReloadCommand(this),
-                removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore, dependencyResolutionService),
+                removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore, dependencyResolutionService, this),
                 new SearchCommand(ephemeralData, pluginFolderService, versionStore)
         ));
         commandService.initialize(commands, "That command wasn't found.");

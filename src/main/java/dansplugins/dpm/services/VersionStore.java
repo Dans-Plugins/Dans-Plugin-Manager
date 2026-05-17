@@ -1,19 +1,20 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.utils.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 public class VersionStore {
-    private static final Logger LOGGER = Logger.getLogger(VersionStore.class.getName());
-
+    private final Logger logger;
     private final File storeFile;
     private final Properties props = new Properties();
 
-    public VersionStore(File storeFile) {
+    public VersionStore(File storeFile, Logger logger) {
+        this.logger = logger;
         this.storeFile = storeFile;
         load();
     }
@@ -40,8 +41,8 @@ public class VersionStore {
         try (FileInputStream in = new FileInputStream(storeFile)) {
             props.load(in);
         } catch (IOException e) {
-            LOGGER.warning("Failed to load " + storeFile.getName() + ": " + e.getMessage()
-                    + " — stored plugin versions will not be available this session.");
+            logger.warn("Could not load version store (" + e.getMessage()
+                    + ") — all plugins will be treated as unversioned this session.");
         }
     }
 
@@ -50,8 +51,8 @@ public class VersionStore {
         try (FileOutputStream out = new FileOutputStream(storeFile)) {
             props.store(out, null);
         } catch (IOException e) {
-            LOGGER.warning("Failed to save " + storeFile.getName() + ": " + e.getMessage()
-                    + " — plugin version data will not persist across restarts.");
+            logger.warn("Could not save version store (" + e.getMessage()
+                    + ") — plugin version data will not persist across restarts.");
         }
     }
 }

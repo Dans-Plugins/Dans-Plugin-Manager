@@ -109,15 +109,19 @@ public class UpdateCommand extends AbstractPluginCommand {
                 String versionDiff = oldTag != null && newTag != null
                         ? " " + oldTag + " → " + newTag
                         : newTag != null ? " " + newTag : "";
+                plugin.getLogger().info("[DPM] Updated " + record.getName() + versionDiff + ".");
                 msg = ChatColor.GREEN + "Updated " + record.getName() + versionDiff + ".";
             } else if (result == DownloadService.NETWORK_ERROR) {
                 failed++;
+                plugin.getLogger().warning("[DPM] Failed to update " + record.getName() + " — could not reach GitHub.");
                 msg = ChatColor.RED + "Failed to update " + record.getName() + " (could not reach GitHub — check console for details).";
             } else if (result == DownloadService.FILE_ERROR) {
                 failed++;
+                plugin.getLogger().warning("[DPM] Failed to update " + record.getName() + " — could not write to plugins folder.");
                 msg = ChatColor.RED + "Failed to update " + record.getName() + " (could not write to plugins folder — check server file permissions).";
             } else {
                 failed++;
+                plugin.getLogger().warning("[DPM] Failed to update " + record.getName() + ".");
                 msg = ChatColor.RED + "Failed to update " + record.getName() + ".";
             }
             Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));

@@ -7,6 +7,7 @@ import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.io.File;
@@ -18,14 +19,17 @@ public class RemoveCommand extends AbstractPluginCommand {
     private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
     private final DependencyResolutionService dependencyResolutionService;
+    private final Plugin plugin;
 
     public RemoveCommand(EphemeralData ephemeralData, PluginFolderService pluginFolderService,
-                         VersionStore versionStore, DependencyResolutionService dependencyResolutionService) {
+                         VersionStore versionStore, DependencyResolutionService dependencyResolutionService,
+                         Plugin plugin) {
         super(new ArrayList<>(List.of("remove")), new ArrayList<>(List.of("dpm.remove")));
         this.ephemeralData = ephemeralData;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
         this.dependencyResolutionService = dependencyResolutionService;
+        this.plugin = plugin;
     }
 
     @Override
@@ -70,10 +74,12 @@ public class RemoveCommand extends AbstractPluginCommand {
         }
         if (jar.delete()) {
             versionStore.removeTag(record.getName());
+            plugin.getLogger().info("[DPM] Removed " + record.getName() + ".");
             sender.sendMessage(ChatColor.GREEN + "Removed " + record.getName() + ".");
             sender.sendMessage(ChatColor.YELLOW + "Restart the server for the removal to take effect.");
             sender.sendMessage(ChatColor.YELLOW + "To reinstall, run " + ChatColor.WHITE + "/dpm get " + record.getName() + ChatColor.YELLOW + ".");
         } else {
+            plugin.getLogger().warning("[DPM] Failed to delete " + jar.getName() + " — check server file permissions.");
             sender.sendMessage(ChatColor.RED + "Failed to delete " + jar.getName() + ". Check server file permissions.");
         }
         return true;
