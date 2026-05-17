@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Docker-based integration test CI (`integration-test/test_dpm.py` + `.github/workflows/integration.yml`) that spins up an OMCSI Spigot stack, deploys DPM, and asserts `dpm list`, `dpm get`, and `dpm search` produce the expected output; runs on workflow dispatch and nightly schedule
 - `/dpm get` now auto-downloads missing hard dependencies that are registered DPC plugins before downloading the requested plugin(s); transitive dependencies are resolved recursively and circular chains are handled safely. Dependencies that are not registered DPC plugins still produce a warning.
 - `/dpm update [plugin-name ...]` — when plugin names are provided, only those plugins are updated; tab-completion offers installed plugin names at every argument position
 - `/dpm search <keyword>` — searches registered plugin names and descriptions (case-insensitive substring match); results are colour-coded by install status

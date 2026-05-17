@@ -1,0 +1,99 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # 02:00 UTC daily
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout DPM
+        uses: actions/checkout@v4
+
+      - name: Checkout OMCSI
+        uses: actions/checkout@v4
+        with:
+          repository: dmccoystephenson/omcsi
+          token: ${{ secrets.OMCSI_GITHUB_TOKEN }}
+          path: omcsi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build DPM JAR
+        run: mvn package -DskipTests -q
+
+      - name: Locate built JAR
+        id: jar
+        run: |
+          path=$(ls target/DansPluginManager-*.jar | grep -v original | head -1)
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install requests
+
+      - name: Configure OMCSI environment
+        run: |
+          {
+            echo "DEPLOY_AUTH_TOKEN=${{ secrets.OMCSI_DEPLOY_TOKEN }}"
+            echo "RCON_PASSWORD=${{ secrets.OMCSI_RCON_PASSWORD }}"
+            echo "ONLINE_MODE=false"
+            echo "DISCORD_WEBHOOK_URL="
+            echo "ALERT_EMAIL="
+          } > omcsi/.env
+
+      # Cache the compiled Spigot image layers so the 10–15 min first-run
+      # compilation is skipped on subsequent runs with the same Dockerfiles.
+      - name: Cache OMCSI Docker images
+        id: docker-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/omcsi-images.tar
+          key: omcsi-docker-${{ hashFiles('omcsi/**/Dockerfile', 'omcsi/docker-compose.yml') }}
+          restore-keys: omcsi-docker-
+
+      - name: Load cached Docker images
+        if: steps.docker-cache.outputs.cache-hit == 'true'
+        run: docker load < /tmp/omcsi-images.tar
+
+      - name: Build OMCSI Docker stack
+        working-directory: omcsi
+        env:
+          DOCKER_BUILDKIT: '1'
+          BUILDKIT_PROGRESS: plain
+        run: docker compose build
+
+      - name: Save Docker images to cache
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: |
+          docker compose -f omcsi/docker-compose.yml images -q \
+            | sort -u \
+            | xargs docker save > /tmp/omcsi-images.tar
+
+      - name: Start OMCSI stack
+        working-directory: omcsi
+        run: docker compose up -d
+
+      - name: Run integration tests
+        env:
+          OMCSI_API_BASE: http://localhost:8092
+          OMCSI_DEPLOY_TOKEN: ${{ secrets.OMCSI_DEPLOY_TOKEN }}
+          DPM_JAR_PATH: ${{ steps.jar.outputs.path }}
+        run: python integration-test/test_dpm.py
+
+      - name: Tear down OMCSI stack
+        if: always()
+        working-directory: omcsi
+        run: docker compose down
