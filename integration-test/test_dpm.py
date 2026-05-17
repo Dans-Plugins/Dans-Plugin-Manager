@@ -90,7 +90,8 @@ def deploy_jar(path):
         _api(
             "POST",
             "/api/plugins/deploy",
-            files={"file": ("plugin.jar", jar, "application/java-archive")},
+            data={"pluginName": "DansPluginManager.jar"},
+            files={"file": ("DansPluginManager.jar", jar, "application/java-archive")},
         )
     print(f"  deployed {path}")
 
