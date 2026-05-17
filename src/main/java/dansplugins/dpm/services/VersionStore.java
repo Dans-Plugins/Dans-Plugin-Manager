@@ -7,13 +7,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-/**
- * Persists the last-downloaded release tag for each managed plugin so that
- * re-downloads can be skipped when the plugin is already on the latest version.
- *
- * Tags are keyed by lower-cased plugin name and stored in a .properties file
- * inside the plugin's data folder.
- */
 public class VersionStore {
     private static final Logger LOGGER = Logger.getLogger(VersionStore.class.getName());
 

@@ -13,6 +13,7 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UpdateCommand extends AbstractPluginCommand {
@@ -52,18 +53,24 @@ public class UpdateCommand extends AbstractPluginCommand {
     }
 
     private boolean executeSelective(CommandSender sender, String[] names) {
-        List<ProjectRecord> toUpdate = new ArrayList<>();
+        List<ProjectRecord> candidates = new ArrayList<>();
         for (String name : names) {
             ProjectRecord record = ephemeralData.getProjectRecord(name);
             if (record == null) {
                 sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
-                continue;
+            } else {
+                candidates.add(record);
             }
-            if (!pluginFolderService.isInstalled(record)) {
-                sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed — use /dpm get " + record.getName() + " first.");
-                continue;
+        }
+        Set<String> installedNames = pluginFolderService.filterInstalled(candidates)
+                .stream().map(ProjectRecord::getName).collect(Collectors.toSet());
+        List<ProjectRecord> toUpdate = new ArrayList<>();
+        for (ProjectRecord r : candidates) {
+            if (installedNames.contains(r.getName())) {
+                toUpdate.add(r);
+            } else {
+                sender.sendMessage(ChatColor.YELLOW + r.getName() + " is not installed — use /dpm get " + r.getName() + " first.");
             }
-            toUpdate.add(record);
         }
         if (toUpdate.isEmpty()) return false;
         sender.sendMessage(ChatColor.AQUA + "Checking " + toUpdate.size() + " plugin(s) for updates...");
