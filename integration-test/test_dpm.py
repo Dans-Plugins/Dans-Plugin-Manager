@@ -13,6 +13,7 @@ Optional:
   OMCSI_CONTAINER_NAME  Docker container name for log reading (default: open-mc-server)
 """
 
+import datetime
 import os
 import subprocess
 import sys
@@ -52,6 +53,9 @@ def wait_until_running(timeout=300, poll_interval=10, label="server"):
 
 
 def send_command(cmd):
+    """Send a console command and return a timestamp cursor for scoped log assertions."""
+    # Subtract 1 s so logs emitted in the same second as the command are included.
+    cursor = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
     requests.post(
         f"{API_BASE}/api/server/command",
         headers={**_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
@@ -59,34 +63,38 @@ def send_command(cmd):
         timeout=30,
     ).raise_for_status()
     print(f"  > {cmd}")
+    return cursor
 
 
-def _docker_logs(tail=500):
-    """Read recent container log lines via docker logs."""
-    result = subprocess.run(
-        ["docker", "logs", "--tail", str(tail), CONTAINER],
-        capture_output=True, text=True, timeout=15,
-    )
+def _docker_logs(cursor=None, tail=500):
+    """Return container log output, scoped to lines after *cursor* when provided."""
+    cmd = ["docker", "logs"]
+    if cursor is not None:
+        cmd += ["--since", cursor.isoformat()]
+    else:
+        cmd += ["--tail", str(tail)]
+    cmd.append(CONTAINER)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     # Minecraft server output may appear on either stream depending on the wrapper
     return result.stdout + result.stderr
 
 
-def assert_log_contains(expected, tail=500, retries=6, delay=5):
+def assert_log_contains(expected, cursor=None, tail=500, retries=6, delay=5):
     for attempt in range(1, retries + 1):
-        if expected in _docker_logs(tail):
+        if expected in _docker_logs(cursor=cursor, tail=tail):
             print(f"  PASS: found {expected!r}")
             return
         if attempt < retries:
             print(f"  attempt {attempt}: {expected!r} not in logs yet, retrying in {delay}s...")
             time.sleep(delay)
     print("--- last container logs ---")
-    print(_docker_logs(tail))
+    print(_docker_logs(cursor=cursor, tail=tail))
     sys.exit(f"FAIL: {expected!r} not found after {retries} attempts")
 
 
-def assert_log_contains_any(candidates, tail=500, retries=6, delay=5):
+def assert_log_contains_any(candidates, cursor=None, tail=500, retries=6, delay=5):
     for attempt in range(1, retries + 1):
-        log = _docker_logs(tail)
+        log = _docker_logs(cursor=cursor, tail=tail)
         for expected in candidates:
             if expected in log:
                 print(f"  PASS: found {expected!r}")
@@ -95,7 +103,7 @@ def assert_log_contains_any(candidates, tail=500, retries=6, delay=5):
             print(f"  attempt {attempt}: none of {candidates!r} in logs yet, retrying in {delay}s...")
             time.sleep(delay)
     print("--- last container logs ---")
-    print(_docker_logs(tail))
+    print(_docker_logs(cursor=cursor, tail=tail))
     sys.exit(f"FAIL: none of {candidates!r} found after {retries} attempts")
 
 
@@ -125,39 +133,39 @@ def main():
     wait_until_running(timeout=120, label="server after reload")
 
     print("\n[4] /dpm list — confirm plugin loaded and command routes correctly...")
-    send_command("dpm list")
-    assert_log_contains("=== Plugins")
+    cursor = send_command("dpm list")
+    assert_log_contains("=== Plugins", cursor=cursor)
 
     # Test dependency auto-install: currencies hard-depends on medievalfactions, which is
     # not yet installed. DPM should detect this and download medievalfactions automatically.
     print("\n[5] /dpm get currencies — confirm hard-dependency auto-install...")
-    send_command("dpm get currencies")
-    assert_log_contains("Also downloading required dependency", retries=3, delay=3)
-    assert_log_contains_any(["Downloaded", "already up to date"], retries=8, delay=5)
+    cursor = send_command("dpm get currencies")
+    assert_log_contains("Also downloading required dependency", cursor=cursor, retries=3, delay=3)
+    assert_log_contains_any(["Downloaded", "already up to date"], cursor=cursor, retries=8, delay=5)
 
     print("\n[6] /dpm remove medievalfactions --confirm — confirm file deletion...")
-    send_command("dpm remove medievalfactions --confirm")
-    assert_log_contains("Removed MedievalFactions")
+    cursor = send_command("dpm remove medievalfactions --confirm")
+    assert_log_contains("Removed MedievalFactions", cursor=cursor)
 
     print("\n[7] /dpm list installed — confirm filter shows only installed plugins...")
-    send_command("dpm list installed")
-    assert_log_contains("=== Installed Plugins")
+    cursor = send_command("dpm list installed")
+    assert_log_contains("=== Installed Plugins", cursor=cursor)
 
     print("\n[8] /dpm list available — confirm filter shows only uninstalled plugins...")
-    send_command("dpm list available")
-    assert_log_contains("=== Available Plugins")
+    cursor = send_command("dpm list available")
+    assert_log_contains("=== Available Plugins", cursor=cursor)
 
     print("\n[9] /dpm get medievalfactions — confirm standard download...")
-    send_command("dpm get medievalfactions")
-    assert_log_contains_any(["Downloaded", "already up to date"], retries=8, delay=5)
+    cursor = send_command("dpm get medievalfactions")
+    assert_log_contains_any(["Downloaded", "already up to date"], cursor=cursor, retries=8, delay=5)
 
     print("\n[10] /dpm search faction — confirm registry search...")
-    send_command("dpm search faction")
-    assert_log_contains("=== Search Results")
+    cursor = send_command("dpm search faction")
+    assert_log_contains("=== Search Results", cursor=cursor)
 
     print("\n[11] /dpm get nonexistentplugin — confirm error path...")
-    send_command("dpm get nonexistentplugin")
-    assert_log_contains("Plugin not found: nonexistentplugin")
+    cursor = send_command("dpm get nonexistentplugin")
+    assert_log_contains("Plugin not found: nonexistentplugin", cursor=cursor)
 
     print("\n=== All integration tests passed ===")
 
