@@ -13,6 +13,7 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UpdateCommand extends AbstractPluginCommand {
     private final EphemeralData ephemeralData;
@@ -46,7 +47,33 @@ public class UpdateCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        return execute(sender);
+        if (args.length == 0) return execute(sender);
+        return executeSelective(sender, args);
+    }
+
+    private boolean executeSelective(CommandSender sender, String[] names) {
+        List<ProjectRecord> toUpdate = new ArrayList<>();
+        for (String name : names) {
+            ProjectRecord record = ephemeralData.getProjectRecord(name);
+            if (record == null) {
+                sender.sendMessage(ChatColor.RED + "Plugin not found: " + name);
+                continue;
+            }
+            if (!pluginFolderService.isInstalled(record)) {
+                sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed — use /dpm get " + record.getName() + " first.");
+                continue;
+            }
+            toUpdate.add(record);
+        }
+        if (toUpdate.isEmpty()) return false;
+        sender.sendMessage(ChatColor.AQUA + "Checking " + toUpdate.size() + " plugin(s) for updates...");
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runUpdates(sender, toUpdate));
+        return true;
+    }
+
+    public List<String> getInstalledPluginNames() {
+        return pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords())
+                .stream().map(ProjectRecord::getName).collect(Collectors.toList());
     }
 
     private List<ProjectRecord> getInstalledPlugins() {

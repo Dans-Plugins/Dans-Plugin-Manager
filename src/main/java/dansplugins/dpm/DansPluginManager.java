@@ -44,6 +44,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private VersionStore versionStore;
     private DownloadService downloadService;
     private RemoveCommand removeCommand;
+    private UpdateCommand updateCommand;
 
     /**
      * This runs when the server starts.
@@ -98,6 +99,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             return TabCompleter.filterByPrefix(removeCommand.getInstalledPluginNames(), args[1]);
+        }
+        if (args.length >= 2 && args[0].equalsIgnoreCase("update")) {
+            return TabCompleter.filterByPrefix(updateCommand.getInstalledPluginNames(), args[args.length - 1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("clean")) {
             return TabCompleter.filterByPrefix(CONFIRM_COMPLETION, args[1]);
@@ -183,7 +187,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new ListCommand(ephemeralData, pluginFolderService, versionStore),
                 new StatsCommand(ephemeralData, pluginFolderService),
                 new CleanCommand(ephemeralData, pluginFolderService, this),
-                new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
+                updateCommand = new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
                 new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),
                 new ReloadCommand(this),
                 removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore)

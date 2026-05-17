@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `/dpm update [plugin-name ...]` — when plugin names are provided, only those plugins are updated; tab-completion offers installed plugin names at every argument position
 - `/dpm stats` now shows installed plugin count alongside the total registered count
 - `/dpm reload` — reloads `config.yml` and re-applies live settings (e.g. `githubToken`) without a server restart
 - `/dpm remove <plugin-name> [--confirm]` — previews the JAR to be deleted; pass `--confirm` to actually remove it and clear the stored version tag
