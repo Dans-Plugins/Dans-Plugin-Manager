@@ -30,13 +30,6 @@ public class DownloadService {
         this.versionStore = versionStore;
     }
 
-    /**
-     * Resolves the latest release via the GitHub API. Returns {@link #ALREADY_UP_TO_DATE}
-     * if the stored tag matches the latest tag AND the managed JAR is present on disk.
-     * Otherwise removes conflicting JARs and downloads the new version.
-     * Returns bytes downloaded on success, {@link #NO_RELEASE} if no release has been
-     * published yet, or -1 on other errors.
-     */
     public int downloadLatest(ProjectRecord projectRecord) {
         ReleaseInfo release = gitHubReleaseService.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
         if (release == ReleaseInfo.NO_RELEASE) {

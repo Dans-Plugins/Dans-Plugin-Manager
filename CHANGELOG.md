@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Tab-completion for `/dpm list` offers `installed` and `available`
 
 ### Changed
+- `GitHubReleaseService`: extracted `parseStringField` to eliminate duplicated JSON-parsing logic shared by `parseTagName` and `parsePublishedAt`
+- Removed remaining multi-line Javadoc blocks from `GitHubReleaseService`, `DownloadService`, and `StatsCommand`; kept non-obvious algorithm notes as single `//` lines
 - `UpdateCommand` selective path replaced per-plugin `isInstalled()` calls with a single `filterInstalled()` scan
 - `USER_GUIDE.md` `dpm.list` permission description now covers `/dpm search` (both commands share this node)
 - Removed multi-line Javadoc blocks from `PluginFolderService`, `VersionStore`, `CleanCommand`, and `DefaultCommand` per CLAUDE.md style rule

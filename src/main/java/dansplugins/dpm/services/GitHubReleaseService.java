@@ -38,12 +38,6 @@ public class GitHubReleaseService {
         return apiToken;
     }
 
-    /**
-     * Returns a {@link ReleaseInfo} with the tag name and first .jar asset URL for the
-     * latest release. Returns {@link ReleaseInfo#NO_RELEASE} when GitHub reports 404
-     * (no releases published yet). Returns null when no .jar asset exists or on network errors.
-     * Results are cached for the session; call {@link #clearCache()} to force a fresh fetch.
-     */
     public ReleaseInfo getLatestRelease(String owner, String repo) {
         ReleaseInfo release = fetchRelease(owner, repo);
         if (release == null || release == ReleaseInfo.NO_RELEASE) return release;
@@ -78,21 +72,11 @@ public class GitHubReleaseService {
         return sb.toString();
     }
 
-    /**
-     * Returns a {@link ReleaseInfo} with tag name and publish date for the latest release,
-     * without requiring a downloadable .jar asset. Returns {@link ReleaseInfo#NO_RELEASE}
-     * on 404, or null on network/other errors.
-     * Results are cached for the session; call {@link #clearCache()} to force a fresh fetch.
-     */
     public ReleaseInfo getLatestReleaseMetadata(String owner, String repo) {
         return fetchRelease(owner, repo);
     }
 
-    /**
-     * Returns the cached entry or fetches it. Network errors (null) are never cached so
-     * the next call can retry. The generation counter prevents a fetch that started before
-     * a {@link #clearCache()} from repopulating the cache with pre-reload data.
-     */
+    // generation check prevents a pre-clearCache() fetch from re-populating the cache with stale data
     private ReleaseInfo fetchRelease(String owner, String repo) {
         String key = owner + "/" + repo;
         ReleaseInfo cached = releaseCache.get(key);
@@ -106,11 +90,7 @@ public class GitHubReleaseService {
         return fetched;
     }
 
-    /**
-     * Makes the HTTP request and parses the response. Returns {@link ReleaseInfo#NO_RELEASE}
-     * on 404, null on network/other errors, and a fully-populated {@link ReleaseInfo} on success.
-     * Package-private so tests can override it via anonymous subclass.
-     */
+    // package-private so tests can override via anonymous subclass without hitting the network
     ReleaseInfo doFetch(String owner, String repo) {
         String apiUrl = String.format(API_URL, owner, repo);
         HttpURLConnection connection = null;
@@ -137,12 +117,12 @@ public class GitHubReleaseService {
         }
     }
 
-    /**
-     * Extracts the value of the top-level "tag_name" field. Tag names are simple
-     * strings that never contain backslash escapes, so a direct quote scan suffices.
-     */
-    String parseTagName(String json) {
-        String key = "\"tag_name\"";
+    // direct quote-scan is safe for these fields — values are simple strings with no backslash escapes
+    String parseTagName(String json)     { return parseStringField(json, "tag_name"); }
+    String parsePublishedAt(String json) { return parseStringField(json, "published_at"); }
+
+    private String parseStringField(String json, String fieldName) {
+        String key = "\"" + fieldName + "\"";
         int keyIndex = json.indexOf(key);
         if (keyIndex == -1) return null;
         int colonIndex = json.indexOf(':', keyIndex + key.length());
@@ -154,28 +134,7 @@ public class GitHubReleaseService {
         return json.substring(openQuote + 1, closeQuote);
     }
 
-    /**
-     * Extracts the value of the top-level "published_at" field (ISO 8601 date string).
-     * Uses the same quote-scan approach as parseTagName.
-     */
-    String parsePublishedAt(String json) {
-        String key = "\"published_at\"";
-        int keyIndex = json.indexOf(key);
-        if (keyIndex == -1) return null;
-        int colonIndex = json.indexOf(':', keyIndex + key.length());
-        if (colonIndex == -1) return null;
-        int openQuote = json.indexOf('"', colonIndex + 1);
-        if (openQuote == -1) return null;
-        int closeQuote = json.indexOf('"', openQuote + 1);
-        if (closeQuote == -1) return null;
-        return json.substring(openQuote + 1, closeQuote);
-    }
-
-    /**
-     * Extracts the first .jar browser_download_url from within the assets array.
-     * Uses bracket-depth tracking to bound the search strictly to the assets array,
-     * and handles backslash-escaped characters within URL strings.
-     */
+    // bracket-depth tracking bounds the search to the assets array; backslash-escape handling for URL strings
     String parseJarUrlFromAssets(String json) {
         int assetsKeyIndex = json.indexOf("\"assets\":");
         if (assetsKeyIndex == -1) return null;
