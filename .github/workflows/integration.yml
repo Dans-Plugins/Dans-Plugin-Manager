@@ -61,15 +61,13 @@ jobs:
             echo "DIFFICULTY=peaceful"
             echo "GAMEMODE=creative"
             echo "PVP_ENABLED=false"
-            echo "JAVA_OPTS=-Xmx2G -Xms1G"
+            echo "JAVA_OPTS=-Xmx2G -Xms1G -Dlogs.diagnostic.enabled=true -Dlogs.diagnostic.max-lines=200"
             echo "DEPLOY_AUTH_TOKEN=${{ secrets.OMCSI_DEPLOY_TOKEN }}"
             echo "RCON_PASSWORD=${{ secrets.OMCSI_RCON_PASSWORD }}"
             echo "DISCORD_ENABLED=false"
             echo "DISCORD_WEBHOOK_URL="
             echo "ALERT_MANAGER_ENABLED=false"
             echo "AGENT_ENABLED=false"
-            echo "LOGS_DIAGNOSTIC_ENABLED=true"
-            echo "LOGS_DIAGNOSTIC_MAX_LINES=200"
           } > omcsi/.env
 
       # Cache the compiled Spigot image layers so the 10–15 min first-run
