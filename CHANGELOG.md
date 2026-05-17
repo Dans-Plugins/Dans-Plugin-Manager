@@ -18,7 +18,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - One-line descriptions added to all 28 registered plugins; shown by `/dpm info`
 - Dependency declarations on `ProjectRecord` — hard (`depend`) and soft (`softdepend`) DPC-to-DPC relationships sourced from each plugin's `plugin.yml`
 - `/dpm info` shows each dependency and whether it is currently installed
-- `/dpm get` warns when a required hard dependency is not yet installed (download still proceeds)
 - `/dpm get` accepts multiple plugin names: `/dpm get plugin1 plugin2 ...` downloads all named plugins sequentially with per-plugin result lines and a summary
 - `/dpm list installed` shows only plugins whose JAR is present in the plugins folder
 - `/dpm list available` shows only plugins that are not currently installed
