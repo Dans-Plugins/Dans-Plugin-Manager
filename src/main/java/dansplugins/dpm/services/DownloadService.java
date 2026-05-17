@@ -16,6 +16,10 @@ public class DownloadService {
     public static final int NO_RELEASE = -2;
     /** The installed JAR is present and its version matches the latest release. */
     public static final int ALREADY_UP_TO_DATE = -3;
+    /** GitHub or the network was unreachable during the download attempt. */
+    public static final int NETWORK_ERROR = -4;
+    /** The JAR was fetched but could not be written to the plugins folder. */
+    public static final int FILE_ERROR = -5;
 
     private final Logger logger;
     private final GitHubReleaseService gitHubReleaseService;
@@ -43,7 +47,7 @@ public class DownloadService {
         }
         if (release == null) {
             logger.log("Could not resolve release info for " + projectRecord.getName() + ".");
-            return -1;
+            return NETWORK_ERROR;
         }
 
         String latestTag = release.getTagName();
@@ -74,18 +78,29 @@ public class DownloadService {
     }
 
     private int downloadFromUrl(String url, String path) {
+        BufferedInputStream stream;
         try {
-            return readAndWrite(url, path);
+            stream = openNetworkStream(url);
         } catch (IOException e) {
-            logger.log("Something went wrong downloading from " + url + ": " + e.getMessage());
-            return -1;
+            logger.log("Network error reaching " + url + ": " + e.getMessage());
+            return NETWORK_ERROR;
+        }
+        File dest = new File(path);
+        try {
+            return writeStreamToFile(stream, dest);
+        } catch (IOException e) {
+            dest.delete();
+            logger.log("File write error to " + path + ": " + e.getMessage());
+            return FILE_ERROR;
         }
     }
 
-    int readAndWrite(String link, String path) throws IOException {
-        File dest = new File(path);
-        try (BufferedInputStream in = new BufferedInputStream(new URL(link).openStream());
-             FileOutputStream out = new FileOutputStream(dest)) {
+    BufferedInputStream openNetworkStream(String url) throws IOException {
+        return new BufferedInputStream(new URL(url).openStream());
+    }
+
+    private int writeStreamToFile(BufferedInputStream in, File dest) throws IOException {
+        try (in; FileOutputStream out = new FileOutputStream(dest)) {
             int totalBytes = 0;
             byte[] data = new byte[1024];
             int bytesRead;
@@ -94,6 +109,15 @@ public class DownloadService {
                 out.write(data, 0, bytesRead);
             }
             return totalBytes;
+        }
+    }
+
+    // Kept for direct test use — calls openNetworkStream then writeStreamToFile.
+    int readAndWrite(String link, String path) throws IOException {
+        File dest = new File(path);
+        try {
+            BufferedInputStream in = openNetworkStream(link);
+            return writeStreamToFile(in, dest);
         } catch (IOException e) {
             dest.delete();
             throw e;

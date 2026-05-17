@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `/dpm remove <plugin-name> --confirm` now prints a reinstall hint (`/dpm get <name>`) after the removal success message
 - `/dpm update` success message now shows the old and new version tag (e.g. `v4.5.0 → v4.6.3`) when a plugin was previously tagged; shows only the new tag if no prior tag was stored
 - All "Plugin not found" errors across `/dpm get`, `/dpm update`, `/dpm info`, and `/dpm remove` now append `Use /dpm search <keyword> to find the right name.`
+- `/dpm remove` preview and confirm paths now warn when other installed plugins declare a hard dependency on the plugin being removed
+- Download failures now distinguish between network errors (GitHub unreachable) and file write errors (plugins folder not writable), surfacing a specific hint in each case
 
 ## [0.5.0] - 2026-05-17
 

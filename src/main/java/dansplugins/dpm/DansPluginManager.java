@@ -192,7 +192,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 updateCommand = new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, this),
                 new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),
                 new ReloadCommand(this),
-                removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore),
+                removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore, dependencyResolutionService),
                 new SearchCommand(ephemeralData, pluginFolderService, versionStore)
         ));
         commandService.initialize(commands, "That command wasn't found.");
