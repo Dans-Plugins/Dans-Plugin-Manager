@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- JAR download stream now sets a 10 s connect timeout and 30 s read timeout; previously `URL.openStream()` had no timeout, so a hung CDN would stall the async task indefinitely
+- Conflicting JARs (e.g. `Plugin-1.0.0.jar`) are now removed only after a successful download; previously they were deleted before the network call, silently uninstalling the plugin on any download failure
+- JAR write buffer increased from 1 KiB to 8 KiB, reducing I/O cycles for large plugin files
+
 ### Removed
 - Multi-line Javadoc blocks from `HelpCommand`, `DansPluginManager`, `Logger`, and `TabCompleter` (CLAUDE.md violation)
 
