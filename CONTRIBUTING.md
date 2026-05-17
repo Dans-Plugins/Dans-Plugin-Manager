@@ -53,6 +53,10 @@ mvn clean package
 
 The built JAR is in `target/`.
 
+## Integration tests
+
+End-to-end tests deploy DPM against a live Spigot server (via [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure)) and assert real command output. See [`integration-test/README.md`](integration-test/README.md) for setup instructions and the list of required secrets for the CI workflow.
+
 ## Questions
 
 Ask in the [Discord server](https://discord.gg/xXtuAQ2).
