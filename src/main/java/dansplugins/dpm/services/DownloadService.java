@@ -8,6 +8,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 
@@ -57,11 +58,13 @@ public class DownloadService {
             return ALREADY_UP_TO_DATE;
         }
 
-        removeConflictingJars(projectRecord);
         String dest = pluginFolderService.getPluginsFolder() + projectRecord.getName() + ".jar";
         int bytes = downloadFromUrl(release.getJarUrl(), dest);
-        if (bytes > 0 && latestTag != null) {
-            versionStore.setTag(projectRecord.getName(), latestTag);
+        if (bytes > 0) {
+            removeConflictingJars(projectRecord);
+            if (latestTag != null) {
+                versionStore.setTag(projectRecord.getName(), latestTag);
+            }
         }
         return bytes;
     }
@@ -70,9 +73,9 @@ public class DownloadService {
         List<File> conflicts = pluginFolderService.findConflictingJars(projectRecord);
         for (File conflict : conflicts) {
             if (conflict.delete()) {
-                logger.log("Removed conflicting JAR before download: " + conflict.getName());
+                logger.log("Removed older JAR after download: " + conflict.getName());
             } else {
-                logger.log("Failed to remove conflicting JAR: " + conflict.getName());
+                logger.log("Failed to remove older JAR: " + conflict.getName());
             }
         }
     }
@@ -96,15 +99,23 @@ public class DownloadService {
     }
 
     BufferedInputStream openNetworkStream(String url) throws IOException {
-        return new BufferedInputStream(new URL(url).openStream());
+        URL u = new URL(url);
+        String protocol = u.getProtocol();
+        if ("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)) {
+            HttpURLConnection connection = (HttpURLConnection) u.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(30000);
+            return new BufferedInputStream(connection.getInputStream());
+        }
+        return new BufferedInputStream(u.openStream());
     }
 
     private int writeStreamToFile(BufferedInputStream in, File dest) throws IOException {
         try (in; FileOutputStream out = new FileOutputStream(dest)) {
             int totalBytes = 0;
-            byte[] data = new byte[1024];
+            byte[] data = new byte[8192];
             int bytesRead;
-            while ((bytesRead = in.read(data, 0, 1024)) != -1) {
+            while ((bytesRead = in.read(data)) != -1) {
                 totalBytes += bytesRead;
                 out.write(data, 0, bytesRead);
             }
