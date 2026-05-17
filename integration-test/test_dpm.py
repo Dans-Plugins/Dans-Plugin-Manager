@@ -167,6 +167,10 @@ def main():
     cursor = send_command("dpm get nonexistentplugin")
     assert_log_contains("Plugin not found: nonexistentplugin", cursor=cursor)
 
+    print("\n[12] /dpm stats — confirm stats output includes available plugin count...")
+    cursor = send_command("dpm stats")
+    assert_log_contains("Available plugins:", cursor=cursor)
+
     print("\n=== All integration tests passed ===")
 
 

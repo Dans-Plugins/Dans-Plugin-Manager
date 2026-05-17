@@ -82,7 +82,9 @@ public class ListCommand extends AbstractPluginCommand {
         }
         sender.sendMessage(ChatColor.AQUA + "=== Available Plugins (" + available.size() + ") ===");
         for (ProjectRecord record : available) {
-            sender.sendMessage(ChatColor.GRAY + record.getName());
+            String desc = record.getDescription();
+            String suffix = desc != null ? ChatColor.DARK_GRAY + " — " + desc : "";
+            sender.sendMessage(ChatColor.GRAY + record.getName() + suffix);
         }
         return true;
     }

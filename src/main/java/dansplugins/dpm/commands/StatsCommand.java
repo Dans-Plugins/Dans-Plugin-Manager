@@ -21,10 +21,13 @@ public class StatsCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender commandSender) {
+        int total = ephemeralData.getNumProjectRecords();
         int installed = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords()).size();
+        int available = total - installed;
         commandSender.sendMessage(ChatColor.AQUA + "=== DPM Stats ===");
-        commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + ephemeralData.getNumProjectRecords());
+        commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + total);
         commandSender.sendMessage(ChatColor.AQUA + "Installed plugins: " + installed);
+        commandSender.sendMessage(ChatColor.AQUA + "Available plugins: " + available);
         return true;
     }
 

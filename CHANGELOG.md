@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- `/dpm stats` now shows available plugin count (registered minus installed) as a third stat line
+- `/dpm list available` now appends each plugin's description after its name, separated by an em-dash
+- `/dpm remove <plugin-name> --confirm` now prints a reinstall hint (`/dpm get <name>`) after the removal success message
+
 ## [0.5.0] - 2026-05-17
 
 ### Added

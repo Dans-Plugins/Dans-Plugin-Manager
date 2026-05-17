@@ -54,6 +54,7 @@ public class RemoveCommand extends AbstractPluginCommand {
             versionStore.removeTag(record.getName());
             sender.sendMessage(ChatColor.GREEN + "Removed " + record.getName() + ".");
             sender.sendMessage(ChatColor.YELLOW + "Restart the server for the removal to take effect.");
+            sender.sendMessage(ChatColor.YELLOW + "To reinstall, run " + ChatColor.WHITE + "/dpm get " + record.getName() + ChatColor.YELLOW + ".");
         } else {
             sender.sendMessage(ChatColor.RED + "Failed to delete " + jar.getName() + ". Check server file permissions.");
         }
