@@ -17,27 +17,29 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 
 | Step | Command | Assertion |
 |------|---------|-----------|
-| 4 | `dpm list` | `=== Plugins` in logs — confirms plugin loaded and command routes correctly |
-| 5 | `dpm get medievalfactions` | `Downloaded` or `already up to date` in logs — confirms real GitHub API call and file write |
-| 6 | `dpm search faction` | `=== Search Results` in logs — confirms search over the registered plugin registry |
+| 4 | `dpm list` | `=== Plugins` — confirms plugin loaded and command routes correctly |
+| 5 | `dpm get currencies` | `Also downloading required dependency` + `Downloaded` — confirms hard-dependency auto-install triggers when dep is missing |
+| 6 | `dpm remove medievalfactions --confirm` | `Removed MedievalFactions` — confirms JAR is deleted from plugins folder |
+| 7 | `dpm list installed` | `=== Installed Plugins` — confirms installed-only filter |
+| 8 | `dpm list available` | `=== Available Plugins` — confirms available-only filter |
+| 9 | `dpm get medievalfactions` | `Downloaded` or `already up to date` — confirms real GitHub API call and file write |
+| 10 | `dpm search faction` | `=== Search Results` — confirms registry search |
+| 11 | `dpm get nonexistentplugin` | `Plugin not found: nonexistentplugin` — confirms error path doesn't crash the server |
 
 ## What is not yet covered
 
 | Area | Notes |
 |------|-------|
-| `dpm update` / `dpm update <name>` | Not tested; exercises the same download path as `dpm get` but with version comparison |
-| `dpm remove <name> [--confirm]` | Not tested; requires a plugin to be installed first |
-| `dpm clean [--confirm]` | Not tested; requires duplicate JARs to be present |
-| `dpm info <name>` | Not tested; mainly a display command, low regression risk |
-| `dpm stats` | Not tested; low regression risk |
-| `dpm reload` | Not tested; would confirm `githubToken` config reloads correctly |
-| `dpm list installed` / `dpm list available` | Filter flags not exercised |
-| `dpm get` with hard dependencies | Auto-install of declared `hardDependencies` not verified end-to-end |
-| `dpm get <multiple names>` | Batch mode not tested |
-| Permission enforcement | Console has all permissions; player-level permission checks are not exercised |
-| Error paths | Plugin-not-found, network failure, and invalid-arg responses are not asserted |
+| `dpm update` / `dpm update <name>` | Exercises the same download path as `dpm get` but with version comparison; low incremental value |
+| `dpm clean [--confirm]` | Requires duplicate JARs to be present; hard to set up reliably in CI |
+| `dpm info <name>` | Mainly a display command; low regression risk |
+| `dpm stats` | Low regression risk |
+| `dpm reload` | Would confirm `githubToken` config reloads without server restart |
+| `dpm get <multiple names>` | Batch mode not tested; same download code path as single |
+| Permission enforcement | Console has all permissions; player-level permission checks cannot be exercised without a player login |
+| Network failure / download error paths | Hard to simulate reliably in CI |
 | Tab-completion | Cannot be tested via console API |
-| Config `githubToken` | Authenticated GitHub API not tested (unauthenticated rate limit applies) |
+| Config `githubToken` | Authenticated GitHub API not tested; unauthenticated rate limit applies in CI |
 
 ## Prerequisites
 

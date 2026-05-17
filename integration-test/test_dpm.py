@@ -61,7 +61,7 @@ def send_command(cmd):
     print(f"  > {cmd}")
 
 
-def _docker_logs(tail=200):
+def _docker_logs(tail=500):
     """Read recent container log lines via docker logs."""
     result = subprocess.run(
         ["docker", "logs", "--tail", str(tail), CONTAINER],
@@ -124,18 +124,40 @@ def main():
     time.sleep(15)
     wait_until_running(timeout=120, label="server after reload")
 
-    print("\n[4] /dpm list — expect '=== Plugins'...")
+    print("\n[4] /dpm list — confirm plugin loaded and command routes correctly...")
     send_command("dpm list")
     assert_log_contains("=== Plugins")
 
-    print("\n[5] /dpm get medievalfactions — expect download confirmation...")
-    send_command("dpm get medievalfactions")
-    # "Downloaded" on first run; "already up to date" on subsequent runs
+    # Test dependency auto-install: currencies hard-depends on medievalfactions, which is
+    # not yet installed. DPM should detect this and download medievalfactions automatically.
+    print("\n[5] /dpm get currencies — confirm hard-dependency auto-install...")
+    send_command("dpm get currencies")
+    assert_log_contains("Also downloading required dependency", retries=3, delay=3)
     assert_log_contains_any(["Downloaded", "already up to date"], retries=8, delay=5)
 
-    print("\n[6] /dpm search faction — expect '=== Search Results'...")
+    print("\n[6] /dpm remove medievalfactions --confirm — confirm file deletion...")
+    send_command("dpm remove medievalfactions --confirm")
+    assert_log_contains("Removed MedievalFactions")
+
+    print("\n[7] /dpm list installed — confirm filter shows only installed plugins...")
+    send_command("dpm list installed")
+    assert_log_contains("=== Installed Plugins")
+
+    print("\n[8] /dpm list available — confirm filter shows only uninstalled plugins...")
+    send_command("dpm list available")
+    assert_log_contains("=== Available Plugins")
+
+    print("\n[9] /dpm get medievalfactions — confirm standard download...")
+    send_command("dpm get medievalfactions")
+    assert_log_contains_any(["Downloaded", "already up to date"], retries=8, delay=5)
+
+    print("\n[10] /dpm search faction — confirm registry search...")
     send_command("dpm search faction")
     assert_log_contains("=== Search Results")
+
+    print("\n[11] /dpm get nonexistentplugin — confirm error path...")
+    send_command("dpm get nonexistentplugin")
+    assert_log_contains("Plugin not found: nonexistentplugin")
 
     print("\n=== All integration tests passed ===")
 
