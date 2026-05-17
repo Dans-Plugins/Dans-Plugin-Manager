@@ -2,13 +2,42 @@
 
 End-to-end tests that deploy DPM to a live Spigot server (via [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure)) and assert that key commands produce the expected output.
 
+## Why this exists
+
+Unit tests can verify parsing logic and service behaviour in isolation, but they cannot catch:
+
+- **Real GitHub API failures** — rate limits, renamed repos, changed release JSON shape
+- **Real file-system behaviour** — JAR placement, duplicate detection, version-tag storage
+- **Real Bukkit command routing** — whether the command is registered, dispatched, and reaches the right handler on a live server
+- **Plugin load failures** — a JAR that passes unit tests can still fail to enable on a real Spigot version due to API incompatibilities
+
+These tests exercise the full stack: Maven build → JAR deploy → Spigot reload → console command → log assertion.
+
 ## What the tests cover
 
 | Step | Command | Assertion |
 |------|---------|-----------|
-| 4 | `dpm list` | `=== Plugins` in logs |
-| 5 | `dpm get medievalfactions` | `Downloaded` or `already up to date` in logs |
-| 6 | `dpm search faction` | `=== Search Results` in logs |
+| 4 | `dpm list` | `=== Plugins` in logs — confirms plugin loaded and command routes correctly |
+| 5 | `dpm get medievalfactions` | `Downloaded` or `already up to date` in logs — confirms real GitHub API call and file write |
+| 6 | `dpm search faction` | `=== Search Results` in logs — confirms search over the registered plugin registry |
+
+## What is not yet covered
+
+| Area | Notes |
+|------|-------|
+| `dpm update` / `dpm update <name>` | Not tested; exercises the same download path as `dpm get` but with version comparison |
+| `dpm remove <name> [--confirm]` | Not tested; requires a plugin to be installed first |
+| `dpm clean [--confirm]` | Not tested; requires duplicate JARs to be present |
+| `dpm info <name>` | Not tested; mainly a display command, low regression risk |
+| `dpm stats` | Not tested; low regression risk |
+| `dpm reload` | Not tested; would confirm `githubToken` config reloads correctly |
+| `dpm list installed` / `dpm list available` | Filter flags not exercised |
+| `dpm get` with hard dependencies | Auto-install of declared `hardDependencies` not verified end-to-end |
+| `dpm get <multiple names>` | Batch mode not tested |
+| Permission enforcement | Console has all permissions; player-level permission checks are not exercised |
+| Error paths | Plugin-not-found, network failure, and invalid-arg responses are not asserted |
+| Tab-completion | Cannot be tested via console API |
+| Config `githubToken` | Authenticated GitHub API not tested (unauthenticated rate limit applies) |
 
 ## Prerequisites
 
@@ -28,11 +57,18 @@ git clone https://github.com/dmccoystephenson/open-mc-server-infrastructure ../o
 **2. Create `../omcsi/.env`** with the following values:
 
 ```
-DEPLOY_AUTH_TOKEN=<your-token>
-RCON_PASSWORD=<any-password>
+MINECRAFT_VERSION=26.1
+OPERATOR_UUID=00000000-0000-0000-0000-000000000001
+OPERATOR_NAME=LocalDev
+OPERATOR_LEVEL=4
 ONLINE_MODE=false
-DISCORD_WEBHOOK_URL=
-ALERT_EMAIL=
+OVERWRITE_EXISTING_SERVER=true
+SERVER_MOTD=DPM Integration Test
+JAVA_OPTS=-Xmx2G -Xms1G
+DEPLOY_AUTH_TOKEN=<any-token>
+RCON_PASSWORD=<any-password>
+DISCORD_ENABLED=false
+AGENT_ENABLED=false
 ```
 
 **3. Start the stack** (first run compiles Spigot from source — allow 10–15 min):
@@ -60,7 +96,7 @@ python integration-test/test_dpm.py
 **6. Tear down** when done:
 
 ```bash
-docker compose -f ../omcsi/docker-compose.yml down
+docker compose -f ../omcsi/compose.yml down
 ```
 
 ## Required GitHub Actions secrets
@@ -73,9 +109,9 @@ docker compose -f ../omcsi/docker-compose.yml down
 
 ## OMCSI REST API reference
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/server/status` | Returns `{"running": true/false}` |
-| `POST` | `/api/plugins/deploy` | Multipart upload of JAR; Bearer auth required |
-| `POST` | `/api/server/command` | JSON `{"command": "..."}` sent to console; Bearer auth required |
-| `GET` | `/api/server/logs?lines=N` | Returns last N lines of `logs/latest.log` |
+| Method | Path | Auth | Body | Description |
+|--------|------|------|------|-------------|
+| `GET` | `/api/server/status` | none | — | Returns `{"running": true/false}` |
+| `POST` | `/api/plugins/deploy` | Bearer | multipart: `pluginName` (filename) + `file` (JAR) | Writes JAR to plugins directory |
+| `POST` | `/api/server/command` | none | `text/plain` command string | Sends raw console command via FIFO |
+| `GET` | `/api/server/logs?lines=N` | none | — | Returns last N lines as JSON; requires `LOGS_DIAGNOSTIC_ENABLED=true` in container env |
