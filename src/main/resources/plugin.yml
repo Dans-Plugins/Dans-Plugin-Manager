@@ -26,3 +26,5 @@ permissions:
     default: op
   dpm.remove:
     default: op
+  dpm.search:
+    default: true
