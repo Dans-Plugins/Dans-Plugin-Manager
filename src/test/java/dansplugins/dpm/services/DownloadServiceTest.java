@@ -189,6 +189,49 @@ class DownloadServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // removeConflictingJars — ordering relative to download
+    // -------------------------------------------------------------------------
+
+    @Test
+    void downloadLatest_doesNotRemoveConflictingJars_whenDownloadFails(@TempDir Path tempDir) throws IOException {
+        File conflicting = tempDir.resolve("testplugin-1.0.0.jar").toFile();
+        Files.write(conflicting.toPath(), new byte[]{1, 2, 3});
+
+        Logger noOpLogger = new Logger(null) {
+            @Override public void log(String message) {}
+        };
+        PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
+        DownloadService svc = new DownloadService(noOpLogger,
+                fakeRelease("v2.0.0", "http://localhost:1/nonexistent.jar"),
+                pluginFolderService, versionStore(tempDir));
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.NETWORK_ERROR, svc.downloadLatest(record));
+        assertTrue(conflicting.exists(), "Conflicting JAR must survive a failed download");
+    }
+
+    @Test
+    void downloadLatest_removesConflictingJars_afterSuccessfulDownload(@TempDir Path tempDir) throws IOException {
+        File conflicting = tempDir.resolve("testplugin-1.0.0.jar").toFile();
+        Files.write(conflicting.toPath(), new byte[]{1, 2, 3});
+
+        File src = tempDir.resolve("source.jar").toFile();
+        Files.write(src.toPath(), new byte[]{4, 5, 6});
+
+        Logger noOpLogger = new Logger(null) {
+            @Override public void log(String message) {}
+        };
+        PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
+        DownloadService svc = new DownloadService(noOpLogger,
+                fakeRelease("v2.0.0", src.toURI().toString()),
+                pluginFolderService, versionStore(tempDir));
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertTrue(svc.downloadLatest(record) > 0);
+        assertFalse(conflicting.exists(), "Conflicting JAR must be removed after a successful download");
+    }
+
+    // -------------------------------------------------------------------------
     // downloadFromUrl — error code distinction
     // -------------------------------------------------------------------------
 
