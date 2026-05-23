@@ -53,6 +53,23 @@ mvn clean package
 
 The built JAR is in `target/`.
 
+### Local test server (Docker)
+
+A local Spigot test server is provided for manual testing of the plugin. It uses the same pattern as Medieval-Factions, with [ServerUtils](https://github.com/Frooshant/ServerUtils) bundled for plugin hot-reloading.
+
+Prerequisites: Docker with Compose v2 (`docker compose`).
+
+1. Create a local `.env`: `cp sample.env .env` (edit `OPERATOR_UUID` / `OPERATOR_NAME` to your own).
+2. Build the plugin: `mvn clean package`
+3. Start the test server: `./up.sh` (first run compiles Spigot from BuildTools — allow 10–15 min)
+4. Connect a Minecraft client to `localhost:25565`
+5. After making code changes, rebuild and hot-reload: `./reload-plugin.sh`
+6. Stop the server: `./down.sh`
+
+The test server's working directory is mounted at `./testmcserver/` and is gitignored. To wipe and re-create the server from scratch, set `OVERWRITE_EXISTING_SERVER=true` in `.env` and run `./up.sh` again.
+
+Run `./test-integration.sh` to verify the required files are present before starting the container.
+
 ## Integration tests
 
 End-to-end tests deploy DPM against a live Spigot server (via [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure)) and assert real command output. See [`integration-test/README.md`](integration-test/README.md) for setup instructions and the list of required secrets for the CI workflow.

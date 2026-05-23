@@ -98,6 +98,10 @@ $RECYCLE.BIN/
 
 target/
 
+# Test container working directory and local env
+testmcserver/
+.env
+
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
