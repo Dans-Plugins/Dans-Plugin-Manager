@@ -53,7 +53,11 @@ if [ ! -f "$OMCSI_PATH/.env" ]; then
     update_env RCON_PASSWORD "${RCON_PASSWORD}"
     update_env ADMIN_PASSWORD "${ADMIN_PASSWORD}"
     update_env ONLINE_MODE false
+    # Enable the diagnostic logs endpoint so ./dpm-cmd.sh can tail server output.
+    update_env LOGS_DIAGNOSTIC_ENABLED true
     echo "    Edit $OMCSI_PATH/.env directly to tune anything else (memory, MOTD, etc.)"
+    echo "    Note: if you later change DEPLOY_AUTH_TOKEN in this repo's .env, also update"
+    echo "          $OMCSI_PATH/.env to match — they must agree for plugin-deploy to succeed."
 fi
 
 # 3) Build the plugin

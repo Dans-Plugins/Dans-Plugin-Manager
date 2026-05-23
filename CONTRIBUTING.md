@@ -60,14 +60,14 @@ A local Spigot test server is provided for manual testing of the plugin. It is a
 Prerequisites: Docker with Compose v2 (`docker compose`), Maven, Git, `curl`. Run `./test-integration.sh` to verify.
 
 1. `cp sample.env .env` and edit if you want a custom operator UUID/name.
-2. `./up.sh` — clones OMCSI to `../omcsi` (first run only; allow 10–15 min while Spigot is built from BuildTools), starts the stack, builds DPM, and hot-deploys it via OMCSI's plugin-deploy API.
+2. `./up.sh` — clones OMCSI to `../omcsi` if missing, builds DPM, starts the OMCSI stack (first run only: allow 10–15 min while Spigot is built from BuildTools), then hot-deploys the JAR via OMCSI's plugin-deploy API.
 3. `./dpm-cmd.sh "dpm list"` — sends a console command to the running server and prints the recent log lines. Lets you exercise `/dpm` commands without joining the server in a Minecraft client.
 4. `./reload-plugin.sh` — rebuilds DPM and hot-redeploys to the running server.
 5. `./down.sh` — stops the OMCSI stack.
 
-You can also connect a Minecraft client to `localhost:25565` to test in-game. Set `OVERWRITE_EXISTING_SERVER=true` in `.env` to wipe the server's persistent data on the next `./up.sh`.
+You can also connect a Minecraft client to `localhost:25565` to test in-game. To wipe the server's persistent data, set `OVERWRITE_EXISTING_SERVER=true` in `../omcsi/.env` (not this repo's `.env` — see the next paragraph) and run `./up.sh` again.
 
-Anything OMCSI-specific (memory, MOTD, BlueMap, alerts, etc.) can be tuned in `../omcsi/.env` directly; see [OMCSI's `sample.env`](https://github.com/dmccoystephenson/open-mc-server-infrastructure/blob/main/sample.env) for the full list.
+Anything OMCSI-specific (memory, MOTD, BlueMap, alerts, etc.) can be tuned in `../omcsi/.env` directly; see [OMCSI's `sample.env`](https://github.com/dmccoystephenson/open-mc-server-infrastructure/blob/main/sample.env) for the full list. `up.sh` seeds `../omcsi/.env` only on first run — if you later change `DEPLOY_AUTH_TOKEN` (or any other shared value) in this repo's `.env`, update `../omcsi/.env` to match, or delete `../omcsi/.env` to have `up.sh` regenerate it.
 
 ## Integration tests
 

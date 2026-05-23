@@ -26,6 +26,7 @@ source .env
 set +a
 
 OMCSI_API_BASE="${OMCSI_API_BASE:-http://localhost:8092}"
+OMCSI_PATH="${OMCSI_PATH:-../omcsi}"
 CMD="$1"
 TAIL="${LOG_TAIL:-60}"
 
@@ -44,9 +45,8 @@ curl -fsS -X POST "$OMCSI_API_BASE/api/server/command" \
 sleep 1
 
 echo "--- last $TAIL log lines ---"
-curl -fsS "$OMCSI_API_BASE/api/server/logs?lines=${TAIL}" \
-    -H "Authorization: Bearer ${DEPLOY_AUTH_TOKEN}" \
-    || {
-        echo "(GET /api/server/logs failed — set LOGS_DIAGNOSTIC_ENABLED=true in $OMCSI_PATH/.env to enable)" >&2
-        exit 1
-    }
+if ! curl -fsS "$OMCSI_API_BASE/api/server/logs?lines=${TAIL}"; then
+    echo "(GET /api/server/logs failed. up.sh seeds LOGS_DIAGNOSTIC_ENABLED=true on first run;" >&2
+    echo " if you regenerated $OMCSI_PATH/.env from sample.env, set it back to true and restart.)" >&2
+    exit 1
+fi
