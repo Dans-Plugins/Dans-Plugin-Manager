@@ -3,7 +3,7 @@
 # (driven by OMCSI) are in place.
 
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 
 fail=0
 
@@ -31,7 +31,16 @@ echo "=== DPM Test Server Sanity Check ==="
 echo
 
 echo "Checking required commands..."
-check_command docker
+if command -v docker >/dev/null 2>&1 && docker version >/dev/null 2>&1; then
+    echo "✓ docker is installed and the daemon is reachable"
+elif command -v docker >/dev/null 2>&1; then
+    echo "✗ docker binary found but the daemon is not reachable"
+    echo "    (on WSL, enable Docker Desktop → Settings → Resources → WSL Integration)"
+    fail=1
+else
+    echo "✗ docker not found in PATH"
+    fail=1
+fi
 check_command mvn
 check_command curl
 check_command git
