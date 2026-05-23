@@ -53,6 +53,10 @@ Filesystem tests use `@TempDir Path tempDir` and construct a `PluginFolderServic
 - Command classes depend on Bukkit and cannot be unit tested here. Cover the underlying services instead.
 - When a bug is fixed, add a regression test that would have caught it.
 
+**`HttpURLConnection` parameter-shadow gotcha**: when creating anonymous `HttpURLConnection` subclasses in tests, never name a parameter or local `responseCode` — `HttpURLConnection` has a protected `int responseCode` field that shadows it, so a `getResponseCode()` override returns the field (`-1`) instead of the value you passed in. Use `statusCode` or similar. The code compiles cleanly and the failure messages don't point at the root cause, so this can waste a full compile-test cycle.
+
+**Retry/sleep override pattern**: when adding retry logic with `Thread.sleep` (or equivalent) to a service method, extract the sleep into a package-private `void sleepMs(long ms)` method — same anonymous-subclass pattern as `doFetch()`/`openNetworkStream()`. Tests override it to a no-op so retries execute immediately. When you add retry to an *existing* method, audit tests that call it with always-failing URLs (e.g. `localhost:1`) — they will now incur the retry delay unless they also override `sleepMs`.
+
 ## Integration test suite
 
 `integration-test/test_dpm.py` runs DPM commands against a live Spigot server and asserts on console output. See `integration-test/README.md` for the full coverage picture.
