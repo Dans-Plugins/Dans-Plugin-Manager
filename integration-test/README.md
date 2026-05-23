@@ -19,7 +19,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 |------|---------|-----------|
 | 4 | `dpm list` | `=== Plugins` — confirms plugin loaded and command routes correctly |
 | 5 | `dpm get currencies` | `Also downloading required dependency` + `Downloaded` — confirms hard-dependency auto-install triggers when dep is missing |
-| 6 | `dpm remove medievalfactions --confirm` | `Removed MedievalFactions` — confirms JAR is deleted from plugins folder |
+| 6 | `dpm remove medievalfactions --confirm` | `Removed medievalfactions` — confirms JAR is deleted from plugins folder |
 | 7 | `dpm list installed` | `=== Installed Plugins` — confirms installed-only filter |
 | 8 | `dpm list available` | `=== Available Plugins` — confirms available-only filter |
 | 9 | `dpm get medievalfactions` | `Downloaded` or `already up to date` — confirms real GitHub API call and file write |
@@ -43,62 +43,34 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 
 ## Prerequisites
 
-- Docker with Compose v2 (`docker compose`)
-- Access to the [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) repository
+- Docker with Compose v2 (`docker compose`), Maven, `curl`, Git — `./test-integration.sh` in the repo root verifies these
 - Python 3.9+ and `pip install requests`
-- A built DPM JAR (`mvn package -DskipTests`)
 
 ## Running locally
 
-**1. Clone OMCSI** next to this repo (or anywhere):
+The repo root's `./up.sh` handles cloning OMCSI, configuring its `.env`, building DPM, starting the stack, and deploying the JAR. See [CONTRIBUTING.md](../CONTRIBUTING.md#local-test-server-via-omcsi) for the full description.
+
+**1. Start the test server** (first run compiles Spigot from BuildTools — allow 10–15 min):
 
 ```bash
-git clone https://github.com/dmccoystephenson/open-mc-server-infrastructure ../omcsi
+cp sample.env .env    # one-time; edit values if you like
+./up.sh
 ```
 
-**2. Create `../omcsi/.env`** with the following values:
-
-```
-MINECRAFT_VERSION=26.1
-OPERATOR_UUID=00000000-0000-0000-0000-000000000001
-OPERATOR_NAME=LocalDev
-OPERATOR_LEVEL=4
-ONLINE_MODE=false
-OVERWRITE_EXISTING_SERVER=true
-SERVER_MOTD=DPM Integration Test
-JAVA_OPTS=-Xmx2G -Xms1G
-DEPLOY_AUTH_TOKEN=<any-token>
-RCON_PASSWORD=<any-password>
-DISCORD_ENABLED=false
-AGENT_ENABLED=false
-```
-
-**3. Start the stack** (first run compiles Spigot from source — allow 10–15 min):
+**2. Run the test harness** against the running server:
 
 ```bash
-cd ../omcsi
-docker compose up -d --build
-```
-
-**4. Build DPM** from the repo root:
-
-```bash
-mvn package -DskipTests
-```
-
-**5. Run the test harness**:
-
-```bash
-export OMCSI_API_BASE=http://localhost:8092
-export OMCSI_DEPLOY_TOKEN=<your-token>
+# Source .env to pick up DEPLOY_AUTH_TOKEN and OMCSI_API_BASE.
+set -a; source .env; set +a
+export OMCSI_DEPLOY_TOKEN="$DEPLOY_AUTH_TOKEN"
 export DPM_JAR_PATH=$(ls target/DansPluginManager-*.jar | grep -v original | head -1)
 python integration-test/test_dpm.py
 ```
 
-**6. Tear down** when done:
+**3. Tear down** when done:
 
 ```bash
-docker compose -f ../omcsi/compose.yml down
+./down.sh
 ```
 
 ## Required GitHub Actions secrets
