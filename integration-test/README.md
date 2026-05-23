@@ -19,7 +19,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 |------|---------|-----------|
 | 4 | `dpm list` | `=== Plugins` — confirms plugin loaded and command routes correctly |
 | 5 | `dpm get currencies` | `Also downloading required dependency` + `Downloaded` — confirms hard-dependency auto-install triggers when dep is missing |
-| 6 | `dpm remove medievalfactions --confirm` | `Removed MedievalFactions` — confirms JAR is deleted from plugins folder |
+| 6 | `dpm remove medievalfactions --confirm` | `Removed medievalfactions` — confirms JAR is deleted from plugins folder |
 | 7 | `dpm list installed` | `=== Installed Plugins` — confirms installed-only filter |
 | 8 | `dpm list available` | `=== Available Plugins` — confirms available-only filter |
 | 9 | `dpm get medievalfactions` | `Downloaded` or `already up to date` — confirms real GitHub API call and file write |
