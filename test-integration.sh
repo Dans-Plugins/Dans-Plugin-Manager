@@ -1,39 +1,71 @@
 #!/bin/bash
+# Sanity check that the prerequisites for running the local test server
+# (driven by OMCSI) are in place.
 
-# Simple verification script to ensure the ServerUtils integration works
-# This script will start the test server briefly to verify all plugins load correctly
+set -uo pipefail
+cd "$(dirname "$0")"
 
-echo "=== Dans Plugin Manager Test Server Integration Test ==="
-echo
+fail=0
 
-# Check if required files exist
-echo "Checking required files..."
-required_files=(
-    ".testcontainer/jars/ServerUtils-Bukkit-3.5.4.jar"
-    ".testcontainer/post-create.sh"
-    "sample.env"
-    "compose.yml"
-    "reload-plugin.sh"
-)
+check_command() {
+    local cmd="$1"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        echo "✓ $cmd is installed"
+    else
+        echo "✗ $cmd not found in PATH"
+        fail=1
+    fi
+}
 
-for file in "${required_files[@]}"; do
+check_file() {
+    local file="$1"
     if [ -f "$file" ]; then
         echo "✓ $file exists"
     else
         echo "✗ $file missing"
-        exit 1
+        fail=1
     fi
-done
+}
+
+echo "=== DPM Test Server Sanity Check ==="
+echo
+
+echo "Checking required commands..."
+check_command docker
+check_command mvn
+check_command curl
+check_command git
 
 echo
-echo "ServerUtils integration is ready!"
+echo "Checking required files..."
+check_file sample.env
+
+if [ ! -f .env ]; then
+    echo "! .env not found — run: cp sample.env .env"
+fi
+
 echo
-echo "To test the full integration:"
-echo "1. Create .env file: cp sample.env .env"
-echo "2. Set SERVERUTILS_ENABLED=true in .env"
-echo "3. Start test server: ./up.sh"
-echo "4. Check server logs to confirm ServerUtils loads"
-echo "5. Use /serverutils list in-game to verify"
-echo "6. Test plugin reloading with: ./reload-plugin.sh"
+OMCSI_PATH="$(grep -E '^OMCSI_PATH=' sample.env | cut -d= -f2-)"
+[ -f .env ] && OMCSI_PATH="$(grep -E '^OMCSI_PATH=' .env | cut -d= -f2- || true)"
+OMCSI_PATH="${OMCSI_PATH:-../omcsi}"
+if [ -d "$OMCSI_PATH/.git" ]; then
+    echo "✓ OMCSI checkout present at $OMCSI_PATH"
+else
+    echo "! OMCSI checkout not found at $OMCSI_PATH — up.sh will clone it"
+fi
+
 echo
-echo "Note: The test server requires a successful build first: mvn clean package"
+if [ "$fail" -eq 0 ]; then
+    echo "All checks passed."
+    echo
+    echo "Next steps:"
+    echo "  1. cp sample.env .env (if you haven't)"
+    echo "  2. ./up.sh        # clone OMCSI, build DPM, start the stack"
+    echo "  3. ./dpm-cmd.sh \"dpm list\""
+    echo "  4. ./reload-plugin.sh   # rebuild + hot-redeploy after code changes"
+    echo "  5. ./down.sh      # stop the stack"
+    exit 0
+else
+    echo "Missing prerequisites — install the items marked with ✗ and re-run."
+    exit 1
+fi

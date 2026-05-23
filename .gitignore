@@ -98,8 +98,7 @@ $RECYCLE.BIN/
 
 target/
 
-# Test container working directory and local env
-testmcserver/
+# Local test server config (used by up.sh / reload-plugin.sh / dpm-cmd.sh)
 .env
 
 pom.xml.tag

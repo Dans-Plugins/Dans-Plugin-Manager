@@ -53,22 +53,21 @@ mvn clean package
 
 The built JAR is in `target/`.
 
-### Local test server (Docker)
+### Local test server (via OMCSI)
 
-A local Spigot test server is provided for manual testing of the plugin. It uses the same pattern as Medieval-Factions, with [ServerUtils](https://github.com/Frooshant/ServerUtils) bundled for plugin hot-reloading.
+A local Spigot test server is provided for manual testing of the plugin. It is a thin set of scripts that drive [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) — the same Minecraft server infrastructure the CI integration tests use — so the local dev environment matches CI exactly.
 
-Prerequisites: Docker with Compose v2 (`docker compose`).
+Prerequisites: Docker with Compose v2 (`docker compose`), Maven, Git, `curl`. Run `./test-integration.sh` to verify.
 
-1. Create a local `.env`: `cp sample.env .env` (edit `OPERATOR_UUID` / `OPERATOR_NAME` to your own).
-2. Build the plugin: `mvn clean package`
-3. Start the test server: `./up.sh` (first run compiles Spigot from BuildTools — allow 10–15 min)
-4. Connect a Minecraft client to `localhost:25565`
-5. After making code changes, rebuild and hot-reload: `./reload-plugin.sh`
-6. Stop the server: `./down.sh`
+1. `cp sample.env .env` and edit if you want a custom operator UUID/name.
+2. `./up.sh` — clones OMCSI to `../omcsi` (first run only; allow 10–15 min while Spigot is built from BuildTools), starts the stack, builds DPM, and hot-deploys it via OMCSI's plugin-deploy API.
+3. `./dpm-cmd.sh "dpm list"` — sends a console command to the running server and prints the recent log lines. Lets you exercise `/dpm` commands without joining the server in a Minecraft client.
+4. `./reload-plugin.sh` — rebuilds DPM and hot-redeploys to the running server.
+5. `./down.sh` — stops the OMCSI stack.
 
-The test server's working directory is mounted at `./testmcserver/` and is gitignored. To wipe and re-create the server from scratch, set `OVERWRITE_EXISTING_SERVER=true` in `.env` and run `./up.sh` again.
+You can also connect a Minecraft client to `localhost:25565` to test in-game. Set `OVERWRITE_EXISTING_SERVER=true` in `.env` to wipe the server's persistent data on the next `./up.sh`.
 
-Run `./test-integration.sh` to verify the required files are present before starting the container.
+Anything OMCSI-specific (memory, MOTD, BlueMap, alerts, etc.) can be tuned in `../omcsi/.env` directly; see [OMCSI's `sample.env`](https://github.com/dmccoystephenson/open-mc-server-infrastructure/blob/main/sample.env) for the full list.
 
 ## Integration tests
 
