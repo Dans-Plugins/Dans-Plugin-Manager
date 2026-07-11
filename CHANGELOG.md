@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Local test server scripts (`up.sh`, `down.sh`, `reload-plugin.sh`, `dpm-cmd.sh`, `test-integration.sh`) that drive [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) for manual plugin testing during development — same Spigot stack and plugin-deploy API used by the CI integration tests
+- `sample.env` documenting the env vars used by the local test server scripts
+
 ## [0.6.0] - 2026-05-18
 
 ### Added

@@ -98,6 +98,9 @@ $RECYCLE.BIN/
 
 target/
 
+# Local test server config (used by up.sh / reload-plugin.sh / dpm-cmd.sh)
+.env
+
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup

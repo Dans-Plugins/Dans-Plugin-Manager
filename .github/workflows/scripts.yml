@@ -1,0 +1,23 @@
+name: Scripts
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        run: shellcheck up.sh down.sh reload-plugin.sh dpm-cmd.sh test-integration.sh compile.sh
+
+      - name: Sanity check
+        run: ./test-integration.sh
