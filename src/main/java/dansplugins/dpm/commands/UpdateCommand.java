@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
@@ -18,18 +18,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UpdateCommand extends AbstractPluginCommand {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final DownloadService downloadService;
     private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
     private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
-    public UpdateCommand(EphemeralData ephemeralData, DownloadService downloadService,
+    public UpdateCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
                          PluginFolderService pluginFolderService, VersionStore versionStore,
                          DiscordNotificationService discordNotificationService, Plugin plugin) {
         super(new ArrayList<>(List.of("update")), new ArrayList<>(List.of("dpm.update")));
-        this.ephemeralData = ephemeralData;
+        this.projectRecordRepository = projectRecordRepository;
         this.downloadService = downloadService;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
@@ -58,7 +58,7 @@ public class UpdateCommand extends AbstractPluginCommand {
     private boolean executeSelective(CommandSender sender, String[] names) {
         List<ProjectRecord> candidates = new ArrayList<>();
         for (String name : names) {
-            ProjectRecord record = ephemeralData.getProjectRecord(name);
+            ProjectRecord record = projectRecordRepository.getProjectRecord(name);
             if (record == null) {
                 sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             } else {
@@ -82,12 +82,12 @@ public class UpdateCommand extends AbstractPluginCommand {
     }
 
     public List<String> getInstalledPluginNames() {
-        return pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords())
+        return pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords())
                 .stream().map(ProjectRecord::getName).collect(Collectors.toList());
     }
 
     private List<ProjectRecord> getInstalledPlugins() {
-        return pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords());
+        return pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords());
     }
 
     private void runUpdates(CommandSender sender, List<ProjectRecord> records) {

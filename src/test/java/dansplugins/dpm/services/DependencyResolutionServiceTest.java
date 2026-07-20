@@ -1,6 +1,6 @@
 package dansplugins.dpm.services;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,22 +22,22 @@ class DependencyResolutionServiceTest {
     @TempDir
     Path tempDir;
 
-    private EphemeralData ephemeralData;
+    private ProjectRecordRepository projectRecordRepository;
     private PluginFolderService pluginFolderService;
     private DependencyResolutionService service;
 
     @BeforeEach
     void setUp() {
-        ephemeralData = new EphemeralData();
+        projectRecordRepository = new ProjectRecordRepository();
         pluginFolderService = new PluginFolderService(tempDir.toString());
-        service = new DependencyResolutionService(ephemeralData, pluginFolderService);
+        service = new DependencyResolutionService(projectRecordRepository, pluginFolderService);
     }
 
     private ProjectRecord registerRecord(String name, List<String> hardDeps) {
         ProjectRecord record = ProjectRecord.builder(name, "owner", "repo")
                 .hardDependencies(hardDeps)
                 .build();
-        ephemeralData.addProjectRecord(record);
+        projectRecordRepository.addProjectRecord(record);
         return record;
     }
 
@@ -80,7 +80,7 @@ class DependencyResolutionServiceTest {
     }
 
     @Test
-    void resolve_addsToUnknownWhenDepNotInEphemeralData() {
+    void resolve_addsToUnknownWhenDepNotInRepository() {
         ProjectRecord main = registerRecord("mainPlugin", List.of("externalPlugin"));
         List<ProjectRecord> depsToFetch = new ArrayList<>();
         List<String> unknownDeps = new ArrayList<>();

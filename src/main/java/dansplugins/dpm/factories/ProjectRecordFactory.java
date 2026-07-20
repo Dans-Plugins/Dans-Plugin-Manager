@@ -1,20 +1,20 @@
 package dansplugins.dpm.factories;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 
 public class ProjectRecordFactory {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
 
-    public ProjectRecordFactory(EphemeralData ephemeralData) {
-        this.ephemeralData = ephemeralData;
+    public ProjectRecordFactory(ProjectRecordRepository projectRecordRepository) {
+        this.projectRecordRepository = projectRecordRepository;
     }
 
     public void createGitHubRecord(String name, String owner, String repo) {
-        ephemeralData.addProjectRecord(ProjectRecord.forGitHub(name, owner, repo));
+        projectRecordRepository.addProjectRecord(ProjectRecord.forGitHub(name, owner, repo));
     }
 
     public void register(ProjectRecord record) {
-        ephemeralData.addProjectRecord(record);
+        projectRecordRepository.addProjectRecord(record);
     }
 }

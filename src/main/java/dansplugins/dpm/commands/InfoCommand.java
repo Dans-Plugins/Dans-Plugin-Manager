@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.services.GitHubReleaseService;
@@ -18,17 +18,17 @@ import java.util.List;
 import java.util.Set;
 
 public class InfoCommand extends AbstractPluginCommand {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final GitHubReleaseService gitHubReleaseService;
     private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
     private final Plugin plugin;
 
-    public InfoCommand(EphemeralData ephemeralData, GitHubReleaseService gitHubReleaseService,
+    public InfoCommand(ProjectRecordRepository projectRecordRepository, GitHubReleaseService gitHubReleaseService,
                        PluginFolderService pluginFolderService, VersionStore versionStore,
                        Plugin plugin) {
         super(new ArrayList<>(List.of("info")), new ArrayList<>(List.of("dpm.info")));
-        this.ephemeralData = ephemeralData;
+        this.projectRecordRepository = projectRecordRepository;
         this.gitHubReleaseService = gitHubReleaseService;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
@@ -44,7 +44,7 @@ public class InfoCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         String name = args[0];
-        ProjectRecord record = ephemeralData.getProjectRecord(name);
+        ProjectRecord record = projectRecordRepository.getProjectRecord(name);
         if (record == null) {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
@@ -104,11 +104,11 @@ public class InfoCommand extends AbstractPluginCommand {
         List<ProjectRecord> toScan = new ArrayList<>();
         toScan.add(record);
         for (String dep : record.getHardDependencies()) {
-            ProjectRecord r = ephemeralData.getProjectRecord(dep);
+            ProjectRecord r = projectRecordRepository.getProjectRecord(dep);
             if (r != null) toScan.add(r);
         }
         for (String dep : record.getSoftDependencies()) {
-            ProjectRecord r = ephemeralData.getProjectRecord(dep);
+            ProjectRecord r = projectRecordRepository.getProjectRecord(dep);
             if (r != null) toScan.add(r);
         }
         Set<String> names = new HashSet<>();

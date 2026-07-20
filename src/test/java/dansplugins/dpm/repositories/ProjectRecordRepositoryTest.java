@@ -1,4 +1,4 @@
-package dansplugins.dpm.data;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.objects.ProjectRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,13 +8,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class EphemeralDataTest {
+class ProjectRecordRepositoryTest {
 
-    private EphemeralData data;
+    private ProjectRecordRepository data;
 
     @BeforeEach
     void setUp() {
-        data = new EphemeralData();
+        data = new ProjectRecordRepository();
         data.addProjectRecord(ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"));
         data.addProjectRecord(ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies"));
     }
