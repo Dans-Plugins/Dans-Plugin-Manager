@@ -12,6 +12,7 @@ test/
 
 # Compiled class file
 *.class
+__pycache__/
 
 # Log file
 *.log
