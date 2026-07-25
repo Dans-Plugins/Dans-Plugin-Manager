@@ -1,6 +1,6 @@
 package dansplugins.dpm.services;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 
 import java.util.ArrayDeque;
@@ -11,11 +11,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DependencyResolutionService {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final PluginFolderService pluginFolderService;
 
-    public DependencyResolutionService(EphemeralData ephemeralData, PluginFolderService pluginFolderService) {
-        this.ephemeralData = ephemeralData;
+    public DependencyResolutionService(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService) {
+        this.projectRecordRepository = projectRecordRepository;
         this.pluginFolderService = pluginFolderService;
     }
 
@@ -37,7 +37,7 @@ public class DependencyResolutionService {
     // resolved must be pre-seeded with lowercase names already in the batch; prevents circular re-processing
     public void resolve(List<ProjectRecord> toProcess, Set<String> resolved,
                         List<ProjectRecord> depsToFetch, List<String> unknownDeps) {
-        Set<String> installedLower = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords())
+        Set<String> installedLower = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords())
                 .stream().map(r -> r.getName().toLowerCase()).collect(Collectors.toSet());
 
         Queue<ProjectRecord> queue = new ArrayDeque<>(toProcess);
@@ -48,7 +48,7 @@ public class DependencyResolutionService {
                 if (resolved.contains(depLower)) continue;
                 resolved.add(depLower);
                 if (installedLower.contains(depLower)) continue;
-                ProjectRecord depRecord = ephemeralData.getProjectRecord(dep);
+                ProjectRecord depRecord = projectRecordRepository.getProjectRecord(dep);
                 if (depRecord == null) {
                     unknownDeps.add(dep);
                 } else {

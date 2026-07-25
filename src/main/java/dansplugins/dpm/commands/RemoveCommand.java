@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.PluginFolderService;
@@ -15,17 +15,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RemoveCommand extends AbstractPluginCommand {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
     private final DependencyResolutionService dependencyResolutionService;
     private final Plugin plugin;
 
-    public RemoveCommand(EphemeralData ephemeralData, PluginFolderService pluginFolderService,
+    public RemoveCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
                          VersionStore versionStore, DependencyResolutionService dependencyResolutionService,
                          Plugin plugin) {
         super(new ArrayList<>(List.of("remove")), new ArrayList<>(List.of("dpm.remove")));
-        this.ephemeralData = ephemeralData;
+        this.projectRecordRepository = projectRecordRepository;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
         this.dependencyResolutionService = dependencyResolutionService;
@@ -41,7 +41,7 @@ public class RemoveCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         String name = args[0];
-        ProjectRecord record = ephemeralData.getProjectRecord(name);
+        ProjectRecord record = projectRecordRepository.getProjectRecord(name);
         if (record == null) {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
@@ -52,7 +52,7 @@ public class RemoveCommand extends AbstractPluginCommand {
             return true;
         }
 
-        List<ProjectRecord> installed = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords());
+        List<ProjectRecord> installed = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords());
         List<String> dependents = dependencyResolutionService.findDependents(record.getName(), installed);
 
         boolean confirmed = args.length >= 2 && args[1].equalsIgnoreCase("--confirm");
@@ -87,7 +87,7 @@ public class RemoveCommand extends AbstractPluginCommand {
 
     public List<String> getInstalledPluginNames() {
         List<String> names = new ArrayList<>();
-        for (ProjectRecord record : pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords())) {
+        for (ProjectRecord record : pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords())) {
             names.add(record.getName());
         }
         return names;

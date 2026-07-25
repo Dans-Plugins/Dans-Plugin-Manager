@@ -1,7 +1,7 @@
 package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.ConfigService;
@@ -33,14 +33,14 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final String pluginVersion = "v" + getDescription().getVersion();
 
     private final CommandService commandService = new CommandService(getPonder());
-    private final EphemeralData ephemeralData = new EphemeralData();
-    private final ProjectRecordFactory projectRecordFactory = new ProjectRecordFactory(ephemeralData);
+    private final ProjectRecordRepository projectRecordRepository = new ProjectRecordRepository();
+    private final ProjectRecordFactory projectRecordFactory = new ProjectRecordFactory(projectRecordRepository);
     private final ProjectRecordInitializer projectRecordInitializer = new ProjectRecordInitializer(projectRecordFactory);
     private final ConfigService configService = new ConfigService(this);
     private final Logger logger = new Logger(this);
     private final GitHubReleaseService gitHubReleaseService = new GitHubReleaseService(logger);
     private final PluginFolderService pluginFolderService = new PluginFolderService();
-    private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(ephemeralData, pluginFolderService);
+    private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(projectRecordRepository, pluginFolderService);
     private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configService);
     private VersionStore versionStore;
     private DownloadService downloadService;
@@ -93,7 +93,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     private List<String> allPluginNames() {
         List<String> names = new ArrayList<>();
-        for (ProjectRecord record : ephemeralData.getAllProjectRecords()) {
+        for (ProjectRecord record : projectRecordRepository.getAllProjectRecords()) {
             names.add(record.getName());
         }
         return names;
@@ -155,15 +155,15 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
-                new GetCommand(ephemeralData, downloadService, dependencyResolutionService, versionStore, discordNotificationService, this),
-                new ListCommand(ephemeralData, pluginFolderService, versionStore),
-                new StatsCommand(ephemeralData, pluginFolderService),
-                new CleanCommand(ephemeralData, pluginFolderService, this),
-                updateCommand = new UpdateCommand(ephemeralData, downloadService, pluginFolderService, versionStore, discordNotificationService, this),
-                new InfoCommand(ephemeralData, gitHubReleaseService, pluginFolderService, versionStore, this),
+                new GetCommand(projectRecordRepository, downloadService, dependencyResolutionService, versionStore, discordNotificationService, this),
+                new ListCommand(projectRecordRepository, pluginFolderService, versionStore),
+                new StatsCommand(projectRecordRepository, pluginFolderService),
+                new CleanCommand(projectRecordRepository, pluginFolderService, this),
+                updateCommand = new UpdateCommand(projectRecordRepository, downloadService, pluginFolderService, versionStore, discordNotificationService, this),
+                new InfoCommand(projectRecordRepository, gitHubReleaseService, pluginFolderService, versionStore, this),
                 new ReloadCommand(this),
-                removeCommand = new RemoveCommand(ephemeralData, pluginFolderService, versionStore, dependencyResolutionService, this),
-                new SearchCommand(ephemeralData, pluginFolderService, versionStore)
+                removeCommand = new RemoveCommand(projectRecordRepository, pluginFolderService, versionStore, dependencyResolutionService, this),
+                new SearchCommand(projectRecordRepository, pluginFolderService, versionStore)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }

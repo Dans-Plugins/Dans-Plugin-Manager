@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.services.VersionStore;
@@ -14,21 +14,21 @@ import java.util.List;
 import java.util.Set;
 
 public class ListCommand extends AbstractPluginCommand {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final PluginFolderService pluginFolderService;
     private final VersionStore versionStore;
 
-    public ListCommand(EphemeralData ephemeralData, PluginFolderService pluginFolderService,
+    public ListCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
                        VersionStore versionStore) {
         super(new ArrayList<>(List.of("list")), new ArrayList<>(List.of("dpm.list")));
-        this.ephemeralData = ephemeralData;
+        this.projectRecordRepository = projectRecordRepository;
         this.pluginFolderService = pluginFolderService;
         this.versionStore = versionStore;
     }
 
     @Override
     public boolean execute(CommandSender sender) {
-        List<ProjectRecord> records = ephemeralData.getAllProjectRecords();
+        List<ProjectRecord> records = projectRecordRepository.getAllProjectRecords();
         Set<String> installedNames = new HashSet<>();
         for (ProjectRecord r : pluginFolderService.filterInstalled(records)) {
             installedNames.add(r.getName());
@@ -60,7 +60,7 @@ public class ListCommand extends AbstractPluginCommand {
     }
 
     private boolean executeInstalled(CommandSender sender) {
-        List<ProjectRecord> installed = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords());
+        List<ProjectRecord> installed = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords());
         sender.sendMessage(ChatColor.AQUA + "=== Installed Plugins (" + installed.size() + ") ===");
         for (ProjectRecord record : installed) {
             String tag = versionStore.getStoredTag(record.getName());
@@ -71,7 +71,7 @@ public class ListCommand extends AbstractPluginCommand {
     }
 
     private boolean executeAvailable(CommandSender sender) {
-        List<ProjectRecord> all = ephemeralData.getAllProjectRecords();
+        List<ProjectRecord> all = projectRecordRepository.getAllProjectRecords();
         Set<String> installedNames = new HashSet<>();
         for (ProjectRecord r : pluginFolderService.filterInstalled(all)) {
             installedNames.add(r.getName());

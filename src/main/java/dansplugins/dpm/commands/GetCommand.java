@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DiscordNotificationService;
@@ -19,19 +19,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class GetCommand extends AbstractPluginCommand {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final DownloadService downloadService;
     private final DependencyResolutionService dependencyResolutionService;
     private final VersionStore versionStore;
     private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
-    public GetCommand(EphemeralData ephemeralData, DownloadService downloadService,
+    public GetCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
                       DependencyResolutionService dependencyResolutionService,
                       VersionStore versionStore, DiscordNotificationService discordNotificationService,
                       Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
-        this.ephemeralData = ephemeralData;
+        this.projectRecordRepository = projectRecordRepository;
         this.downloadService = downloadService;
         this.dependencyResolutionService = dependencyResolutionService;
         this.versionStore = versionStore;
@@ -54,7 +54,7 @@ public class GetCommand extends AbstractPluginCommand {
     }
 
     private boolean executeSingle(CommandSender sender, String name) {
-        ProjectRecord record = ephemeralData.getProjectRecord(name);
+        ProjectRecord record = projectRecordRepository.getProjectRecord(name);
         if (record == null) {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
@@ -98,7 +98,7 @@ public class GetCommand extends AbstractPluginCommand {
         List<ProjectRecord> records = new ArrayList<>();
         int notFound = 0;
         for (String name : args) {
-            ProjectRecord record = ephemeralData.getProjectRecord(name);
+            ProjectRecord record = projectRecordRepository.getProjectRecord(name);
             if (record == null) {
                 sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + " — skipping. Use /dpm search <keyword> to find the right name.");
                 notFound++;

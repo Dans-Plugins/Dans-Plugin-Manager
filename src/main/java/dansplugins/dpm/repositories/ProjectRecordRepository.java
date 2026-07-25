@@ -1,11 +1,11 @@
-package dansplugins.dpm.data;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.objects.ProjectRecord;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EphemeralData {
+public class ProjectRecordRepository {
     private final ArrayList<ProjectRecord> projectRecords = new ArrayList<>();
 
     public ProjectRecord getProjectRecord(String name) {

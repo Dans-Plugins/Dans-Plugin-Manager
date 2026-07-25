@@ -141,7 +141,13 @@ def main():
     print("\n[5] /dpm get currencies — confirm hard-dependency auto-install...")
     cursor = send_command("dpm get currencies")
     assert_log_contains("Also downloading required dependency", cursor=cursor, retries=3, delay=3)
-    assert_log_contains_any(["Downloaded", "already up to date"], cursor=cursor, retries=8, delay=5)
+    assert_log_contains_any(
+        ["Downloaded medievalfactions", "medievalfactions already up to date", "medievalfactions v"],
+        cursor=cursor,
+        retries=8,
+        delay=5,
+    )
+    assert_log_contains("Done:", cursor=cursor, retries=8, delay=5)
 
     print("\n[6] /dpm remove medievalfactions --confirm — confirm file deletion...")
     cursor = send_command("dpm remove medievalfactions --confirm")

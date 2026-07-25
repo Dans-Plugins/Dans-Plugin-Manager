@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.data.EphemeralData;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -10,19 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StatsCommand extends AbstractPluginCommand {
-    private final EphemeralData ephemeralData;
+    private final ProjectRecordRepository projectRecordRepository;
     private final PluginFolderService pluginFolderService;
 
-    public StatsCommand(EphemeralData ephemeralData, PluginFolderService pluginFolderService) {
+    public StatsCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService) {
         super(new ArrayList<>(List.of("stats")), new ArrayList<>(List.of("dpm.stats")));
-        this.ephemeralData = ephemeralData;
+        this.projectRecordRepository = projectRecordRepository;
         this.pluginFolderService = pluginFolderService;
     }
 
     @Override
     public boolean execute(CommandSender commandSender) {
-        int total = ephemeralData.getNumProjectRecords();
-        int installed = pluginFolderService.filterInstalled(ephemeralData.getAllProjectRecords()).size();
+        int total = projectRecordRepository.getNumProjectRecords();
+        int installed = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords()).size();
         int available = total - installed;
         commandSender.sendMessage(ChatColor.AQUA + "=== DPM Stats ===");
         commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + total);
