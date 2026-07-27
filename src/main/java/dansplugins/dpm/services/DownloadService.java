@@ -2,6 +2,7 @@ package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.utils.Logger;
 
 import java.io.BufferedInputStream;
@@ -25,14 +26,14 @@ public class DownloadService {
     private final Logger logger;
     private final GitHubReleaseService gitHubReleaseService;
     private final PluginFolderService pluginFolderService;
-    private final VersionStore versionStore;
+    private final VersionRepository versionRepository;
 
     public DownloadService(Logger logger, GitHubReleaseService gitHubReleaseService,
-                           PluginFolderService pluginFolderService, VersionStore versionStore) {
+                           PluginFolderService pluginFolderService, VersionRepository versionRepository) {
         this.logger = logger;
         this.gitHubReleaseService = gitHubReleaseService;
         this.pluginFolderService = pluginFolderService;
-        this.versionStore = versionStore;
+        this.versionRepository = versionRepository;
     }
 
     public int downloadLatest(ProjectRecord projectRecord) {
@@ -53,7 +54,7 @@ public class DownloadService {
 
         String latestTag = release.getTagName();
         if (latestTag != null
-                && latestTag.equals(versionStore.getStoredTag(projectRecord.getName()))
+                && latestTag.equals(versionRepository.getStoredTag(projectRecord.getName()))
                 && physicallyInstalled) {
             return ALREADY_UP_TO_DATE;
         }
@@ -63,7 +64,7 @@ public class DownloadService {
         if (bytes > 0) {
             removeConflictingJars(projectRecord);
             if (latestTag != null) {
-                versionStore.setTag(projectRecord.getName(), latestTag);
+                versionRepository.setTag(projectRecord.getName(), latestTag);
             }
         }
         return bytes;

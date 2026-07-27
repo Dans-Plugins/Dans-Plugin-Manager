@@ -1,4 +1,4 @@
-package dansplugins.dpm.services;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.utils.Logger;
 
@@ -8,12 +8,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-public class VersionStore {
+public class VersionRepository {
     private final Logger logger;
     private final File storeFile;
     private final Properties props = new Properties();
 
-    public VersionStore(File storeFile, Logger logger) {
+    public VersionRepository(File storeFile, Logger logger) {
         this.logger = logger;
         this.storeFile = storeFile;
         load();

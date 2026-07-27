@@ -1,4 +1,4 @@
-package dansplugins.dpm.services;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class VersionStoreTest {
+class VersionRepositoryTest {
 
     // -------------------------------------------------------------------------
     // getStoredTag / setTag
@@ -19,7 +19,7 @@ class VersionStoreTest {
 
     @Test
     void setTag_thenGetStoredTag_returnsTag(@TempDir Path tempDir) {
-        VersionStore store = store(tempDir);
+        VersionRepository store = store(tempDir);
         store.setTag("medievalfactions", "v4.6.3");
         assertEquals("v4.6.3", store.getStoredTag("medievalfactions"));
     }
@@ -31,7 +31,7 @@ class VersionStoreTest {
 
     @Test
     void setTag_keyIsCaseInsensitive(@TempDir Path tempDir) {
-        VersionStore store = store(tempDir);
+        VersionRepository store = store(tempDir);
         store.setTag("MedievalFactions", "v4.6.3");
         assertEquals("v4.6.3", store.getStoredTag("medievalfactions"));
         assertEquals("v4.6.3", store.getStoredTag("MEDIEVALFACTIONS"));
@@ -39,7 +39,7 @@ class VersionStoreTest {
 
     @Test
     void setTag_overwritesPreviousValue(@TempDir Path tempDir) {
-        VersionStore store = store(tempDir);
+        VersionRepository store = store(tempDir);
         store.setTag("medievalfactions", "v4.6.2");
         store.setTag("medievalfactions", "v4.6.3");
         assertEquals("v4.6.3", store.getStoredTag("medievalfactions"));
@@ -51,7 +51,7 @@ class VersionStoreTest {
 
     @Test
     void removeTag_erasesStoredValue(@TempDir Path tempDir) {
-        VersionStore store = store(tempDir);
+        VersionRepository store = store(tempDir);
         store.setTag("medievalfactions", "v4.6.3");
         store.removeTag("medievalfactions");
         assertNull(store.getStoredTag("medievalfactions"));
@@ -77,7 +77,7 @@ class VersionStoreTest {
             @Override public void log(String m) {}
             @Override public void warn(String m) { warnings.add(m); }
         };
-        new VersionStore(notAFile, capturing);
+        new VersionRepository(notAFile, capturing);
         assertFalse(warnings.isEmpty(), "load failure must emit a warn");
         assertTrue(warnings.get(0).contains("version store"), "warn must mention version store");
     }
@@ -90,17 +90,17 @@ class VersionStoreTest {
     void tagsPersistedToDisk_survivesNewInstance(@TempDir Path tempDir) {
         File storeFile = tempDir.resolve("dpm-versions.properties").toFile();
 
-        new VersionStore(storeFile, noOpLogger()).setTag("currencies", "v2.1.0");
+        new VersionRepository(storeFile, noOpLogger()).setTag("currencies", "v2.1.0");
 
-        assertEquals("v2.1.0", new VersionStore(storeFile, noOpLogger()).getStoredTag("currencies"));
+        assertEquals("v2.1.0", new VersionRepository(storeFile, noOpLogger()).getStoredTag("currencies"));
     }
 
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------
 
-    private VersionStore store(Path tempDir) {
-        return new VersionStore(tempDir.resolve("dpm-versions.properties").toFile(), noOpLogger());
+    private VersionRepository store(Path tempDir) {
+        return new VersionRepository(tempDir.resolve("dpm-versions.properties").toFile(), noOpLogger());
     }
 
     private Logger noOpLogger() {

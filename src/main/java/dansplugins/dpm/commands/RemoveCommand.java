@@ -1,10 +1,10 @@
 package dansplugins.dpm.commands;
 
 import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.PluginFolderService;
-import dansplugins.dpm.services.VersionStore;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -17,17 +17,17 @@ import java.util.List;
 public class RemoveCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final PluginFolderService pluginFolderService;
-    private final VersionStore versionStore;
+    private final VersionRepository versionRepository;
     private final DependencyResolutionService dependencyResolutionService;
     private final Plugin plugin;
 
     public RemoveCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
-                         VersionStore versionStore, DependencyResolutionService dependencyResolutionService,
+                         VersionRepository versionRepository, DependencyResolutionService dependencyResolutionService,
                          Plugin plugin) {
         super(new ArrayList<>(List.of("remove")), new ArrayList<>(List.of("dpm.remove")));
         this.projectRecordRepository = projectRecordRepository;
         this.pluginFolderService = pluginFolderService;
-        this.versionStore = versionStore;
+        this.versionRepository = versionRepository;
         this.dependencyResolutionService = dependencyResolutionService;
         this.plugin = plugin;
     }
@@ -73,7 +73,7 @@ public class RemoveCommand extends AbstractPluginCommand {
                     + " declare a hard dependency on " + record.getName() + " and may stop working.");
         }
         if (jar.delete()) {
-            versionStore.removeTag(record.getName());
+            versionRepository.removeTag(record.getName());
             plugin.getLogger().info("[DPM] Removed " + record.getName() + ".");
             sender.sendMessage(ChatColor.GREEN + "Removed " + record.getName() + ".");
             sender.sendMessage(ChatColor.YELLOW + "Restart the server for the removal to take effect.");

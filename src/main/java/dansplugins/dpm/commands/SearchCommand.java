@@ -1,9 +1,9 @@
 package dansplugins.dpm.commands;
 
 import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.PluginFolderService;
-import dansplugins.dpm.services.VersionStore;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -16,14 +16,14 @@ import java.util.Set;
 public class SearchCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final PluginFolderService pluginFolderService;
-    private final VersionStore versionStore;
+    private final VersionRepository versionRepository;
 
     public SearchCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
-                         VersionStore versionStore) {
+                         VersionRepository versionRepository) {
         super(new ArrayList<>(List.of("search")), new ArrayList<>(List.of("dpm.list")));
         this.projectRecordRepository = projectRecordRepository;
         this.pluginFolderService = pluginFolderService;
-        this.versionStore = versionStore;
+        this.versionRepository = versionRepository;
     }
 
     @Override
@@ -51,7 +51,7 @@ public class SearchCommand extends AbstractPluginCommand {
         for (ProjectRecord record : matches) {
             String desc = record.getDescription() != null ? ChatColor.GRAY + " — " + record.getDescription() : "";
             if (installedNames.contains(record.getName())) {
-                String tag = versionStore.getStoredTag(record.getName());
+                String tag = versionRepository.getStoredTag(record.getName());
                 String version = tag != null ? " " + tag : "";
                 sender.sendMessage(ChatColor.GREEN + record.getName() + version + desc);
             } else {
