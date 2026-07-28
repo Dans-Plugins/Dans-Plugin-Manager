@@ -1,11 +1,11 @@
 package dansplugins.dpm.commands;
 
 import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.services.PluginFolderService;
-import dansplugins.dpm.services.VersionStore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -21,18 +21,18 @@ public class UpdateCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final DownloadService downloadService;
     private final PluginFolderService pluginFolderService;
-    private final VersionStore versionStore;
+    private final VersionRepository versionRepository;
     private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
     public UpdateCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
-                         PluginFolderService pluginFolderService, VersionStore versionStore,
+                         PluginFolderService pluginFolderService, VersionRepository versionRepository,
                          DiscordNotificationService discordNotificationService, Plugin plugin) {
         super(new ArrayList<>(List.of("update")), new ArrayList<>(List.of("dpm.update")));
         this.projectRecordRepository = projectRecordRepository;
         this.downloadService = downloadService;
         this.pluginFolderService = pluginFolderService;
-        this.versionStore = versionStore;
+        this.versionRepository = versionRepository;
         this.discordNotificationService = discordNotificationService;
         this.plugin = plugin;
     }
@@ -98,7 +98,7 @@ public class UpdateCommand extends AbstractPluginCommand {
         List<String> versionDiffs = new ArrayList<>();
 
         for (ProjectRecord record : records) {
-            String oldTag = versionStore.getStoredTag(record.getName());
+            String oldTag = versionRepository.getStoredTag(record.getName());
             int result = downloadService.downloadLatest(record, true);
             final String msg;
             if (result == DownloadService.ALREADY_UP_TO_DATE) {
@@ -109,7 +109,7 @@ public class UpdateCommand extends AbstractPluginCommand {
                 msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
             } else if (result > 0) {
                 updated++;
-                String newTag = versionStore.getStoredTag(record.getName());
+                String newTag = versionRepository.getStoredTag(record.getName());
                 String versionDiff = oldTag != null && newTag != null
                         ? " " + oldTag + " → " + newTag
                         : newTag != null ? " " + newTag : "";

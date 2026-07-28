@@ -1,11 +1,11 @@
 package dansplugins.dpm.commands;
 
 import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
-import dansplugins.dpm.services.VersionStore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -22,19 +22,19 @@ public class GetCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final DownloadService downloadService;
     private final DependencyResolutionService dependencyResolutionService;
-    private final VersionStore versionStore;
+    private final VersionRepository versionRepository;
     private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
     public GetCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
                       DependencyResolutionService dependencyResolutionService,
-                      VersionStore versionStore, DiscordNotificationService discordNotificationService,
+                      VersionRepository versionRepository, DiscordNotificationService discordNotificationService,
                       Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.projectRecordRepository = projectRecordRepository;
         this.downloadService = downloadService;
         this.dependencyResolutionService = dependencyResolutionService;
-        this.versionStore = versionStore;
+        this.versionRepository = versionRepository;
         this.discordNotificationService = discordNotificationService;
         this.plugin = plugin;
     }
@@ -142,7 +142,7 @@ public class GetCommand extends AbstractPluginCommand {
                 msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
             } else if (result == DownloadService.ALREADY_UP_TO_DATE) {
                 upToDate++;
-                String tag = versionStore.getStoredTag(record.getName());
+                String tag = versionRepository.getStoredTag(record.getName());
                 msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
             } else if (result == DownloadService.NETWORK_ERROR) {
                 failed++;
@@ -160,7 +160,7 @@ public class GetCommand extends AbstractPluginCommand {
                 msg = ChatColor.RED + "Failed to download " + record.getName() + ".";
             } else {
                 downloaded++;
-                String tag = versionStore.getStoredTag(record.getName());
+                String tag = versionRepository.getStoredTag(record.getName());
                 String version = tag != null ? " " + tag : "";
                 plugin.getLogger().info("[DPM] Installed " + record.getName() + version + ".");
                 msg = ChatColor.GREEN + "Downloaded " + record.getName() + version + " (" + (result / 1024) + " KB).";
@@ -188,7 +188,7 @@ public class GetCommand extends AbstractPluginCommand {
         if (result == DownloadService.NO_RELEASE) {
             sender.sendMessage(ChatColor.YELLOW + record.getName() + " has no published release yet. Try again later.");
         } else if (result == DownloadService.ALREADY_UP_TO_DATE) {
-            String tag = versionStore.getStoredTag(record.getName());
+            String tag = versionRepository.getStoredTag(record.getName());
             String version = tag != null ? " (" + tag + ")" : "";
             sender.sendMessage(ChatColor.GREEN + record.getName() + " is already up to date" + version + ".");
         } else if (result == DownloadService.NETWORK_ERROR) {
@@ -201,7 +201,7 @@ public class GetCommand extends AbstractPluginCommand {
             plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + ".");
             sender.sendMessage(ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
         } else {
-            String tag = versionStore.getStoredTag(record.getName());
+            String tag = versionRepository.getStoredTag(record.getName());
             String version = tag != null ? " " + tag : "";
             plugin.getLogger().info("[DPM] Installed " + record.getName() + version + ".");
             sender.sendMessage(ChatColor.GREEN + "Downloaded" + version + " (" + (result / 1024) + " KB). Restart the server to enable " + record.getName() + ".");

@@ -2,6 +2,7 @@ package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,8 +23,8 @@ class DownloadServiceTest {
     private final DownloadService service = noSleepService(null, null, null, null);
 
     private static DownloadService noSleepService(Logger logger, GitHubReleaseService ghrs,
-                                                   PluginFolderService pfs, VersionStore vs) {
-        return new DownloadService(logger, ghrs, pfs, vs) {
+                                                   PluginFolderService pfs, VersionRepository vr) {
+        return new DownloadService(logger, ghrs, pfs, vr) {
             @Override void sleepMs(long ms) {}
         };
     }
@@ -89,27 +90,27 @@ class DownloadServiceTest {
         File src = tempDir.resolve("plugin.jar").toFile();
         Files.write(src.toPath(), content);
 
-        VersionStore versionStore = versionStore(tempDir);
+        VersionRepository versionRepository = versionRepository(tempDir);
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = noSleepService(null, fakeRelease("v1.0.0", src.toURI().toString()),
-                pluginFolderService, versionStore);
+                pluginFolderService, versionRepository);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         int result = svc.downloadLatest(record);
 
         assertTrue(result > 0);
-        assertEquals("v1.0.0", versionStore.getStoredTag("testplugin"));
+        assertEquals("v1.0.0", versionRepository.getStoredTag("testplugin"));
     }
 
     @Test
     void downloadLatest_returnsAlreadyUpToDate_whenTagMatchesAndJarPresent(@TempDir Path tempDir) throws IOException {
-        VersionStore versionStore = versionStore(tempDir);
-        versionStore.setTag("testplugin", "v1.0.0");
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "v1.0.0");
         Files.write(tempDir.resolve("testplugin.jar"), new byte[]{1});
 
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", "http://unused"),
-                pluginFolderService, versionStore);
+                pluginFolderService, versionRepository);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record));
@@ -118,15 +119,15 @@ class DownloadServiceTest {
     @Test
     void downloadLatest_reDownloads_whenTagMatchesButJarMissing(@TempDir Path tempDir) throws IOException {
         // JAR was manually deleted — must re-download even though the stored tag matches.
-        VersionStore versionStore = versionStore(tempDir);
-        versionStore.setTag("testplugin", "v1.0.0");
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "v1.0.0");
 
         File src = tempDir.resolve("source.jar").toFile();
         Files.write(src.toPath(), new byte[]{1, 2, 3});
 
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", src.toURI().toString()),
-                pluginFolderService, versionStore);
+                pluginFolderService, versionRepository);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertTrue(svc.downloadLatest(record) > 0, "Should re-download when JAR is absent despite matching tag");
@@ -141,7 +142,7 @@ class DownloadServiceTest {
                 return ReleaseInfo.NO_RELEASE;
             }
         };
-        DownloadService svc = new DownloadService(null, noReleaseService, pluginFolderService, versionStore(tempDir));
+        DownloadService svc = new DownloadService(null, noReleaseService, pluginFolderService, versionRepository(tempDir));
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.NO_RELEASE, svc.downloadLatest(record));
@@ -153,14 +154,14 @@ class DownloadServiceTest {
 
     @Test
     void downloadLatest_withTrueHint_returnsAlreadyUpToDate_withoutDirectoryScan(@TempDir Path tempDir) {
-        VersionStore versionStore = versionStore(tempDir);
-        versionStore.setTag("testplugin", "v1.0.0");
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "v1.0.0");
 
         // PluginFolderService with a non-existent folder — isInstalled() would return false
         // if called, but the hint bypasses the scan entirely.
         PluginFolderService noScanService = new PluginFolderService("/this/path/does/not/exist");
         DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", "http://unused"),
-                noScanService, versionStore);
+                noScanService, versionRepository);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record, true));
@@ -168,15 +169,15 @@ class DownloadServiceTest {
 
     @Test
     void downloadLatest_withFalseHint_downloadsEvenWhenTagMatches(@TempDir Path tempDir) throws IOException {
-        VersionStore versionStore = versionStore(tempDir);
-        versionStore.setTag("testplugin", "v1.0.0");
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "v1.0.0");
 
         File src = tempDir.resolve("source.jar").toFile();
         Files.write(src.toPath(), new byte[]{1, 2, 3});
 
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", src.toURI().toString()),
-                pluginFolderService, versionStore);
+                pluginFolderService, versionRepository);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertTrue(svc.downloadLatest(record, false) > 0,
@@ -185,13 +186,13 @@ class DownloadServiceTest {
 
     @Test
     void downloadLatest_noArgOverload_callsIsInstalledViaScan(@TempDir Path tempDir) throws IOException {
-        VersionStore versionStore = versionStore(tempDir);
-        versionStore.setTag("testplugin", "v1.0.0");
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "v1.0.0");
         Files.write(tempDir.resolve("testplugin.jar"), new byte[]{1});
 
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(null, fakeRelease("v1.0.0", "http://unused"),
-                pluginFolderService, versionStore);
+                pluginFolderService, versionRepository);
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record));
@@ -213,7 +214,7 @@ class DownloadServiceTest {
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = noSleepService(noOpLogger,
                 fakeRelease("v2.0.0", "http://localhost:1/nonexistent.jar"),
-                pluginFolderService, versionStore(tempDir));
+                pluginFolderService, versionRepository(tempDir));
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.NETWORK_ERROR, svc.downloadLatest(record));
@@ -235,7 +236,7 @@ class DownloadServiceTest {
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = new DownloadService(noOpLogger,
                 fakeRelease("v2.0.0", src.toURI().toString()),
-                pluginFolderService, versionStore(tempDir));
+                pluginFolderService, versionRepository(tempDir));
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertTrue(svc.downloadLatest(record) > 0);
@@ -255,7 +256,7 @@ class DownloadServiceTest {
         PluginFolderService pluginFolderService = new PluginFolderService(tempDir.toString());
         DownloadService svc = noSleepService(noOpLogger,
                 fakeRelease("v1.0.0", "http://localhost:1/nonexistent.jar"),
-                pluginFolderService, versionStore(tempDir));
+                pluginFolderService, versionRepository(tempDir));
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.NETWORK_ERROR, svc.downloadLatest(record));
@@ -278,7 +279,7 @@ class DownloadServiceTest {
         PluginFolderService pluginFolderService = new PluginFolderService(readOnlyDir.getAbsolutePath() + "/");
         DownloadService svc = new DownloadService(noOpLogger,
                 fakeRelease("v1.0.0", src.toURI().toString()),
-                pluginFolderService, versionStore(tempDir));
+                pluginFolderService, versionRepository(tempDir));
 
         ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
         assertEquals(DownloadService.FILE_ERROR, svc.downloadLatest(record));
@@ -327,12 +328,12 @@ class DownloadServiceTest {
     // helpers
     // -------------------------------------------------------------------------
 
-    private VersionStore versionStore(Path tempDir) {
+    private VersionRepository versionRepository(Path tempDir) {
         Logger noOp = new Logger(null) {
             @Override public void log(String m) {}
             @Override public void warn(String m) {}
         };
-        return new VersionStore(tempDir.resolve("dpm-versions.properties").toFile(), noOp);
+        return new VersionRepository(tempDir.resolve("dpm-versions.properties").toFile(), noOp);
     }
 
     private GitHubReleaseService fakeRelease(String tag, String jarUrl) {

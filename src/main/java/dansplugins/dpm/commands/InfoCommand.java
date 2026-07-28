@@ -1,11 +1,11 @@
 package dansplugins.dpm.commands;
 
 import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.services.GitHubReleaseService;
 import dansplugins.dpm.services.PluginFolderService;
-import dansplugins.dpm.services.VersionStore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -21,17 +21,17 @@ public class InfoCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final GitHubReleaseService gitHubReleaseService;
     private final PluginFolderService pluginFolderService;
-    private final VersionStore versionStore;
+    private final VersionRepository versionRepository;
     private final Plugin plugin;
 
     public InfoCommand(ProjectRecordRepository projectRecordRepository, GitHubReleaseService gitHubReleaseService,
-                       PluginFolderService pluginFolderService, VersionStore versionStore,
+                       PluginFolderService pluginFolderService, VersionRepository versionRepository,
                        Plugin plugin) {
         super(new ArrayList<>(List.of("info")), new ArrayList<>(List.of("dpm.info")));
         this.projectRecordRepository = projectRecordRepository;
         this.gitHubReleaseService = gitHubReleaseService;
         this.pluginFolderService = pluginFolderService;
-        this.versionStore = versionStore;
+        this.versionRepository = versionRepository;
         this.plugin = plugin;
     }
 
@@ -80,7 +80,7 @@ public class InfoCommand extends AbstractPluginCommand {
 
         Set<String> installedNames = installedNamesFor(record);
         boolean installed = installedNames.contains(record.getName());
-        String storedTag = versionStore.getStoredTag(record.getName());
+        String storedTag = versionRepository.getStoredTag(record.getName());
 
         if (installed) {
             String version = storedTag != null ? storedTag : "(version unknown)";
