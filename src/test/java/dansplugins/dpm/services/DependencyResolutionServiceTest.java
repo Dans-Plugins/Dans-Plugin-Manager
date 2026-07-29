@@ -1,5 +1,6 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,14 +24,14 @@ class DependencyResolutionServiceTest {
     Path tempDir;
 
     private ProjectRecordRepository projectRecordRepository;
-    private PluginFolderService pluginFolderService;
+    private PluginFileRepository pluginFileRepository;
     private DependencyResolutionService service;
 
     @BeforeEach
     void setUp() {
         projectRecordRepository = new ProjectRecordRepository();
-        pluginFolderService = new PluginFolderService(tempDir.toString());
-        service = new DependencyResolutionService(projectRecordRepository, pluginFolderService);
+        pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        service = new DependencyResolutionService(projectRecordRepository, pluginFileRepository);
     }
 
     private ProjectRecord registerRecord(String name, List<String> hardDeps) {

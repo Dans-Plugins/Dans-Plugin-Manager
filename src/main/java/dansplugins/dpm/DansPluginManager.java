@@ -1,6 +1,8 @@
 package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
+import dansplugins.dpm.repositories.GitHubReleaseRepository;
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
@@ -9,8 +11,6 @@ import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
-import dansplugins.dpm.services.GitHubReleaseService;
-import dansplugins.dpm.services.PluginFolderService;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 import dansplugins.dpm.utils.TabCompleter;
@@ -38,9 +38,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final ProjectRecordInitializer projectRecordInitializer = new ProjectRecordInitializer(projectRecordFactory);
     private final ConfigService configService = new ConfigService(this);
     private final Logger logger = new Logger(this);
-    private final GitHubReleaseService gitHubReleaseService = new GitHubReleaseService(logger);
-    private final PluginFolderService pluginFolderService = new PluginFolderService();
-    private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(projectRecordRepository, pluginFolderService);
+    private final GitHubReleaseRepository gitHubReleaseRepository = new GitHubReleaseRepository(logger);
+    private final PluginFileRepository pluginFileRepository = new PluginFileRepository();
+    private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(projectRecordRepository, pluginFileRepository);
     private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configService);
     private VersionRepository versionRepository;
     private DownloadService downloadService;
@@ -50,9 +50,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public void onEnable() {
         initializeConfig();
-        gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubToken", ""));
+        gitHubReleaseRepository.setApiToken(configService.getStringOrDefault("githubToken", ""));
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
-        downloadService = new DownloadService(logger, gitHubReleaseService, pluginFolderService, versionRepository);
+        downloadService = new DownloadService(logger, gitHubReleaseRepository, pluginFileRepository, versionRepository);
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -128,8 +128,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     public void reloadDpm() {
         reloadConfig();
-        gitHubReleaseService.setApiToken(configService.getStringOrDefault("githubToken", ""));
-        gitHubReleaseService.clearCache();
+        gitHubReleaseRepository.setApiToken(configService.getStringOrDefault("githubToken", ""));
+        gitHubReleaseRepository.clearCache();
     }
 
     private void initializeConfig() {
@@ -156,14 +156,14 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
                 new GetCommand(projectRecordRepository, downloadService, dependencyResolutionService, versionRepository, discordNotificationService, this),
-                new ListCommand(projectRecordRepository, pluginFolderService, versionRepository),
-                new StatsCommand(projectRecordRepository, pluginFolderService),
-                new CleanCommand(projectRecordRepository, pluginFolderService, this),
-                updateCommand = new UpdateCommand(projectRecordRepository, downloadService, pluginFolderService, versionRepository, discordNotificationService, this),
-                new InfoCommand(projectRecordRepository, gitHubReleaseService, pluginFolderService, versionRepository, this),
+                new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository),
+                new StatsCommand(projectRecordRepository, pluginFileRepository),
+                new CleanCommand(projectRecordRepository, pluginFileRepository, this),
+                updateCommand = new UpdateCommand(projectRecordRepository, downloadService, pluginFileRepository, versionRepository, discordNotificationService, this),
+                new InfoCommand(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, this),
                 new ReloadCommand(this),
-                removeCommand = new RemoveCommand(projectRecordRepository, pluginFolderService, versionRepository, dependencyResolutionService, this),
-                new SearchCommand(projectRecordRepository, pluginFolderService, versionRepository)
+                removeCommand = new RemoveCommand(projectRecordRepository, pluginFileRepository, versionRepository, dependencyResolutionService, this),
+                new SearchCommand(projectRecordRepository, pluginFileRepository, versionRepository)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }

@@ -1,5 +1,6 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 
@@ -12,11 +13,11 @@ import java.util.stream.Collectors;
 
 public class DependencyResolutionService {
     private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFolderService pluginFolderService;
+    private final PluginFileRepository pluginFileRepository;
 
-    public DependencyResolutionService(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService) {
+    public DependencyResolutionService(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository) {
         this.projectRecordRepository = projectRecordRepository;
-        this.pluginFolderService = pluginFolderService;
+        this.pluginFileRepository = pluginFileRepository;
     }
 
     // Caller supplies the pre-filtered installed list so no extra directory scan happens here.
@@ -37,7 +38,7 @@ public class DependencyResolutionService {
     // resolved must be pre-seeded with lowercase names already in the batch; prevents circular re-processing
     public void resolve(List<ProjectRecord> toProcess, Set<String> resolved,
                         List<ProjectRecord> depsToFetch, List<String> unknownDeps) {
-        Set<String> installedLower = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords())
+        Set<String> installedLower = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords())
                 .stream().map(r -> r.getName().toLowerCase()).collect(Collectors.toSet());
 
         Queue<ProjectRecord> queue = new ArrayDeque<>(toProcess);

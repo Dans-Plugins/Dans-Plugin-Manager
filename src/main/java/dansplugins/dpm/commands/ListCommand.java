@@ -1,9 +1,9 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -15,14 +15,14 @@ import java.util.Set;
 
 public class ListCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFolderService pluginFolderService;
+    private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
 
-    public ListCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
+    public ListCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
                        VersionRepository versionRepository) {
         super(new ArrayList<>(List.of("list")), new ArrayList<>(List.of("dpm.list")));
         this.projectRecordRepository = projectRecordRepository;
-        this.pluginFolderService = pluginFolderService;
+        this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
     }
 
@@ -30,7 +30,7 @@ public class ListCommand extends AbstractPluginCommand {
     public boolean execute(CommandSender sender) {
         List<ProjectRecord> records = projectRecordRepository.getAllProjectRecords();
         Set<String> installedNames = new HashSet<>();
-        for (ProjectRecord r : pluginFolderService.filterInstalled(records)) {
+        for (ProjectRecord r : pluginFileRepository.filterInstalled(records)) {
             installedNames.add(r.getName());
         }
         sender.sendMessage(ChatColor.AQUA + "=== Plugins (" + records.size() + ") ===");
@@ -60,7 +60,7 @@ public class ListCommand extends AbstractPluginCommand {
     }
 
     private boolean executeInstalled(CommandSender sender) {
-        List<ProjectRecord> installed = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords());
+        List<ProjectRecord> installed = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
         sender.sendMessage(ChatColor.AQUA + "=== Installed Plugins (" + installed.size() + ") ===");
         for (ProjectRecord record : installed) {
             String tag = versionRepository.getStoredTag(record.getName());
@@ -73,7 +73,7 @@ public class ListCommand extends AbstractPluginCommand {
     private boolean executeAvailable(CommandSender sender) {
         List<ProjectRecord> all = projectRecordRepository.getAllProjectRecords();
         Set<String> installedNames = new HashSet<>();
-        for (ProjectRecord r : pluginFolderService.filterInstalled(all)) {
+        for (ProjectRecord r : pluginFileRepository.filterInstalled(all)) {
             installedNames.add(r.getName());
         }
         List<ProjectRecord> available = new ArrayList<>();

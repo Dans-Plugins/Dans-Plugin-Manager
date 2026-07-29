@@ -1,11 +1,11 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
-import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -20,18 +20,18 @@ import java.util.stream.Collectors;
 public class UpdateCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final DownloadService downloadService;
-    private final PluginFolderService pluginFolderService;
+    private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
     private final DiscordNotificationService discordNotificationService;
     private final Plugin plugin;
 
     public UpdateCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
-                         PluginFolderService pluginFolderService, VersionRepository versionRepository,
+                         PluginFileRepository pluginFileRepository, VersionRepository versionRepository,
                          DiscordNotificationService discordNotificationService, Plugin plugin) {
         super(new ArrayList<>(List.of("update")), new ArrayList<>(List.of("dpm.update")));
         this.projectRecordRepository = projectRecordRepository;
         this.downloadService = downloadService;
-        this.pluginFolderService = pluginFolderService;
+        this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
         this.discordNotificationService = discordNotificationService;
         this.plugin = plugin;
@@ -65,7 +65,7 @@ public class UpdateCommand extends AbstractPluginCommand {
                 candidates.add(record);
             }
         }
-        Set<String> installedNames = pluginFolderService.filterInstalled(candidates)
+        Set<String> installedNames = pluginFileRepository.filterInstalled(candidates)
                 .stream().map(ProjectRecord::getName).collect(Collectors.toSet());
         List<ProjectRecord> toUpdate = new ArrayList<>();
         for (ProjectRecord r : candidates) {
@@ -82,12 +82,12 @@ public class UpdateCommand extends AbstractPluginCommand {
     }
 
     public List<String> getInstalledPluginNames() {
-        return pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords())
+        return pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords())
                 .stream().map(ProjectRecord::getName).collect(Collectors.toList());
     }
 
     private List<ProjectRecord> getInstalledPlugins() {
-        return pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords());
+        return pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
     }
 
     private void runUpdates(CommandSender sender, List<ProjectRecord> records) {

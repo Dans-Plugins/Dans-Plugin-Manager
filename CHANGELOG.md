@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Local test server scripts (`up.sh`, `down.sh`, `reload-plugin.sh`, `dpm-cmd.sh`, `test-integration.sh`) that drive [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) for manual plugin testing during development — same Spigot stack and plugin-deploy API used by the CI integration tests
 - `sample.env` documenting the env vars used by the local test server scripts
 
+### Changed
+- Reclassified `PluginFolderService` as `PluginFileRepository` and `GitHubReleaseService` as `GitHubReleaseRepository`, moving both into the `repositories/` package — both are data-access classes (filesystem scanning, GitHub API calls), not business logic, per the layering proposed in #94. No behavior change.
+
 ## [0.6.0] - 2026-05-18
 
 ### Added

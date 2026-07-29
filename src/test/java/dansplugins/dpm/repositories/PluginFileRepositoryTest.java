@@ -1,4 +1,4 @@
-package dansplugins.dpm.services;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.objects.ProjectRecord;
 import org.junit.jupiter.api.Test;
@@ -12,9 +12,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class PluginFolderServiceTest {
+class PluginFileRepositoryTest {
 
-    private final PluginFolderService service = new PluginFolderService();
+    private final PluginFileRepository service = new PluginFileRepository();
 
     // -------------------------------------------------------------------------
     // normalize()
@@ -101,7 +101,7 @@ class PluginFolderServiceTest {
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
         createFile(tempDir, "medievalfactions.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         List<File> conflicts = svc.findConflictingJars(record);
@@ -113,7 +113,7 @@ class PluginFolderServiceTest {
     void findConflictingJars_ignoresManagedFile(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
@@ -123,7 +123,7 @@ class PluginFolderServiceTest {
     void findConflictingJars_ignoresDifferentPlugin(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
@@ -135,7 +135,7 @@ class PluginFolderServiceTest {
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
         createFile(tempDir, "medievalfactions.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertEquals(2, svc.findConflictingJars(record).size());
@@ -143,7 +143,7 @@ class PluginFolderServiceTest {
 
     @Test
     void findConflictingJars_emptyFolder(@TempDir Path tempDir) {
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
@@ -154,7 +154,7 @@ class PluginFolderServiceTest {
         createFile(tempDir, "Medieval-Factions-4.6.3.zip");
         createFile(tempDir, "Medieval-Factions-4.6.3.txt");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
@@ -167,7 +167,7 @@ class PluginFolderServiceTest {
         createFile(tempDir, "MEDIEVALFACTIONS.JAR");
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         List<File> conflicts = svc.findConflictingJars(record);
@@ -177,7 +177,7 @@ class PluginFolderServiceTest {
 
     @Test
     void findConflictingJars_nonExistentFolderReturnsEmpty() {
-        PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");
+        PluginFileRepository svc = new PluginFileRepository("/this/path/does/not/exist");
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         assertTrue(svc.findConflictingJars(record).isEmpty());
@@ -190,14 +190,14 @@ class PluginFolderServiceTest {
     @Test
     void isInstalled_returnsTrueWhenManagedJarExists(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         assertTrue(svc.isInstalled(record));
     }
 
     @Test
     void isInstalled_returnsFalseWhenManagedJarAbsent(@TempDir Path tempDir) {
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         assertFalse(svc.isInstalled(record));
     }
@@ -206,7 +206,7 @@ class PluginFolderServiceTest {
     void isInstalled_returnsFalseWhenOnlyVersionedJarPresent(@TempDir Path tempDir) throws IOException {
         // The versioned copy is a conflict, not the managed file
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         assertFalse(svc.isInstalled(record));
     }
@@ -218,7 +218,7 @@ class PluginFolderServiceTest {
     @Test
     void filterInstalled_returnsOnlyInstalledRecords(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
                 ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
@@ -232,7 +232,7 @@ class PluginFolderServiceTest {
     void filterInstalled_returnsAllWhenAllInstalled(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
         createFile(tempDir, "currencies.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
                 ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
@@ -242,7 +242,7 @@ class PluginFolderServiceTest {
 
     @Test
     void filterInstalled_returnsEmptyWhenNoneInstalled(@TempDir Path tempDir) {
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
         );
@@ -252,14 +252,14 @@ class PluginFolderServiceTest {
     @Test
     void filterInstalled_returnsEmptyForEmptyInput(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         assertTrue(svc.filterInstalled(List.of()).isEmpty());
     }
 
     @Test
     void filterInstalled_isCaseInsensitive(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "MedievalFactions.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
         );
@@ -268,7 +268,7 @@ class PluginFolderServiceTest {
 
     @Test
     void filterInstalled_nonExistentFolderReturnsEmpty() {
-        PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");
+        PluginFileRepository svc = new PluginFileRepository("/this/path/does/not/exist");
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
         );
@@ -282,7 +282,7 @@ class PluginFolderServiceTest {
     @Test
     void getInstalledFile_returnsFileWhenPresent(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString() + "/");
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         File result = svc.getInstalledFile(record);
         assertNotNull(result);
@@ -291,7 +291,7 @@ class PluginFolderServiceTest {
 
     @Test
     void getInstalledFile_returnsNullWhenAbsent(@TempDir Path tempDir) {
-        PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString() + "/");
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         assertNull(svc.getInstalledFile(record));
     }
@@ -299,7 +299,7 @@ class PluginFolderServiceTest {
     @Test
     void getInstalledFile_caseInsensitiveMatch(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "MedievalFactions.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString() + "/");
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString() + "/");
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
         assertNotNull(svc.getInstalledFile(record));
     }
@@ -313,7 +313,7 @@ class PluginFolderServiceTest {
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
         createFile(tempDir, "medievalfactions.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
                 ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
@@ -330,7 +330,7 @@ class PluginFolderServiceTest {
     void findAllConflictingJars_emptyWhenNoConflicts(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "medievalfactions.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
         );
@@ -345,7 +345,7 @@ class PluginFolderServiceTest {
         createFile(tempDir, "Currencies-2.1.jar");
         createFile(tempDir, "currencies.jar");
 
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions"),
                 ProjectRecord.forGitHub("currencies", "Dans-Plugins", "Currencies")
@@ -359,7 +359,7 @@ class PluginFolderServiceTest {
 
     @Test
     void findAllConflictingJars_emptyFolder(@TempDir Path tempDir) {
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
         );
@@ -368,7 +368,7 @@ class PluginFolderServiceTest {
 
     @Test
     void findAllConflictingJars_nonExistentFolderReturnsEmpty() {
-        PluginFolderService svc = new PluginFolderService("/this/path/does/not/exist");
+        PluginFileRepository svc = new PluginFileRepository("/this/path/does/not/exist");
         List<ProjectRecord> records = List.of(
                 ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions")
         );
@@ -378,7 +378,7 @@ class PluginFolderServiceTest {
     @Test
     void findAllConflictingJars_emptyInputReturnsEmpty(@TempDir Path tempDir) throws IOException {
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
-        PluginFolderService svc = new PluginFolderService(tempDir.toString());
+        PluginFileRepository svc = new PluginFileRepository(tempDir.toString());
         assertTrue(svc.findAllConflictingJars(List.of()).isEmpty());
     }
 
