@@ -1,9 +1,9 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -15,14 +15,14 @@ import java.util.Set;
 
 public class SearchCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFolderService pluginFolderService;
+    private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
 
-    public SearchCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
+    public SearchCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
                          VersionRepository versionRepository) {
         super(new ArrayList<>(List.of("search")), new ArrayList<>(List.of("dpm.list")));
         this.projectRecordRepository = projectRecordRepository;
-        this.pluginFolderService = pluginFolderService;
+        this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
     }
 
@@ -44,7 +44,7 @@ public class SearchCommand extends AbstractPluginCommand {
             return true;
         }
         Set<String> installedNames = new HashSet<>();
-        for (ProjectRecord r : pluginFolderService.filterInstalled(matches)) {
+        for (ProjectRecord r : pluginFileRepository.filterInstalled(matches)) {
             installedNames.add(r.getName());
         }
         sender.sendMessage(ChatColor.AQUA + "=== Search Results (" + matches.size() + ") ===");

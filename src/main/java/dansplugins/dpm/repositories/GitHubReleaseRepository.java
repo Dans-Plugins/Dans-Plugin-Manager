@@ -1,4 +1,4 @@
-package dansplugins.dpm.services;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.utils.Logger;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class GitHubReleaseService {
+public class GitHubReleaseRepository {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
 
     private final Logger logger;
@@ -21,7 +21,7 @@ public class GitHubReleaseService {
     private final ConcurrentHashMap<String, ReleaseInfo> releaseCache = new ConcurrentHashMap<>();
     private final AtomicInteger cacheGeneration = new AtomicInteger(0);
 
-    public GitHubReleaseService(Logger logger) {
+    public GitHubReleaseRepository(Logger logger) {
         this.logger = logger;
     }
 

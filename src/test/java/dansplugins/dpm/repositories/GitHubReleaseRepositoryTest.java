@@ -1,4 +1,4 @@
-package dansplugins.dpm.services;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.utils.Logger;
@@ -15,10 +15,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GitHubReleaseServiceTest {
+class GitHubReleaseRepositoryTest {
 
     // Logger is only used for HTTP errors; null is safe for pure parsing tests.
-    private final GitHubReleaseService service = new GitHubReleaseService(null);
+    private final GitHubReleaseRepository service = new GitHubReleaseRepository(null);
 
     // -------------------------------------------------------------------------
     // parseJarUrlFromAssets()
@@ -152,7 +152,7 @@ class GitHubReleaseServiceTest {
     @Test
     void getLatestRelease_returnsCachedResultOnSecondCall() {
         AtomicInteger fetchCount = new AtomicInteger(0);
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override
             ReleaseInfo doFetch(String owner, String repo) {
                 fetchCount.incrementAndGet();
@@ -167,7 +167,7 @@ class GitHubReleaseServiceTest {
     @Test
     void clearCache_causesRefetchOnNextCall() {
         AtomicInteger fetchCount = new AtomicInteger(0);
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override
             ReleaseInfo doFetch(String owner, String repo) {
                 fetchCount.incrementAndGet();
@@ -183,7 +183,7 @@ class GitHubReleaseServiceTest {
     @Test
     void differentRepos_eachFetchedOnce() {
         AtomicInteger fetchCount = new AtomicInteger(0);
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override
             ReleaseInfo doFetch(String owner, String repo) {
                 fetchCount.incrementAndGet();
@@ -200,7 +200,7 @@ class GitHubReleaseServiceTest {
     @Test
     void noRelease_isCached() {
         AtomicInteger fetchCount = new AtomicInteger(0);
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override
             ReleaseInfo doFetch(String owner, String repo) {
                 fetchCount.incrementAndGet();
@@ -215,7 +215,7 @@ class GitHubReleaseServiceTest {
     @Test
     void networkError_isNotCached() {
         AtomicInteger fetchCount = new AtomicInteger(0);
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override
             ReleaseInfo doFetch(String owner, String repo) {
                 fetchCount.incrementAndGet();
@@ -263,7 +263,7 @@ class GitHubReleaseServiceTest {
     @Test
     void doFetch_returnsNull_andWarns_onHttp401() throws IOException {
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
                 return fakeConnection(401, null);
@@ -277,7 +277,7 @@ class GitHubReleaseServiceTest {
     @Test
     void doFetch_returnsNull_andWarns_onHttp429RateLimit() throws IOException {
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
                 return fakeConnection(429, null);
@@ -291,7 +291,7 @@ class GitHubReleaseServiceTest {
     @Test
     void doFetch_returnsNull_andWarns_onHttp403WithZeroRateLimitRemaining() throws IOException {
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
                 return fakeConnection(403, "0");
@@ -305,7 +305,7 @@ class GitHubReleaseServiceTest {
     @Test
     void doFetch_returnsNull_andWarns_onGenericNon200() throws IOException {
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
                 return fakeConnection(500, null);
@@ -325,7 +325,7 @@ class GitHubReleaseServiceTest {
         int[] callCount = {0};
         String successJson = "{\"tag_name\":\"v1.0\",\"published_at\":\"2024-01-01T00:00:00Z\"," +
                 "\"assets\":[{\"browser_download_url\":\"https://example.com/plugin.jar\"}]}";
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override void sleepMs(long ms) {}
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
@@ -344,7 +344,7 @@ class GitHubReleaseServiceTest {
         int[] callCount = {0};
         String successJson = "{\"tag_name\":\"v2.0\",\"published_at\":\"2024-01-01T00:00:00Z\"," +
                 "\"assets\":[{\"browser_download_url\":\"https://example.com/plugin.jar\"}]}";
-        GitHubReleaseService svc = new GitHubReleaseService(null) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
             @Override void sleepMs(long ms) {}
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
@@ -361,7 +361,7 @@ class GitHubReleaseServiceTest {
     void doFetch_doesNotRetryOn4xxClientError() throws IOException {
         int[] callCount = {0};
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override void sleepMs(long ms) {}
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
@@ -377,7 +377,7 @@ class GitHubReleaseServiceTest {
     void doFetch_returnsNull_afterBothAttemptsFailWithIoException() throws IOException {
         int[] callCount = {0};
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override void sleepMs(long ms) {}
             @Override
             HttpURLConnection openConnection(String url) throws IOException {
@@ -394,7 +394,7 @@ class GitHubReleaseServiceTest {
     void doFetch_returnsNull_afterBoth5xxAttemptsFail() throws IOException {
         int[] callCount = {0};
         List<String> warnings = new ArrayList<>();
-        GitHubReleaseService svc = new GitHubReleaseService(capturingLogger(warnings)) {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
             @Override void sleepMs(long ms) {}
             @Override
             HttpURLConnection openConnection(String url) throws IOException {

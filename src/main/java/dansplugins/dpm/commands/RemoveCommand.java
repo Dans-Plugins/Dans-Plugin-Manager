@@ -1,10 +1,10 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.services.DependencyResolutionService;
-import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -16,17 +16,17 @@ import java.util.List;
 
 public class RemoveCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFolderService pluginFolderService;
+    private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
     private final DependencyResolutionService dependencyResolutionService;
     private final Plugin plugin;
 
-    public RemoveCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService,
+    public RemoveCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
                          VersionRepository versionRepository, DependencyResolutionService dependencyResolutionService,
                          Plugin plugin) {
         super(new ArrayList<>(List.of("remove")), new ArrayList<>(List.of("dpm.remove")));
         this.projectRecordRepository = projectRecordRepository;
-        this.pluginFolderService = pluginFolderService;
+        this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
         this.dependencyResolutionService = dependencyResolutionService;
         this.plugin = plugin;
@@ -46,13 +46,13 @@ public class RemoveCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
         }
-        File jar = pluginFolderService.getInstalledFile(record);
+        File jar = pluginFileRepository.getInstalledFile(record);
         if (jar == null) {
             sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed.");
             return true;
         }
 
-        List<ProjectRecord> installed = pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords());
+        List<ProjectRecord> installed = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
         List<String> dependents = dependencyResolutionService.findDependents(record.getName(), installed);
 
         boolean confirmed = args.length >= 2 && args[1].equalsIgnoreCase("--confirm");
@@ -87,7 +87,7 @@ public class RemoveCommand extends AbstractPluginCommand {
 
     public List<String> getInstalledPluginNames() {
         List<String> names = new ArrayList<>();
-        for (ProjectRecord record : pluginFolderService.filterInstalled(projectRecordRepository.getAllProjectRecords())) {
+        for (ProjectRecord record : pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords())) {
             names.add(record.getName());
         }
         return names;

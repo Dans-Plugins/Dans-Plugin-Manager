@@ -1,7 +1,7 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -15,13 +15,13 @@ import java.util.Map;
 
 public class CleanCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFolderService pluginFolderService;
+    private final PluginFileRepository pluginFileRepository;
     private final Plugin plugin;
 
-    public CleanCommand(ProjectRecordRepository projectRecordRepository, PluginFolderService pluginFolderService, Plugin plugin) {
+    public CleanCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository, Plugin plugin) {
         super(new ArrayList<>(List.of("clean")), new ArrayList<>(List.of("dpm.clean")));
         this.projectRecordRepository = projectRecordRepository;
-        this.pluginFolderService = pluginFolderService;
+        this.pluginFileRepository = pluginFileRepository;
         this.plugin = plugin;
     }
 
@@ -30,7 +30,7 @@ public class CleanCommand extends AbstractPluginCommand {
         sender.sendMessage(ChatColor.AQUA + "Scanning for duplicate plugin JARs...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             List<String> conflicts = buildConflictLabels(
-                    pluginFolderService.findAllConflictingJars(projectRecordRepository.getAllProjectRecords()));
+                    pluginFileRepository.findAllConflictingJars(projectRecordRepository.getAllProjectRecords()));
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (conflicts.isEmpty()) {
                     sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
@@ -52,7 +52,7 @@ public class CleanCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.AQUA + "Removing duplicate plugin JARs...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 Map<String, List<File>> conflictMap =
-                        pluginFolderService.findAllConflictingJars(projectRecordRepository.getAllProjectRecords());
+                        pluginFileRepository.findAllConflictingJars(projectRecordRepository.getAllProjectRecords());
                 List<String> removed = new ArrayList<>();
                 List<String> failed = new ArrayList<>();
                 for (Map.Entry<String, List<File>> entry : conflictMap.entrySet()) {

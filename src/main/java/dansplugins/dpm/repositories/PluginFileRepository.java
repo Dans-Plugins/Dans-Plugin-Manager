@@ -1,4 +1,4 @@
-package dansplugins.dpm.services;
+package dansplugins.dpm.repositories;
 
 import dansplugins.dpm.objects.ProjectRecord;
 
@@ -10,18 +10,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class PluginFolderService {
+public class PluginFileRepository {
     private final String pluginsFolder;
 
-    public PluginFolderService() {
+    public PluginFileRepository() {
         this("./plugins/");
     }
 
-    PluginFolderService(String pluginsFolder) {
+    public PluginFileRepository(String pluginsFolder) {
         this.pluginsFolder = pluginsFolder;
     }
 
-    String getPluginsFolder() {
+    public String getPluginsFolder() {
         return pluginsFolder;
     }
 

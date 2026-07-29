@@ -2,6 +2,8 @@ package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.repositories.GitHubReleaseRepository;
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.utils.Logger;
 
@@ -24,26 +26,26 @@ public class DownloadService {
     public static final int FILE_ERROR = -5;
 
     private final Logger logger;
-    private final GitHubReleaseService gitHubReleaseService;
-    private final PluginFolderService pluginFolderService;
+    private final GitHubReleaseRepository gitHubReleaseRepository;
+    private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
 
-    public DownloadService(Logger logger, GitHubReleaseService gitHubReleaseService,
-                           PluginFolderService pluginFolderService, VersionRepository versionRepository) {
+    public DownloadService(Logger logger, GitHubReleaseRepository gitHubReleaseRepository,
+                           PluginFileRepository pluginFileRepository, VersionRepository versionRepository) {
         this.logger = logger;
-        this.gitHubReleaseService = gitHubReleaseService;
-        this.pluginFolderService = pluginFolderService;
+        this.gitHubReleaseRepository = gitHubReleaseRepository;
+        this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
     }
 
     public int downloadLatest(ProjectRecord projectRecord) {
-        return downloadLatest(projectRecord, pluginFolderService.isInstalled(projectRecord));
+        return downloadLatest(projectRecord, pluginFileRepository.isInstalled(projectRecord));
     }
 
     // physicallyInstalled lets callers that have already confirmed the JAR is present (e.g. via
     // filterInstalled()) skip the per-call isInstalled() directory scan.
     public int downloadLatest(ProjectRecord projectRecord, boolean physicallyInstalled) {
-        ReleaseInfo release = gitHubReleaseService.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
+        ReleaseInfo release = gitHubReleaseRepository.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
         if (release == ReleaseInfo.NO_RELEASE) {
             return NO_RELEASE;
         }
@@ -59,7 +61,7 @@ public class DownloadService {
             return ALREADY_UP_TO_DATE;
         }
 
-        String dest = pluginFolderService.getPluginsFolder() + projectRecord.getName() + ".jar";
+        String dest = pluginFileRepository.getPluginsFolder() + projectRecord.getName() + ".jar";
         int bytes = downloadFromUrl(release.getJarUrl(), dest);
         if (bytes > 0) {
             removeConflictingJars(projectRecord);
@@ -71,7 +73,7 @@ public class DownloadService {
     }
 
     private void removeConflictingJars(ProjectRecord projectRecord) {
-        List<File> conflicts = pluginFolderService.findConflictingJars(projectRecord);
+        List<File> conflicts = pluginFileRepository.findConflictingJars(projectRecord);
         for (File conflict : conflicts) {
             if (conflict.delete()) {
                 logger.log("Removed older JAR after download: " + conflict.getName());

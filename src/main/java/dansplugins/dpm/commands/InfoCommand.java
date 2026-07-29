@@ -1,11 +1,11 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.GitHubReleaseRepository;
+import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseInfo;
-import dansplugins.dpm.services.GitHubReleaseService;
-import dansplugins.dpm.services.PluginFolderService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -19,18 +19,18 @@ import java.util.Set;
 
 public class InfoCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final GitHubReleaseService gitHubReleaseService;
-    private final PluginFolderService pluginFolderService;
+    private final GitHubReleaseRepository gitHubReleaseRepository;
+    private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
     private final Plugin plugin;
 
-    public InfoCommand(ProjectRecordRepository projectRecordRepository, GitHubReleaseService gitHubReleaseService,
-                       PluginFolderService pluginFolderService, VersionRepository versionRepository,
+    public InfoCommand(ProjectRecordRepository projectRecordRepository, GitHubReleaseRepository gitHubReleaseRepository,
+                       PluginFileRepository pluginFileRepository, VersionRepository versionRepository,
                        Plugin plugin) {
         super(new ArrayList<>(List.of("info")), new ArrayList<>(List.of("dpm.info")));
         this.projectRecordRepository = projectRecordRepository;
-        this.gitHubReleaseService = gitHubReleaseService;
-        this.pluginFolderService = pluginFolderService;
+        this.gitHubReleaseRepository = gitHubReleaseRepository;
+        this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
         this.plugin = plugin;
     }
@@ -51,7 +51,7 @@ public class InfoCommand extends AbstractPluginCommand {
         }
         sender.sendMessage(ChatColor.AQUA + "Fetching release info for " + record.getName() + "...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            ReleaseInfo release = gitHubReleaseService.getLatestReleaseMetadata(record.getOwner(), record.getRepo());
+            ReleaseInfo release = gitHubReleaseRepository.getLatestReleaseMetadata(record.getOwner(), record.getRepo());
             Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, record, release));
         });
         return true;
@@ -112,7 +112,7 @@ public class InfoCommand extends AbstractPluginCommand {
             if (r != null) toScan.add(r);
         }
         Set<String> names = new HashSet<>();
-        for (ProjectRecord r : pluginFolderService.filterInstalled(toScan)) {
+        for (ProjectRecord r : pluginFileRepository.filterInstalled(toScan)) {
             names.add(r.getName());
         }
         return names;
