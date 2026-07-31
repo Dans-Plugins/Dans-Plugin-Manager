@@ -1,5 +1,7 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.repositories.ConfigRepository;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -7,14 +9,14 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class DiscordNotificationService {
-    private final ConfigService configService;
+    private final ConfigRepository configRepository;
 
-    public DiscordNotificationService(ConfigService configService) {
-        this.configService = configService;
+    public DiscordNotificationService(ConfigRepository configRepository) {
+        this.configRepository = configRepository;
     }
 
     public void send(String message) {
-        String webhookUrl = configService.getString("discordWebhook");
+        String webhookUrl = configRepository.getString("discordWebhook");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
         try {
             doPost(webhookUrl, message);

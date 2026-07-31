@@ -1,5 +1,6 @@
 package dansplugins.dpm.services;
 
+import dansplugins.dpm.repositories.ConfigRepository;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -67,8 +68,8 @@ class DiscordNotificationServiceTest {
     // helpers
     // -------------------------------------------------------------------------
 
-    private ConfigService stubConfig(String webhookUrl) {
-        return new ConfigService(null) {
+    private ConfigRepository stubConfig(String webhookUrl) {
+        return new ConfigRepository(null, null, null) {
             @Override public String getString(String option) {
                 return "discordWebhook".equals(option) ? webhookUrl : null;
             }

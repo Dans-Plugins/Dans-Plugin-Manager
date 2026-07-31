@@ -15,9 +15,10 @@ making any changes.
 
 - `src/main/java/dansplugins/dpm/` – Plugin source code
 - `src/main/java/dansplugins/dpm/commands/` – Command handlers
-- `src/main/java/dansplugins/dpm/data/` – Ephemeral runtime data
 - `src/main/java/dansplugins/dpm/objects/` – Domain objects (ProjectRecord)
-- `src/main/java/dansplugins/dpm/services/` – Services (ConfigService)
+- `src/main/java/dansplugins/dpm/repositories/` – Data access (filesystem, GitHub API, Bukkit config)
+- `src/main/java/dansplugins/dpm/controllers/` – Business logic orchestration (ConfigController)
+- `src/main/java/dansplugins/dpm/services/` – Pure business-logic services
 - `src/main/resources/` – `plugin.yml`
 
 ## Contribution Workflow

@@ -1,13 +1,13 @@
 package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
+import dansplugins.dpm.repositories.ConfigRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.factories.ProjectRecordFactory;
-import dansplugins.dpm.services.ConfigService;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
@@ -36,12 +36,12 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final ProjectRecordRepository projectRecordRepository = new ProjectRecordRepository();
     private final ProjectRecordFactory projectRecordFactory = new ProjectRecordFactory(projectRecordRepository);
     private final ProjectRecordInitializer projectRecordInitializer = new ProjectRecordInitializer(projectRecordFactory);
-    private final ConfigService configService = new ConfigService(this);
+    private final ConfigRepository configRepository = new ConfigRepository(this::getConfig, this::getVersion, this::saveConfig);
     private final Logger logger = new Logger(this);
     private final GitHubReleaseRepository gitHubReleaseRepository = new GitHubReleaseRepository(logger);
     private final PluginFileRepository pluginFileRepository = new PluginFileRepository();
     private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(projectRecordRepository, pluginFileRepository);
-    private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configService);
+    private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configRepository);
     private VersionRepository versionRepository;
     private DownloadService downloadService;
     private RemoveCommand removeCommand;
@@ -50,7 +50,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public void onEnable() {
         initializeConfig();
-        gitHubReleaseRepository.setApiToken(configService.getStringOrDefault("githubToken", ""));
+        gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
         downloadService = new DownloadService(logger, gitHubReleaseRepository, pluginFileRepository, versionRepository);
         initializeCommandService();
@@ -123,12 +123,12 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     }
 
     public boolean isDebugEnabled() {
-        return configService.getBoolean("debugMode");
+        return configRepository.getBoolean("debugMode");
     }
 
     public void reloadDpm() {
         reloadConfig();
-        gitHubReleaseRepository.setApiToken(configService.getStringOrDefault("githubToken", ""));
+        gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
         gitHubReleaseRepository.clearCache();
     }
 
@@ -137,7 +137,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
             performCompatibilityChecks();
         }
         else {
-            configService.saveMissingConfigDefaultsIfNotPresent();
+            configRepository.saveMissingConfigDefaultsIfNotPresent();
         }
     }
 
@@ -147,7 +147,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     private void performCompatibilityChecks() {
         if (isVersionMismatched()) {
-            configService.saveMissingConfigDefaultsIfNotPresent();
+            configRepository.saveMissingConfigDefaultsIfNotPresent();
         }
         reloadConfig();
     }
