@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Reclassified `PluginFolderService` as `PluginFileRepository` and `GitHubReleaseService` as `GitHubReleaseRepository`, moving both into the `repositories/` package — both are data-access classes (filesystem scanning, GitHub API calls), not business logic, per the layering proposed in #94. No behavior change.
 - Split `ConfigService` into `ConfigRepository` (`repositories/` package — plain config I/O) and `ConfigController` (`controllers/` package — option validation, `CommandSender` messaging, the `hasBeenAltered` flag), per the layering proposed in #94. `DansPluginManager` and `DiscordNotificationService` now depend on `ConfigRepository`. No behavior change.
+- Introduced `GetController` (`controllers/` package), which now owns `/dpm get`'s dependency resolution and download-loop orchestration, returning plain per-plugin result data (`GetController.PluginResult`) instead of calling `sender.sendMessage()` directly. `GetCommand` is now a thin router that formats and sends the results; the async `runTaskAsynchronously`/`runTask` dispatch pattern is unchanged. This is the template for the remaining controllers proposed in #94. No user-visible behavior change.
 
 ## [0.6.0] - 2026-05-18
 

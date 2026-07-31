@@ -1,6 +1,7 @@
 package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
+import dansplugins.dpm.controllers.GetController;
 import dansplugins.dpm.repositories.ConfigRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
@@ -44,6 +45,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configRepository);
     private VersionRepository versionRepository;
     private DownloadService downloadService;
+    private GetController getController;
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
@@ -53,6 +55,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
         downloadService = new DownloadService(logger, gitHubReleaseRepository, pluginFileRepository, versionRepository);
+        getController = new GetController(downloadService, dependencyResolutionService, versionRepository, discordNotificationService, getLogger());
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -155,7 +158,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private void initializeCommandService() {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
-                new GetCommand(projectRecordRepository, downloadService, dependencyResolutionService, versionRepository, discordNotificationService, this),
+                new GetCommand(projectRecordRepository, getController, this),
                 new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository),
                 new StatsCommand(projectRecordRepository, pluginFileRepository),
                 new CleanCommand(projectRecordRepository, pluginFileRepository, this),

@@ -1,11 +1,10 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.controllers.GetController;
+import dansplugins.dpm.controllers.GetController.DependencyResolutionResult;
+import dansplugins.dpm.controllers.GetController.PluginResult;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.services.DependencyResolutionService;
-import dansplugins.dpm.services.DiscordNotificationService;
-import dansplugins.dpm.services.DownloadService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -13,29 +12,17 @@ import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class GetCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final DownloadService downloadService;
-    private final DependencyResolutionService dependencyResolutionService;
-    private final VersionRepository versionRepository;
-    private final DiscordNotificationService discordNotificationService;
+    private final GetController getController;
     private final Plugin plugin;
 
-    public GetCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
-                      DependencyResolutionService dependencyResolutionService,
-                      VersionRepository versionRepository, DiscordNotificationService discordNotificationService,
-                      Plugin plugin) {
+    public GetCommand(ProjectRecordRepository projectRecordRepository, GetController getController, Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.projectRecordRepository = projectRecordRepository;
-        this.downloadService = downloadService;
-        this.dependencyResolutionService = dependencyResolutionService;
-        this.versionRepository = versionRepository;
-        this.discordNotificationService = discordNotificationService;
+        this.getController = getController;
         this.plugin = plugin;
     }
 
@@ -60,27 +47,18 @@ public class GetCommand extends AbstractPluginCommand {
             return false;
         }
 
-        List<ProjectRecord> depsToFetch = new ArrayList<>();
-        List<String> unknownDeps = new ArrayList<>();
-        Set<String> resolved = new HashSet<>();
-        resolved.add(record.getName().toLowerCase());
-        dependencyResolutionService.resolve(List.of(record), resolved, depsToFetch, unknownDeps);
-
-        for (String dep : unknownDeps) {
+        DependencyResolutionResult resolution = getController.resolveDependencies(List.of(record));
+        for (String dep : resolution.getUnknownDeps()) {
             sender.sendMessage(ChatColor.YELLOW + "Warning: " + record.getName()
                     + " requires " + dep + ", which is not installed and is not a managed DPC plugin.");
         }
 
+        List<ProjectRecord> depsToFetch = resolution.getDepsToFetch();
         if (depsToFetch.isEmpty()) {
             sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + "...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                int result = downloadService.downloadLatest(record);
-                if (result == DownloadService.NETWORK_ERROR) {
-                    discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": network error");
-                } else if (result == DownloadService.FILE_ERROR) {
-                    discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": file write error");
-                }
-                Bukkit.getScheduler().runTask(plugin, () -> reportSingleResult(sender, record, result));
+                PluginResult result = getController.download(record);
+                Bukkit.getScheduler().runTask(plugin, () -> reportSingleResult(sender, result));
             });
         } else {
             for (ProjectRecord dep : depsToFetch) {
@@ -107,18 +85,13 @@ public class GetCommand extends AbstractPluginCommand {
             }
         }
 
-        Set<String> resolved = records.stream()
-                .map(r -> r.getName().toLowerCase())
-                .collect(Collectors.toCollection(HashSet::new));
-        List<ProjectRecord> depsToFetch = new ArrayList<>();
-        List<String> unknownDeps = new ArrayList<>();
-        dependencyResolutionService.resolve(records, resolved, depsToFetch, unknownDeps);
-
-        for (String dep : unknownDeps) {
+        DependencyResolutionResult resolution = getController.resolveDependencies(records);
+        for (String dep : resolution.getUnknownDeps()) {
             sender.sendMessage(ChatColor.YELLOW + "Warning: required dependency '" + dep
                     + "' is not installed and is not a managed DPC plugin.");
         }
 
+        List<ProjectRecord> depsToFetch = resolution.getDepsToFetch();
         List<ProjectRecord> allToFetch = new ArrayList<>(depsToFetch);
         for (ProjectRecord dep : depsToFetch) {
             sender.sendMessage(ChatColor.AQUA + "Info: Also downloading required dependency " + dep.getName() + ".");
@@ -133,39 +106,41 @@ public class GetCommand extends AbstractPluginCommand {
     }
 
     private void runBatch(CommandSender sender, List<ProjectRecord> records, int notFound) {
+        List<PluginResult> results = getController.runBatch(records);
         int downloaded = 0, upToDate = 0, skipped = 0, failed = 0;
-        for (ProjectRecord record : records) {
-            int result = downloadService.downloadLatest(record);
-            final String msg;
-            if (result == DownloadService.NO_RELEASE) {
-                skipped++;
-                msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
-            } else if (result == DownloadService.ALREADY_UP_TO_DATE) {
-                upToDate++;
-                String tag = versionRepository.getStoredTag(record.getName());
-                msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
-            } else if (result == DownloadService.NETWORK_ERROR) {
-                failed++;
-                plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not reach GitHub.");
-                discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": network error");
-                msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not reach GitHub — check console for details).";
-            } else if (result == DownloadService.FILE_ERROR) {
-                failed++;
-                plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not write to plugins folder.");
-                discordNotificationService.send("[DPM] Failed to install " + record.getName() + ": file write error");
-                msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not write to plugins folder — check server file permissions).";
-            } else if (result < 0) {
-                failed++;
-                plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + ".");
-                msg = ChatColor.RED + "Failed to download " + record.getName() + ".";
-            } else {
-                downloaded++;
-                String tag = versionRepository.getStoredTag(record.getName());
-                String version = tag != null ? " " + tag : "";
-                plugin.getLogger().info("[DPM] Installed " + record.getName() + version + ".");
-                msg = ChatColor.GREEN + "Downloaded " + record.getName() + version + " (" + (result / 1024) + " KB).";
+        for (PluginResult result : results) {
+            ProjectRecord record = result.getRecord();
+            String msg;
+            switch (result.getOutcome()) {
+                case NO_RELEASE:
+                    skipped++;
+                    msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
+                    break;
+                case ALREADY_UP_TO_DATE:
+                    upToDate++;
+                    String tag = result.getStoredTag();
+                    msg = ChatColor.GREEN + record.getName() + (tag != null ? " " + tag : "") + " already up to date.";
+                    break;
+                case NETWORK_ERROR:
+                    failed++;
+                    msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not reach GitHub — check console for details).";
+                    break;
+                case FILE_ERROR:
+                    failed++;
+                    msg = ChatColor.RED + "Failed to download " + record.getName() + " (could not write to plugins folder — check server file permissions).";
+                    break;
+                case DOWNLOADED:
+                    downloaded++;
+                    String version = result.getStoredTag() != null ? " " + result.getStoredTag() : "";
+                    msg = ChatColor.GREEN + "Downloaded " + record.getName() + version + " (" + (result.getDownloadedBytes() / 1024) + " KB).";
+                    break;
+                default:
+                    failed++;
+                    msg = ChatColor.RED + "Failed to download " + record.getName() + ".";
+                    break;
             }
-            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
+            final String fmsg = msg;
+            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(fmsg));
         }
         final int fd = downloaded, fu = upToDate, fs = skipped, ff = failed;
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -184,27 +159,30 @@ public class GetCommand extends AbstractPluginCommand {
         });
     }
 
-    private void reportSingleResult(CommandSender sender, ProjectRecord record, int result) {
-        if (result == DownloadService.NO_RELEASE) {
-            sender.sendMessage(ChatColor.YELLOW + record.getName() + " has no published release yet. Try again later.");
-        } else if (result == DownloadService.ALREADY_UP_TO_DATE) {
-            String tag = versionRepository.getStoredTag(record.getName());
-            String version = tag != null ? " (" + tag + ")" : "";
-            sender.sendMessage(ChatColor.GREEN + record.getName() + " is already up to date" + version + ".");
-        } else if (result == DownloadService.NETWORK_ERROR) {
-            plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not reach GitHub.");
-            sender.sendMessage(ChatColor.RED + "Could not reach GitHub when downloading " + record.getName() + " — check console for details.");
-        } else if (result == DownloadService.FILE_ERROR) {
-            plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + " — could not write to plugins folder.");
-            sender.sendMessage(ChatColor.RED + "Could not write " + record.getName() + " to the plugins folder — check server file permissions.");
-        } else if (result < 0) {
-            plugin.getLogger().warning("[DPM] Failed to install " + record.getName() + ".");
-            sender.sendMessage(ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
-        } else {
-            String tag = versionRepository.getStoredTag(record.getName());
-            String version = tag != null ? " " + tag : "";
-            plugin.getLogger().info("[DPM] Installed " + record.getName() + version + ".");
-            sender.sendMessage(ChatColor.GREEN + "Downloaded" + version + " (" + (result / 1024) + " KB). Restart the server to enable " + record.getName() + ".");
+    private void reportSingleResult(CommandSender sender, PluginResult result) {
+        ProjectRecord record = result.getRecord();
+        switch (result.getOutcome()) {
+            case NO_RELEASE:
+                sender.sendMessage(ChatColor.YELLOW + record.getName() + " has no published release yet. Try again later.");
+                break;
+            case ALREADY_UP_TO_DATE:
+                String tag = result.getStoredTag();
+                String upToDateVersion = tag != null ? " (" + tag + ")" : "";
+                sender.sendMessage(ChatColor.GREEN + record.getName() + " is already up to date" + upToDateVersion + ".");
+                break;
+            case NETWORK_ERROR:
+                sender.sendMessage(ChatColor.RED + "Could not reach GitHub when downloading " + record.getName() + " — check console for details.");
+                break;
+            case FILE_ERROR:
+                sender.sendMessage(ChatColor.RED + "Could not write " + record.getName() + " to the plugins folder — check server file permissions.");
+                break;
+            case DOWNLOADED:
+                String downloadedVersion = result.getStoredTag() != null ? " " + result.getStoredTag() : "";
+                sender.sendMessage(ChatColor.GREEN + "Downloaded" + downloadedVersion + " (" + (result.getDownloadedBytes() / 1024) + " KB). Restart the server to enable " + record.getName() + ".");
+                break;
+            default:
+                sender.sendMessage(ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
+                break;
         }
     }
 }
