@@ -2,6 +2,7 @@ package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
 import dansplugins.dpm.controllers.GetController;
+import dansplugins.dpm.controllers.UpdateController;
 import dansplugins.dpm.repositories.ConfigRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
@@ -46,6 +47,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private VersionRepository versionRepository;
     private DownloadService downloadService;
     private GetController getController;
+    private UpdateController updateController;
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
@@ -56,6 +58,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
         downloadService = new DownloadService(logger, gitHubReleaseRepository, pluginFileRepository, versionRepository);
         getController = new GetController(downloadService, dependencyResolutionService, versionRepository, discordNotificationService, getLogger());
+        updateController = new UpdateController(projectRecordRepository, pluginFileRepository, downloadService, versionRepository, discordNotificationService, getLogger());
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -162,7 +165,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository),
                 new StatsCommand(projectRecordRepository, pluginFileRepository),
                 new CleanCommand(projectRecordRepository, pluginFileRepository, this),
-                updateCommand = new UpdateCommand(projectRecordRepository, downloadService, pluginFileRepository, versionRepository, discordNotificationService, this),
+                updateCommand = new UpdateCommand(updateController, this),
                 new InfoCommand(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, this),
                 new ReloadCommand(this),
                 removeCommand = new RemoveCommand(projectRecordRepository, pluginFileRepository, versionRepository, dependencyResolutionService, this),

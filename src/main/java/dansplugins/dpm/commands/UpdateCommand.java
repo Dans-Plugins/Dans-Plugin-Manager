@@ -1,11 +1,9 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.repositories.PluginFileRepository;
-import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.controllers.UpdateController;
+import dansplugins.dpm.controllers.UpdateController.PluginResult;
+import dansplugins.dpm.controllers.UpdateController.SelectionResult;
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.services.DiscordNotificationService;
-import dansplugins.dpm.services.DownloadService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -14,32 +12,21 @@ import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UpdateCommand extends AbstractPluginCommand {
-    private final ProjectRecordRepository projectRecordRepository;
-    private final DownloadService downloadService;
-    private final PluginFileRepository pluginFileRepository;
-    private final VersionRepository versionRepository;
-    private final DiscordNotificationService discordNotificationService;
+    private final UpdateController updateController;
     private final Plugin plugin;
 
-    public UpdateCommand(ProjectRecordRepository projectRecordRepository, DownloadService downloadService,
-                         PluginFileRepository pluginFileRepository, VersionRepository versionRepository,
-                         DiscordNotificationService discordNotificationService, Plugin plugin) {
+    public UpdateCommand(UpdateController updateController, Plugin plugin) {
         super(new ArrayList<>(List.of("update")), new ArrayList<>(List.of("dpm.update")));
-        this.projectRecordRepository = projectRecordRepository;
-        this.downloadService = downloadService;
-        this.pluginFileRepository = pluginFileRepository;
-        this.versionRepository = versionRepository;
-        this.discordNotificationService = discordNotificationService;
+        this.updateController = updateController;
         this.plugin = plugin;
     }
 
     @Override
     public boolean execute(CommandSender sender) {
-        List<ProjectRecord> installed = getInstalledPlugins();
+        List<ProjectRecord> installed = updateController.getInstalledPlugins();
         if (installed.isEmpty()) {
             sender.sendMessage(ChatColor.YELLOW + "No managed plugins are currently installed.");
             return true;
@@ -56,25 +43,14 @@ public class UpdateCommand extends AbstractPluginCommand {
     }
 
     private boolean executeSelective(CommandSender sender, String[] names) {
-        List<ProjectRecord> candidates = new ArrayList<>();
-        for (String name : names) {
-            ProjectRecord record = projectRecordRepository.getProjectRecord(name);
-            if (record == null) {
-                sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
-            } else {
-                candidates.add(record);
-            }
+        SelectionResult selection = updateController.selectForUpdate(names);
+        for (String name : selection.getNotFound()) {
+            sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
         }
-        Set<String> installedNames = pluginFileRepository.filterInstalled(candidates)
-                .stream().map(ProjectRecord::getName).collect(Collectors.toSet());
-        List<ProjectRecord> toUpdate = new ArrayList<>();
-        for (ProjectRecord r : candidates) {
-            if (installedNames.contains(r.getName())) {
-                toUpdate.add(r);
-            } else {
-                sender.sendMessage(ChatColor.YELLOW + r.getName() + " is not installed — use /dpm get " + r.getName() + " first.");
-            }
+        for (String name : selection.getNotInstalled()) {
+            sender.sendMessage(ChatColor.YELLOW + name + " is not installed — use /dpm get " + name + " first.");
         }
+        List<ProjectRecord> toUpdate = selection.getToUpdate();
         if (toUpdate.isEmpty()) return false;
         sender.sendMessage(ChatColor.AQUA + "Checking " + toUpdate.size() + " plugin(s) for updates...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runUpdates(sender, toUpdate));
@@ -82,57 +58,47 @@ public class UpdateCommand extends AbstractPluginCommand {
     }
 
     public List<String> getInstalledPluginNames() {
-        return pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords())
+        return updateController.getInstalledPlugins()
                 .stream().map(ProjectRecord::getName).collect(Collectors.toList());
     }
 
-    private List<ProjectRecord> getInstalledPlugins() {
-        return pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
-    }
-
     private void runUpdates(CommandSender sender, List<ProjectRecord> records) {
-        int updated = 0;
-        int upToDate = 0;
-        int skipped = 0;
-        int failed = 0;
-        List<String> versionDiffs = new ArrayList<>();
-
-        for (ProjectRecord record : records) {
-            String oldTag = versionRepository.getStoredTag(record.getName());
-            int result = downloadService.downloadLatest(record, true);
-            final String msg;
-            if (result == DownloadService.ALREADY_UP_TO_DATE) {
-                upToDate++;
-                msg = ChatColor.GREEN + record.getName() + (oldTag != null ? " " + oldTag : "") + " already up to date.";
-            } else if (result == DownloadService.NO_RELEASE) {
-                skipped++;
-                msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
-            } else if (result > 0) {
-                updated++;
-                String newTag = versionRepository.getStoredTag(record.getName());
-                String versionDiff = oldTag != null && newTag != null
-                        ? " " + oldTag + " → " + newTag
-                        : newTag != null ? " " + newTag : "";
-                versionDiffs.add(record.getName() + versionDiff);
-                plugin.getLogger().info("[DPM] Updated " + record.getName() + versionDiff + ".");
-                msg = ChatColor.GREEN + "Updated " + record.getName() + versionDiff + ".";
-            } else if (result == DownloadService.NETWORK_ERROR) {
-                failed++;
-                plugin.getLogger().warning("[DPM] Failed to update " + record.getName() + " — could not reach GitHub.");
-                msg = ChatColor.RED + "Failed to update " + record.getName() + " (could not reach GitHub — check console for details).";
-            } else if (result == DownloadService.FILE_ERROR) {
-                failed++;
-                plugin.getLogger().warning("[DPM] Failed to update " + record.getName() + " — could not write to plugins folder.");
-                msg = ChatColor.RED + "Failed to update " + record.getName() + " (could not write to plugins folder — check server file permissions).";
-            } else {
-                failed++;
-                plugin.getLogger().warning("[DPM] Failed to update " + record.getName() + ".");
-                msg = ChatColor.RED + "Failed to update " + record.getName() + ".";
+        List<PluginResult> results = updateController.runBatch(records);
+        int updated = 0, upToDate = 0, skipped = 0, failed = 0;
+        for (PluginResult result : results) {
+            ProjectRecord record = result.getRecord();
+            String msg;
+            switch (result.getOutcome()) {
+                case ALREADY_UP_TO_DATE:
+                    upToDate++;
+                    String oldTag = result.getOldTag();
+                    msg = ChatColor.GREEN + record.getName() + (oldTag != null ? " " + oldTag : "") + " already up to date.";
+                    break;
+                case NO_RELEASE:
+                    skipped++;
+                    msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
+                    break;
+                case UPDATED:
+                    updated++;
+                    String versionDiff = UpdateController.versionDiffSuffix(result.getOldTag(), result.getNewTag());
+                    msg = ChatColor.GREEN + "Updated " + record.getName() + versionDiff + ".";
+                    break;
+                case NETWORK_ERROR:
+                    failed++;
+                    msg = ChatColor.RED + "Failed to update " + record.getName() + " (could not reach GitHub — check console for details).";
+                    break;
+                case FILE_ERROR:
+                    failed++;
+                    msg = ChatColor.RED + "Failed to update " + record.getName() + " (could not write to plugins folder — check server file permissions).";
+                    break;
+                default:
+                    failed++;
+                    msg = ChatColor.RED + "Failed to update " + record.getName() + ".";
+                    break;
             }
-            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(msg));
+            final String fmsg = msg;
+            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(fmsg));
         }
-
-        sendUpdateNotification(updated, upToDate, skipped, failed, versionDiffs);
 
         final int finalUpdated = updated;
         final int finalUpToDate = upToDate;
@@ -155,14 +121,5 @@ public class UpdateCommand extends AbstractPluginCommand {
                 sender.sendMessage(ChatColor.YELLOW + "Restart the server to load updated plugins.");
             }
         });
-    }
-
-    private void sendUpdateNotification(int updated, int upToDate, int skipped, int failed, List<String> versionDiffs) {
-        StringBuilder msg = new StringBuilder("[DPM] Update complete: ")
-                .append(updated).append(" updated, ").append(upToDate).append(" already up to date");
-        if (skipped > 0) msg.append(", ").append(skipped).append(" skipped");
-        if (failed > 0) msg.append(", ").append(failed).append(" failed");
-        for (String diff : versionDiffs) msg.append("\n• ").append(diff);
-        discordNotificationService.send(msg.toString());
     }
 }
