@@ -1,35 +1,26 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.repositories.PluginFileRepository;
-import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.controllers.RemoveController;
+import dansplugins.dpm.controllers.RemoveController.RemovalPreview;
+import dansplugins.dpm.controllers.RemoveController.RemovalResult;
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.services.DependencyResolutionService;
+import dansplugins.dpm.repositories.ProjectRecordRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RemoveCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFileRepository pluginFileRepository;
-    private final VersionRepository versionRepository;
-    private final DependencyResolutionService dependencyResolutionService;
-    private final Plugin plugin;
+    private final RemoveController removeController;
 
-    public RemoveCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
-                         VersionRepository versionRepository, DependencyResolutionService dependencyResolutionService,
-                         Plugin plugin) {
+    public RemoveCommand(ProjectRecordRepository projectRecordRepository, RemoveController removeController) {
         super(new ArrayList<>(List.of("remove")), new ArrayList<>(List.of("dpm.remove")));
         this.projectRecordRepository = projectRecordRepository;
-        this.pluginFileRepository = pluginFileRepository;
-        this.versionRepository = versionRepository;
-        this.dependencyResolutionService = dependencyResolutionService;
-        this.plugin = plugin;
+        this.removeController = removeController;
     }
 
     @Override
@@ -46,51 +37,54 @@ public class RemoveCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
         }
-        File jar = pluginFileRepository.getInstalledFile(record);
-        if (jar == null) {
-            sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed.");
-            return true;
-        }
-
-        List<ProjectRecord> installed = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
-        List<String> dependents = dependencyResolutionService.findDependents(record.getName(), installed);
 
         boolean confirmed = args.length >= 2 && args[1].equalsIgnoreCase("--confirm");
         if (!confirmed) {
-            if (!dependents.isEmpty()) {
-                sender.sendMessage(ChatColor.YELLOW + "Warning: " + formatList(dependents)
-                        + " declare a hard dependency on " + record.getName() + ".");
-                sender.sendMessage(ChatColor.YELLOW + "Removing " + record.getName()
-                        + " may cause those plugins to stop working.");
-            }
-            sender.sendMessage(ChatColor.YELLOW + "This will delete " + ChatColor.WHITE + jar.getName() + ChatColor.YELLOW + " from the plugins folder.");
-            sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm remove " + name + " --confirm" + ChatColor.YELLOW + " to proceed.");
+            return previewRemoval(sender, record);
+        }
+        return performRemoval(sender, record);
+    }
+
+    private boolean previewRemoval(CommandSender sender, ProjectRecord record) {
+        RemovalPreview preview = removeController.preview(record);
+        if (!preview.isInstalled()) {
+            sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed.");
             return true;
         }
+        if (!preview.getDependents().isEmpty()) {
+            sender.sendMessage(ChatColor.YELLOW + "Warning: " + formatList(preview.getDependents())
+                    + " declare a hard dependency on " + record.getName() + ".");
+            sender.sendMessage(ChatColor.YELLOW + "Removing " + record.getName()
+                    + " may cause those plugins to stop working.");
+        }
+        sender.sendMessage(ChatColor.YELLOW + "This will delete " + ChatColor.WHITE + preview.getJar().getName() + ChatColor.YELLOW + " from the plugins folder.");
+        sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm remove " + record.getName() + " --confirm" + ChatColor.YELLOW + " to proceed.");
+        return true;
+    }
 
-        if (!dependents.isEmpty()) {
-            sender.sendMessage(ChatColor.YELLOW + "Warning: " + formatList(dependents)
+    private boolean performRemoval(CommandSender sender, ProjectRecord record) {
+        RemovalResult result = removeController.remove(record);
+        if (result.getOutcome() == RemoveController.Outcome.NOT_INSTALLED) {
+            sender.sendMessage(ChatColor.YELLOW + record.getName() + " is not installed.");
+            return true;
+        }
+        if (!result.getDependents().isEmpty()) {
+            sender.sendMessage(ChatColor.YELLOW + "Warning: " + formatList(result.getDependents())
                     + " declare a hard dependency on " + record.getName() + " and may stop working.");
         }
-        if (jar.delete()) {
-            versionRepository.removeTag(record.getName());
-            plugin.getLogger().info("[DPM] Removed " + record.getName() + ".");
+        if (result.getOutcome() == RemoveController.Outcome.DELETED) {
             sender.sendMessage(ChatColor.GREEN + "Removed " + record.getName() + ".");
             sender.sendMessage(ChatColor.YELLOW + "Restart the server for the removal to take effect.");
             sender.sendMessage(ChatColor.YELLOW + "To reinstall, run " + ChatColor.WHITE + "/dpm get " + record.getName() + ChatColor.YELLOW + ".");
         } else {
-            plugin.getLogger().warning("[DPM] Failed to delete " + jar.getName() + " — check server file permissions.");
-            sender.sendMessage(ChatColor.RED + "Failed to delete " + jar.getName() + ". Check server file permissions.");
+            sender.sendMessage(ChatColor.RED + "Failed to delete " + result.getJar().getName() + ". Check server file permissions.");
         }
         return true;
     }
 
     public List<String> getInstalledPluginNames() {
-        List<String> names = new ArrayList<>();
-        for (ProjectRecord record : pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords())) {
-            names.add(record.getName());
-        }
-        return names;
+        return removeController.getInstalledPlugins()
+                .stream().map(ProjectRecord::getName).collect(Collectors.toList());
     }
 
     private String formatList(List<String> names) {
