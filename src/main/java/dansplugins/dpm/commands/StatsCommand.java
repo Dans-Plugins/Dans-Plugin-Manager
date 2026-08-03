@@ -1,7 +1,7 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.repositories.PluginFileRepository;
-import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.controllers.StatsController;
+import dansplugins.dpm.controllers.StatsController.Stats;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -10,24 +10,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StatsCommand extends AbstractPluginCommand {
-    private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFileRepository pluginFileRepository;
+    private final StatsController statsController;
 
-    public StatsCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository) {
+    public StatsCommand(StatsController statsController) {
         super(new ArrayList<>(List.of("stats")), new ArrayList<>(List.of("dpm.stats")));
-        this.projectRecordRepository = projectRecordRepository;
-        this.pluginFileRepository = pluginFileRepository;
+        this.statsController = statsController;
     }
 
     @Override
     public boolean execute(CommandSender commandSender) {
-        int total = projectRecordRepository.getNumProjectRecords();
-        int installed = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords()).size();
-        int available = total - installed;
+        Stats stats = statsController.getStats();
         commandSender.sendMessage(ChatColor.AQUA + "=== DPM Stats ===");
-        commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + total);
-        commandSender.sendMessage(ChatColor.AQUA + "Installed plugins: " + installed);
-        commandSender.sendMessage(ChatColor.AQUA + "Available plugins: " + available);
+        commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + stats.getTotal());
+        commandSender.sendMessage(ChatColor.AQUA + "Installed plugins: " + stats.getInstalled());
+        commandSender.sendMessage(ChatColor.AQUA + "Available plugins: " + stats.getAvailable());
         return true;
     }
 
