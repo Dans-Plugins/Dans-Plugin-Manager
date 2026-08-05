@@ -3,6 +3,8 @@ package dansplugins.dpm;
 import dansplugins.dpm.commands.*;
 import dansplugins.dpm.controllers.GetController;
 import dansplugins.dpm.controllers.RemoveController;
+import dansplugins.dpm.controllers.SearchController;
+import dansplugins.dpm.controllers.StatsController;
 import dansplugins.dpm.controllers.UpdateController;
 import dansplugins.dpm.repositories.ConfigRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
@@ -50,6 +52,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private GetController getController;
     private UpdateController updateController;
     private RemoveController removeController;
+    private final StatsController statsController = new StatsController(projectRecordRepository, pluginFileRepository);
+    private SearchController searchController;
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
@@ -62,6 +66,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         getController = new GetController(downloadService, dependencyResolutionService, versionRepository, discordNotificationService, getLogger());
         updateController = new UpdateController(projectRecordRepository, pluginFileRepository, downloadService, versionRepository, discordNotificationService, getLogger());
         removeController = new RemoveController(projectRecordRepository, pluginFileRepository, versionRepository, dependencyResolutionService, getLogger());
+        searchController = new SearchController(projectRecordRepository, pluginFileRepository, versionRepository);
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -166,13 +171,13 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new HelpCommand(),
                 new GetCommand(projectRecordRepository, getController, this),
                 new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository),
-                new StatsCommand(projectRecordRepository, pluginFileRepository),
+                new StatsCommand(statsController),
                 new CleanCommand(projectRecordRepository, pluginFileRepository, this),
                 updateCommand = new UpdateCommand(updateController, this),
                 new InfoCommand(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, this),
                 new ReloadCommand(this),
                 removeCommand = new RemoveCommand(projectRecordRepository, removeController),
-                new SearchCommand(projectRecordRepository, pluginFileRepository, versionRepository)
+                new SearchCommand(searchController)
         ));
         commandService.initialize(commands, "That command wasn't found.");
     }
