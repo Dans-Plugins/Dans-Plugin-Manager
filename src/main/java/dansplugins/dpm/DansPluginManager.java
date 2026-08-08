@@ -2,6 +2,8 @@ package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
 import dansplugins.dpm.controllers.GetController;
+import dansplugins.dpm.controllers.InfoController;
+import dansplugins.dpm.controllers.ListController;
 import dansplugins.dpm.controllers.RemoveController;
 import dansplugins.dpm.controllers.SearchController;
 import dansplugins.dpm.controllers.StatsController;
@@ -54,6 +56,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private RemoveController removeController;
     private final StatsController statsController = new StatsController(projectRecordRepository, pluginFileRepository);
     private SearchController searchController;
+    private ListController listController;
+    private InfoController infoController;
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
@@ -67,6 +71,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         updateController = new UpdateController(projectRecordRepository, pluginFileRepository, downloadService, versionRepository, discordNotificationService, getLogger());
         removeController = new RemoveController(projectRecordRepository, pluginFileRepository, versionRepository, dependencyResolutionService, getLogger());
         searchController = new SearchController(projectRecordRepository, pluginFileRepository, versionRepository);
+        listController = new ListController(projectRecordRepository, pluginFileRepository, versionRepository);
+        infoController = new InfoController(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository);
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -170,11 +176,11 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
                 new GetCommand(projectRecordRepository, getController, this),
-                new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository),
+                new ListCommand(listController),
                 new StatsCommand(statsController),
                 new CleanCommand(projectRecordRepository, pluginFileRepository, this),
                 updateCommand = new UpdateCommand(updateController, this),
-                new InfoCommand(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, this),
+                new InfoCommand(infoController, this),
                 new ReloadCommand(this),
                 removeCommand = new RemoveCommand(projectRecordRepository, removeController),
                 new SearchCommand(searchController)
