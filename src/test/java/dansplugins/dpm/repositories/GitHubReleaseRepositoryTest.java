@@ -1,5 +1,6 @@
 package dansplugins.dpm.repositories;
 
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
@@ -421,6 +422,231 @@ class GitHubReleaseRepositoryTest {
         // No closing bracket — bracket-depth tracking should handle gracefully
         String json = "{\"assets\":[{\"name\":\"Plugin-1.0.jar\",\"browser_download_url\":\"https://example.com/Plugin-1.0.jar\"";
         assertNull(service.parseJarUrlFromAssets(json));
+    }
+
+    // -------------------------------------------------------------------------
+    // synthesizeExperimentalVersion()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void synthesizeExperimentalVersion_usesShortShaWhenTargetCommitishIsACommitSha() {
+        assertEquals("dev-abc1234",
+                service.synthesizeExperimentalVersion("dev", "abc1234def5678901234567890123456789abcde", "2024-01-01T00:00:00Z"));
+    }
+
+    @Test
+    void synthesizeExperimentalVersion_fallsBackToPublishedAtWhenTargetCommitishIsABranchName() {
+        assertEquals("dev@2024-03-15T10:00:00Z",
+                service.synthesizeExperimentalVersion("dev", "main", "2024-03-15T10:00:00Z"));
+    }
+
+    @Test
+    void synthesizeExperimentalVersion_fallsBackToTagWhenNeitherShaNorPublishedAtAvailable() {
+        assertEquals("dev", service.synthesizeExperimentalVersion("dev", "main", null));
+        assertEquals("dev", service.synthesizeExperimentalVersion("dev", null, ""));
+    }
+
+    @Test
+    void synthesizeExperimentalVersion_usesConfiguredTagWhenReleaseTagNameIsMissing() {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null);
+        svc.setExperimentalTag("nightly");
+        assertEquals("nightly-abc1234",
+                svc.synthesizeExperimentalVersion(null, "abc1234def5678901234567890123456789abcde", null));
+    }
+
+    @Test
+    void synthesizeExperimentalVersion_rejectsNonHexAndWrongLengthCommitish() {
+        // 40 characters but not hex — must not be mistaken for a sha.
+        assertEquals("dev@2024-01-01T00:00:00Z",
+                service.synthesizeExperimentalVersion("dev", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "2024-01-01T00:00:00Z"));
+        // A short sha is not a full commitish and must not be truncated silently.
+        assertEquals("dev@2024-01-01T00:00:00Z",
+                service.synthesizeExperimentalVersion("dev", "abc1234", "2024-01-01T00:00:00Z"));
+    }
+
+    // -------------------------------------------------------------------------
+    // parseTargetCommitish()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void parseTargetCommitish_returnsValue() {
+        String json = "{\"tag_name\":\"dev\",\"target_commitish\":\"abc1234def5678901234567890123456789abcde\"}";
+        assertEquals("abc1234def5678901234567890123456789abcde", service.parseTargetCommitish(json));
+    }
+
+    @Test
+    void parseTargetCommitish_returnsNullWhenMissing() {
+        assertNull(service.parseTargetCommitish("{\"tag_name\":\"dev\"}"));
+    }
+
+    // -------------------------------------------------------------------------
+    // getExperimentalRelease()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void getExperimentalRelease_requestsTheConfiguredTagAndSynthesizesAVersionFromTheCommit() throws IOException {
+        List<String> requestedUrls = new ArrayList<>();
+        String json = "{\"tag_name\":\"dev\",\"target_commitish\":\"abc1234def5678901234567890123456789abcde\"," +
+                "\"published_at\":\"2024-05-01T00:00:00Z\"," +
+                "\"assets\":[{\"browser_download_url\":\"https://example.com/plugin.jar\"}]}";
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                requestedUrls.add(url);
+                return fakeConnection(200, null, json);
+            }
+        };
+
+        ReleaseInfo release = svc.getExperimentalRelease("org", "repo");
+
+        assertNotNull(release);
+        assertEquals("dev-abc1234", release.getTagName());
+        assertEquals("https://example.com/plugin.jar", release.getJarUrl());
+        assertEquals(List.of("https://api.github.com/repos/org/repo/releases/tags/dev"), requestedUrls);
+    }
+
+    @Test
+    void getExperimentalRelease_honoursACustomExperimentalTag() throws IOException {
+        List<String> requestedUrls = new ArrayList<>();
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                requestedUrls.add(url);
+                return fakeConnection(404, null);
+            }
+        };
+        svc.setExperimentalTag("nightly");
+
+        svc.getExperimentalRelease("org", "repo");
+
+        assertEquals(List.of("https://api.github.com/repos/org/repo/releases/tags/nightly"), requestedUrls);
+    }
+
+    @Test
+    void getExperimentalRelease_returnsNoReleaseWhenTagDoesNotExist() throws IOException {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return fakeConnection(404, null);
+            }
+        };
+
+        assertSame(ReleaseInfo.NO_RELEASE, svc.getExperimentalRelease("org", "repo"),
+                "A repository that publishes no experimental build must report NO_RELEASE, not an error");
+    }
+
+    @Test
+    void getExperimentalRelease_returnsNullAndWarnsWhenPrereleaseHasNoJarAsset() throws IOException {
+        List<String> warnings = new ArrayList<>();
+        String json = "{\"tag_name\":\"dev\",\"target_commitish\":\"abc1234def5678901234567890123456789abcde\"," +
+                "\"assets\":[{\"browser_download_url\":\"https://example.com/checksums.txt\"}]}";
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(capturingLogger(warnings)) {
+            @Override
+            HttpURLConnection openConnection(String url) throws IOException {
+                return fakeConnection(200, null, json);
+            }
+        };
+
+        assertNull(svc.getExperimentalRelease("org", "repo"));
+        assertTrue(warnings.stream().anyMatch(m -> m.contains("no .jar asset")),
+                "A dev prerelease with no JAR attached must warn");
+    }
+
+    @Test
+    void setExperimentalTag_blankOrNullRestoresTheDefault() {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null);
+        svc.setExperimentalTag("nightly");
+        svc.setExperimentalTag("   ");
+        assertEquals("dev", svc.getExperimentalTag());
+        svc.setExperimentalTag("nightly");
+        svc.setExperimentalTag(null);
+        assertEquals("dev", svc.getExperimentalTag());
+    }
+
+    // -------------------------------------------------------------------------
+    // channel-aware caching
+    // -------------------------------------------------------------------------
+
+    @Test
+    void cache_keepsStableAndExperimentalEntriesSeparateForTheSameRepo() {
+        AtomicInteger stableFetches = new AtomicInteger(0);
+        AtomicInteger experimentalFetches = new AtomicInteger(0);
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                stableFetches.incrementAndGet();
+                return new ReleaseInfo("v1.0", "https://example.com/stable.jar", null);
+            }
+            @Override
+            ReleaseInfo doFetchExperimental(String owner, String repo) {
+                experimentalFetches.incrementAndGet();
+                return new ReleaseInfo("dev-abc1234", "https://example.com/dev.jar", null);
+            }
+        };
+
+        assertEquals("v1.0", svc.getLatestRelease("org", "repo").getTagName());
+        assertEquals("dev-abc1234", svc.getExperimentalRelease("org", "repo").getTagName(),
+                "The experimental fetch must not be served the cached stable release");
+        assertEquals("v1.0", svc.getLatestRelease("org", "repo").getTagName(),
+                "The stable fetch must not be served the cached experimental release");
+
+        assertEquals(1, stableFetches.get(), "Stable should be fetched once and then cached");
+        assertEquals(1, experimentalFetches.get(), "Experimental should be fetched once and then cached");
+    }
+
+    @Test
+    void cacheKey_changesWithTheConfiguredExperimentalTag() {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null);
+        String stableKey = svc.cacheKey("org", "repo", ReleaseChannel.STABLE);
+        String devKey = svc.cacheKey("org", "repo", ReleaseChannel.EXPERIMENTAL);
+        svc.setExperimentalTag("nightly");
+        String nightlyKey = svc.cacheKey("org", "repo", ReleaseChannel.EXPERIMENTAL);
+
+        assertNotEquals(stableKey, devKey);
+        assertNotEquals(devKey, nightlyKey);
+    }
+
+    @Test
+    void clearCache_refetchesBothChannels() {
+        AtomicInteger stableFetches = new AtomicInteger(0);
+        AtomicInteger experimentalFetches = new AtomicInteger(0);
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                stableFetches.incrementAndGet();
+                return new ReleaseInfo("v1.0", "https://example.com/stable.jar", null);
+            }
+            @Override
+            ReleaseInfo doFetchExperimental(String owner, String repo) {
+                experimentalFetches.incrementAndGet();
+                return new ReleaseInfo("dev-abc1234", "https://example.com/dev.jar", null);
+            }
+        };
+        svc.getLatestRelease("org", "repo");
+        svc.getExperimentalRelease("org", "repo");
+        svc.clearCache();
+        svc.getLatestRelease("org", "repo");
+        svc.getExperimentalRelease("org", "repo");
+
+        assertEquals(2, stableFetches.get());
+        assertEquals(2, experimentalFetches.get());
+    }
+
+    @Test
+    void getRelease_dispatchesOnChannel() {
+        GitHubReleaseRepository svc = new GitHubReleaseRepository(null) {
+            @Override
+            ReleaseInfo doFetch(String owner, String repo) {
+                return new ReleaseInfo("v1.0", "https://example.com/stable.jar", null);
+            }
+            @Override
+            ReleaseInfo doFetchExperimental(String owner, String repo) {
+                return new ReleaseInfo("dev-abc1234", "https://example.com/dev.jar", null);
+            }
+        };
+
+        assertEquals("v1.0", svc.getRelease("org", "repo", ReleaseChannel.STABLE).getTagName());
+        assertEquals("dev-abc1234", svc.getRelease("org", "repo", ReleaseChannel.EXPERIMENTAL).getTagName());
     }
 
     // -------------------------------------------------------------------------

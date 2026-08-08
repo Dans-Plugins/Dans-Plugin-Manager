@@ -82,4 +82,41 @@ class TabCompletionTest {
         assertEquals(List.of("currencies", "conquestrecipes"),
                 TabCompleter.filterByPrefix(plugins, "c"));
     }
+
+    // -------------------------------------------------------------------------
+    // channel-flag completion for /dpm get
+    // -------------------------------------------------------------------------
+
+    @Test
+    void pluginNamesWithChannelFlags_offersBothFlagsAlongsidePluginNames() {
+        List<String> options = TabCompleter.pluginNamesWithChannelFlags(
+                List.of("currencies"), new String[]{"get", ""});
+
+        assertTrue(options.containsAll(List.of("currencies", "--experimental", "--stable")));
+    }
+
+    @Test
+    void pluginNamesWithChannelFlags_completesAPartiallyTypedFlag() {
+        List<String> options = TabCompleter.pluginNamesWithChannelFlags(
+                List.of("currencies"), new String[]{"get", "currencies", "--e"});
+
+        assertEquals(List.of("--experimental"), TabCompleter.filterByPrefix(options, "--e"));
+    }
+
+    @Test
+    void pluginNamesWithChannelFlags_stopsOfferingFlagsOnceOneIsPresent() {
+        List<String> options = TabCompleter.pluginNamesWithChannelFlags(
+                List.of("currencies"), new String[]{"get", "currencies", "--experimental", ""});
+
+        assertEquals(List.of("currencies"), options,
+                "The flags are mutually exclusive, so neither should be suggested a second time");
+    }
+
+    @Test
+    void pluginNamesWithChannelFlags_isCaseInsensitiveWhenDetectingAnExistingFlag() {
+        List<String> options = TabCompleter.pluginNamesWithChannelFlags(
+                List.of("currencies"), new String[]{"get", "currencies", "--STABLE", ""});
+
+        assertEquals(List.of("currencies"), options);
+    }
 }

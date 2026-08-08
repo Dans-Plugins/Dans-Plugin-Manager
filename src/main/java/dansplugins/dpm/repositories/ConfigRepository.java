@@ -31,6 +31,9 @@ public class ConfigRepository {
         if (!isSet("discordWebhook")) {
             config.set("discordWebhook", "");
         }
+        if (!isSet("experimentalReleaseTag")) {
+            config.set("experimentalReleaseTag", "dev");
+        }
         config.options().copyDefaults(true);
         saveAction.run();
     }

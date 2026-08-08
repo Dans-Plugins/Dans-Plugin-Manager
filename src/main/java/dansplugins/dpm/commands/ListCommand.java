@@ -1,9 +1,11 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -17,13 +19,22 @@ public class ListCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
+    private final ChannelRepository channelRepository;
 
     public ListCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
-                       VersionRepository versionRepository) {
+                       VersionRepository versionRepository, ChannelRepository channelRepository) {
         super(new ArrayList<>(List.of("list")), new ArrayList<>(List.of("dpm.list")));
         this.projectRecordRepository = projectRecordRepository;
         this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
+        this.channelRepository = channelRepository;
+    }
+
+    /** Appends an [experimental] marker to plugins pinned to the experimental channel. */
+    private String channelMarker(ProjectRecord record) {
+        return channelRepository.getChannel(record.getName()) == ReleaseChannel.EXPERIMENTAL
+                ? ChatColor.YELLOW + " [experimental]"
+                : "";
     }
 
     @Override
@@ -38,7 +49,7 @@ public class ListCommand extends AbstractPluginCommand {
             if (installedNames.contains(record.getName())) {
                 String tag = versionRepository.getStoredTag(record.getName());
                 String version = tag != null ? " " + tag : "";
-                sender.sendMessage(ChatColor.GREEN + record.getName() + version);
+                sender.sendMessage(ChatColor.GREEN + record.getName() + version + channelMarker(record));
             } else {
                 sender.sendMessage(ChatColor.GRAY + record.getName() + " (not installed)");
             }
@@ -65,7 +76,7 @@ public class ListCommand extends AbstractPluginCommand {
         for (ProjectRecord record : installed) {
             String tag = versionRepository.getStoredTag(record.getName());
             String version = tag != null ? " " + tag : "";
-            sender.sendMessage(ChatColor.GREEN + record.getName() + version);
+            sender.sendMessage(ChatColor.GREEN + record.getName() + version + channelMarker(record));
         }
         return true;
     }

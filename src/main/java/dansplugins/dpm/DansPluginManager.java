@@ -6,6 +6,7 @@ import dansplugins.dpm.controllers.RemoveController;
 import dansplugins.dpm.controllers.SearchController;
 import dansplugins.dpm.controllers.StatsController;
 import dansplugins.dpm.controllers.UpdateController;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.ConfigRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
@@ -48,6 +49,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final DependencyResolutionService dependencyResolutionService = new DependencyResolutionService(projectRecordRepository, pluginFileRepository);
     private final DiscordNotificationService discordNotificationService = new DiscordNotificationService(configRepository);
     private VersionRepository versionRepository;
+    private ChannelRepository channelRepository;
     private DownloadService downloadService;
     private GetController getController;
     private UpdateController updateController;
@@ -61,11 +63,14 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     public void onEnable() {
         initializeConfig();
         gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
+        gitHubReleaseRepository.setExperimentalTag(configRepository.getStringOrDefault("experimentalReleaseTag",
+                GitHubReleaseRepository.DEFAULT_EXPERIMENTAL_TAG));
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
+        channelRepository = new ChannelRepository(new File(getDataFolder(), "dpm-channels.properties"), logger);
         downloadService = new DownloadService(logger, gitHubReleaseRepository, pluginFileRepository, versionRepository);
-        getController = new GetController(downloadService, dependencyResolutionService, versionRepository, discordNotificationService, getLogger());
-        updateController = new UpdateController(projectRecordRepository, pluginFileRepository, downloadService, versionRepository, discordNotificationService, getLogger());
-        removeController = new RemoveController(projectRecordRepository, pluginFileRepository, versionRepository, dependencyResolutionService, getLogger());
+        getController = new GetController(downloadService, dependencyResolutionService, versionRepository, channelRepository, discordNotificationService, getLogger());
+        updateController = new UpdateController(projectRecordRepository, pluginFileRepository, downloadService, versionRepository, channelRepository, discordNotificationService, getLogger());
+        removeController = new RemoveController(projectRecordRepository, pluginFileRepository, versionRepository, channelRepository, dependencyResolutionService, getLogger());
         searchController = new SearchController(projectRecordRepository, pluginFileRepository, versionRepository);
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
@@ -82,7 +87,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
             return TabCompleter.filterByPrefix(Arrays.asList("help", "list", "get", "clean", "stats", "update", "info", "reload", "remove", "search"), args[0]);
         }
         if (args.length >= 2 && args[0].equalsIgnoreCase("get")) {
-            return TabCompleter.filterByPrefix(allPluginNames(), args[args.length - 1]);
+            return TabCompleter.filterByPrefix(
+                    TabCompleter.pluginNamesWithChannelFlags(allPluginNames(), args), args[args.length - 1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("info")) {
             return TabCompleter.filterByPrefix(allPluginNames(), args[1]);
@@ -143,6 +149,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     public void reloadDpm() {
         reloadConfig();
         gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
+        gitHubReleaseRepository.setExperimentalTag(configRepository.getStringOrDefault("experimentalReleaseTag",
+                GitHubReleaseRepository.DEFAULT_EXPERIMENTAL_TAG));
         gitHubReleaseRepository.clearCache();
     }
 
@@ -170,11 +178,11 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
                 new GetCommand(projectRecordRepository, getController, this),
-                new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository),
+                new ListCommand(projectRecordRepository, pluginFileRepository, versionRepository, channelRepository),
                 new StatsCommand(statsController),
                 new CleanCommand(projectRecordRepository, pluginFileRepository, this),
                 updateCommand = new UpdateCommand(updateController, this),
-                new InfoCommand(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, this),
+                new InfoCommand(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, channelRepository, this),
                 new ReloadCommand(this),
                 removeCommand = new RemoveCommand(projectRecordRepository, removeController),
                 new SearchCommand(searchController)

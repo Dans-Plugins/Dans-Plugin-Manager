@@ -42,6 +42,8 @@ public class ConfigController {
         String webhook = configRepository.getString("discordWebhook");
         String webhookDisplay = (webhook != null && !webhook.isEmpty()) ? "(set)" : "(not set)";
         sender.sendMessage(ChatColor.AQUA + "discordWebhook: " + webhookDisplay);
+        sender.sendMessage(ChatColor.AQUA + "experimentalReleaseTag: "
+                + configRepository.getStringOrDefault("experimentalReleaseTag", "dev"));
     }
 
     public boolean hasBeenAltered() {

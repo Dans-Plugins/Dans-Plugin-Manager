@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+- Experimental release channel. `/dpm get <plugin-name> --experimental` installs a build of the plugin's `main` branch instead of its latest published release, so changes can be picked up as soon as they are merged. The choice is remembered per plugin: plain `/dpm get` and `/dpm update` then keep that plugin on experimental builds until `/dpm get <plugin-name> --stable` switches it back. Experimental builds are read from a rolling `dev` prerelease published by each plugin repository's CI, and are unreleased, unreviewed code — see the Release channels section of `USER_GUIDE.md`
+- `ReleaseChannel` and `ChannelRepository` — the per-plugin channel is persisted in `dpm-channels.properties` alongside the existing `dpm-versions.properties`, whose format is unchanged. Plugins with no stored channel are treated as stable, so existing installations are unaffected
+- `GitHubReleaseRepository.getExperimentalRelease()` — fetches `releases/tags/<experimentalReleaseTag>`, caches per channel so the two channels cannot serve each other's releases, and synthesises a version identity of `dev-<short commit sha>` from the release's `target_commitish` (falling back to `dev@<published_at>`). Without this every experimental build would share the tag `dev` and report as already up to date forever
+- `experimentalReleaseTag` config option (default `dev`) — the release tag experimental builds are read from. Applied on `/dpm reload`
+
+### Changed
+- `/dpm update` now updates each plugin on the channel it is pinned to, rather than always using the latest published release. It takes no channel flags — channels are switched with `/dpm get`
+- `/dpm info` now shows a `Channel:` line and reports the latest build on that plugin's channel, so the "Update available" status matches what `/dpm update` would install
+- `/dpm list` and `/dpm list installed` now mark plugins on experimental builds with a trailing `[experimental]`
+- `/dpm remove --confirm` now clears the stored release channel along with the stored version tag, so a later reinstall starts on stable
+- Tab completion for `/dpm get` now suggests `--experimental` and `--stable` alongside plugin names
+
 ## [0.7.0-SNAPSHOT-8-8-2026] – 2026-08-08
 
 ### Changed

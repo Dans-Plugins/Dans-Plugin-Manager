@@ -1,5 +1,6 @@
 package dansplugins.dpm.repositories;
 
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.utils.Logger;
 
@@ -15,9 +16,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class GitHubReleaseRepository {
     private static final String API_URL = "https://api.github.com/repos/%s/%s/releases/latest";
+    private static final String TAGGED_RELEASE_API_URL = "https://api.github.com/repos/%s/%s/releases/tags/%s";
+
+    /** The rolling prerelease tag experimental builds are published under, unless config overrides it. */
+    public static final String DEFAULT_EXPERIMENTAL_TAG = "dev";
 
     private final Logger logger;
     private String apiToken = "";
+    private String experimentalTag = DEFAULT_EXPERIMENTAL_TAG;
     private final ConcurrentHashMap<String, ReleaseInfo> releaseCache = new ConcurrentHashMap<>();
     private final AtomicInteger cacheGeneration = new AtomicInteger(0);
 
@@ -27,6 +33,15 @@ public class GitHubReleaseRepository {
 
     public void setApiToken(String token) {
         this.apiToken = token != null ? token : "";
+    }
+
+    /** Sets the tag experimental builds are fetched from; blank or null restores the default. */
+    public void setExperimentalTag(String tag) {
+        this.experimentalTag = (tag != null && !tag.trim().isEmpty()) ? tag.trim() : DEFAULT_EXPERIMENTAL_TAG;
+    }
+
+    public String getExperimentalTag() {
+        return experimentalTag;
     }
 
     public void clearCache() {
@@ -39,7 +54,24 @@ public class GitHubReleaseRepository {
     }
 
     public ReleaseInfo getLatestRelease(String owner, String repo) {
-        ReleaseInfo release = fetchRelease(owner, repo);
+        return withJarAsset(fetchRelease(owner, repo, ReleaseChannel.STABLE), owner, repo);
+    }
+
+    /**
+     * Fetches the rolling main-branch prerelease. Returns {@link ReleaseInfo#NO_RELEASE} when the
+     * repository publishes no experimental build (the tag 404s), matching the stable path.
+     */
+    public ReleaseInfo getExperimentalRelease(String owner, String repo) {
+        return withJarAsset(fetchRelease(owner, repo, ReleaseChannel.EXPERIMENTAL), owner, repo);
+    }
+
+    public ReleaseInfo getRelease(String owner, String repo, ReleaseChannel channel) {
+        return channel == ReleaseChannel.EXPERIMENTAL
+                ? getExperimentalRelease(owner, repo)
+                : getLatestRelease(owner, repo);
+    }
+
+    private ReleaseInfo withJarAsset(ReleaseInfo release, String owner, String repo) {
         if (release == null || release == ReleaseInfo.NO_RELEASE) return release;
         if (release.getJarUrl() == null) {
             logger.warn("Release " + release.getTagName() + " for " + owner + "/" + repo + " has no .jar asset.");
@@ -73,26 +105,49 @@ public class GitHubReleaseRepository {
     }
 
     public ReleaseInfo getLatestReleaseMetadata(String owner, String repo) {
-        return fetchRelease(owner, repo);
+        return fetchRelease(owner, repo, ReleaseChannel.STABLE);
+    }
+
+    public ReleaseInfo getReleaseMetadata(String owner, String repo, ReleaseChannel channel) {
+        return fetchRelease(owner, repo, channel);
     }
 
     // generation check prevents a pre-clearCache() fetch from re-populating the cache with stale data
-    private ReleaseInfo fetchRelease(String owner, String repo) {
-        String key = owner + "/" + repo;
+    private ReleaseInfo fetchRelease(String owner, String repo, ReleaseChannel channel) {
+        String key = cacheKey(owner, repo, channel);
         ReleaseInfo cached = releaseCache.get(key);
         if (cached != null) return cached;
 
         int generation = cacheGeneration.get();
-        ReleaseInfo fetched = doFetch(owner, repo);
+        ReleaseInfo fetched = fetchForChannel(owner, repo, channel);
         if (fetched != null && cacheGeneration.get() == generation) {
             releaseCache.putIfAbsent(key, fetched);
         }
         return fetched;
     }
 
+    // The two channels return different releases for the same repo, so they must not share a key.
+    String cacheKey(String owner, String repo, ReleaseChannel channel) {
+        String base = owner + "/" + repo;
+        return channel == ReleaseChannel.EXPERIMENTAL ? base + "@" + experimentalTag : base;
+    }
+
+    private ReleaseInfo fetchForChannel(String owner, String repo, ReleaseChannel channel) {
+        return channel == ReleaseChannel.EXPERIMENTAL ? doFetchExperimental(owner, repo) : doFetch(owner, repo);
+    }
+
     // package-private so tests can override via anonymous subclass without hitting the network
     ReleaseInfo doFetch(String owner, String repo) {
-        String apiUrl = String.format(API_URL, owner, repo);
+        return fetchFrom(String.format(API_URL, owner, repo), owner, repo, ReleaseChannel.STABLE);
+    }
+
+    // package-private for the same reason as doFetch()
+    ReleaseInfo doFetchExperimental(String owner, String repo) {
+        String apiUrl = String.format(TAGGED_RELEASE_API_URL, owner, repo, experimentalTag);
+        return fetchFrom(apiUrl, owner, repo, ReleaseChannel.EXPERIMENTAL);
+    }
+
+    private ReleaseInfo fetchFrom(String apiUrl, String owner, String repo, ReleaseChannel channel) {
         for (int attempt = 0; attempt < 2; attempt++) {
             if (attempt > 0) sleepMs(2000);
             HttpURLConnection connection = null;
@@ -125,7 +180,11 @@ public class GitHubReleaseRepository {
                     return null;
                 }
                 String json = readStream(connection.getInputStream());
-                return new ReleaseInfo(parseTagName(json), parseJarUrlFromAssets(json), parsePublishedAt(json));
+                String publishedAt = parsePublishedAt(json);
+                String version = channel == ReleaseChannel.EXPERIMENTAL
+                        ? synthesizeExperimentalVersion(parseTagName(json), parseTargetCommitish(json), publishedAt)
+                        : parseTagName(json);
+                return new ReleaseInfo(version, parseJarUrlFromAssets(json), publishedAt);
             } catch (IOException e) {
                 if (attempt == 0) continue;
                 logger.warn("Failed to reach GitHub API for " + owner + "/" + repo + ": " + e.getMessage());
@@ -148,8 +207,39 @@ public class GitHubReleaseRepository {
     }
 
     // direct quote-scan is safe for these fields — values are simple strings with no backslash escapes
-    String parseTagName(String json)     { return parseStringField(json, "tag_name"); }
-    String parsePublishedAt(String json) { return parseStringField(json, "published_at"); }
+    String parseTagName(String json)         { return parseStringField(json, "tag_name"); }
+    String parsePublishedAt(String json)     { return parseStringField(json, "published_at"); }
+    String parseTargetCommitish(String json) { return parseStringField(json, "target_commitish"); }
+
+    /**
+     * Builds a version identity for an experimental release.
+     *
+     * <p>Every experimental build carries the same tag, so the tag alone can never distinguish
+     * yesterday's build from today's — a plugin pinned to it would report "already up to date"
+     * forever. The commit the release points at is appended to make each build distinct, with the
+     * publish timestamp as a fallback for repositories whose {@code target_commitish} is a branch
+     * name rather than a sha.
+     */
+    String synthesizeExperimentalVersion(String tagName, String targetCommitish, String publishedAt) {
+        String base = (tagName != null && !tagName.isEmpty()) ? tagName : experimentalTag;
+        if (isCommitSha(targetCommitish)) {
+            return base + "-" + targetCommitish.substring(0, 7);
+        }
+        if (publishedAt != null && !publishedAt.isEmpty()) {
+            return base + "@" + publishedAt;
+        }
+        return base;
+    }
+
+    private boolean isCommitSha(String value) {
+        if (value == null || value.length() != 40) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            boolean hex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+            if (!hex) return false;
+        }
+        return true;
+    }
 
     private String parseStringField(String json, String fieldName) {
         String key = "\"" + fieldName + "\"";

@@ -1,6 +1,8 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
@@ -59,16 +61,19 @@ public class UpdateController {
     private final PluginFileRepository pluginFileRepository;
     private final DownloadService downloadService;
     private final VersionRepository versionRepository;
+    private final ChannelRepository channelRepository;
     private final DiscordNotificationService discordNotificationService;
     private final Logger logger;
 
     public UpdateController(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
                             DownloadService downloadService, VersionRepository versionRepository,
-                            DiscordNotificationService discordNotificationService, Logger logger) {
+                            ChannelRepository channelRepository, DiscordNotificationService discordNotificationService,
+                            Logger logger) {
         this.projectRecordRepository = projectRecordRepository;
         this.pluginFileRepository = pluginFileRepository;
         this.downloadService = downloadService;
         this.versionRepository = versionRepository;
+        this.channelRepository = channelRepository;
         this.discordNotificationService = discordNotificationService;
         this.logger = logger;
     }
@@ -111,9 +116,11 @@ public class UpdateController {
         return results;
     }
 
+    // /dpm update takes no channel flags — each plugin is updated on whatever channel it is pinned to.
     private PluginResult update(ProjectRecord record) {
         String oldTag = versionRepository.getStoredTag(record.getName());
-        int result = downloadService.downloadLatest(record, true);
+        ReleaseChannel channel = channelRepository.getChannel(record.getName());
+        int result = downloadService.downloadLatest(record, channel, true);
         if (result == DownloadService.ALREADY_UP_TO_DATE) {
             return new PluginResult(record, Outcome.ALREADY_UP_TO_DATE, oldTag, oldTag);
         }
