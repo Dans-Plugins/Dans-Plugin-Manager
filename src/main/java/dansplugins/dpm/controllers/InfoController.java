@@ -42,9 +42,9 @@ public class InfoController {
             return release != null && release != ReleaseInfo.NO_RELEASE;
         }
 
-        /** True when the installed tag matches the latest published release tag. */
+        /** True when the plugin is installed and the installed tag matches the latest published release tag. */
         public boolean isUpToDate() {
-            return hasPublishedRelease() && storedTag != null && storedTag.equals(release.getTagName());
+            return installed && hasPublishedRelease() && storedTag != null && storedTag.equals(release.getTagName());
         }
 
         public boolean isDependencyInstalled(String pluginName) {

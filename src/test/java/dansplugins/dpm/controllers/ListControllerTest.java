@@ -5,6 +5,7 @@ import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -28,8 +29,13 @@ class ListControllerTest {
         return repository;
     }
 
+    private static final Logger NO_OP_LOGGER = new Logger(null) {
+        @Override public void log(String message) {}
+        @Override public void warn(String message) {}
+    };
+
     private static VersionRepository versionRepository(Path tempDir) {
-        return new VersionRepository(new File(tempDir.toFile(), "dpm-versions.properties"), null);
+        return new VersionRepository(new File(tempDir.toFile(), "dpm-versions.properties"), NO_OP_LOGGER);
     }
 
     private static ListController controller(Path tempDir, VersionRepository versionRepository, ProjectRecord... records) {

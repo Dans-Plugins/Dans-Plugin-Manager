@@ -7,6 +7,7 @@ import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.utils.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,8 +31,13 @@ class InfoControllerTest {
         return repository;
     }
 
+    private static final Logger NO_OP_LOGGER = new Logger(null) {
+        @Override public void log(String message) {}
+        @Override public void warn(String message) {}
+    };
+
     private static VersionRepository versionRepository(Path tempDir) {
-        return new VersionRepository(new File(tempDir.toFile(), "dpm-versions.properties"), null);
+        return new VersionRepository(new File(tempDir.toFile(), "dpm-versions.properties"), NO_OP_LOGGER);
     }
 
     private static GitHubReleaseRepository stubReleaseRepository(ReleaseInfo release) {
@@ -201,6 +207,16 @@ class InfoControllerTest {
         ProjectRecord record = record("MedievalFactions");
         new File(tempDir.toFile(), "MedievalFactions.jar").createNewFile();
         InfoController controller = controller(tempDir, new ReleaseInfo("v4.6.3", "url"), versionRepository(tempDir), record);
+
+        assertFalse(controller.getInfo(record).isUpToDate());
+    }
+
+    @Test
+    void isUpToDate_returnsFalseWhenNotInstalledEvenIfTagMatches(@TempDir Path tempDir) throws Exception {
+        ProjectRecord record = record("MedievalFactions");
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("MedievalFactions", "v4.6.3");
+        InfoController controller = controller(tempDir, new ReleaseInfo("v4.6.3", "url"), versionRepository, record);
 
         assertFalse(controller.getInfo(record).isUpToDate());
     }
