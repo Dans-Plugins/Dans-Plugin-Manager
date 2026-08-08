@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.7.0-SNAPSHOT-8-8-2026] – 2026-08-08
+
+### Changed
+- Dans-Plugin-Manager is now developed AI-first. Day-to-day feature work, grooming, review and maintenance run through AI agents working directly against this repository, with the maintainers setting direction and approving what lands. The version bump marks that change in how the project is built — it is not a break in behaviour, configuration or stored data, and existing installations can upgrade in place. Released as `0.7.0-SNAPSHOT-8-8-2026`: the AI-first line has not yet been verified in live operation, and the dated snapshot designation stays until it has.
 
 ### Added
 - Local test server scripts (`up.sh`, `down.sh`, `reload-plugin.sh`, `dpm-cmd.sh`, `test-integration.sh`) that drive [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) for manual plugin testing during development — same Spigot stack and plugin-deploy API used by the CI integration tests
