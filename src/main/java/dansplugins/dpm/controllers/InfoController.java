@@ -1,7 +1,9 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
@@ -20,13 +22,15 @@ public class InfoController {
     public static final class PluginInfo {
         private final ProjectRecord record;
         private final ReleaseInfo release;
+        private final ReleaseChannel channel;
         private final boolean installed;
         private final String storedTag;
         private final Set<String> installedNames;
 
-        PluginInfo(ProjectRecord record, ReleaseInfo release, boolean installed, String storedTag, Set<String> installedNames) {
+        PluginInfo(ProjectRecord record, ReleaseInfo release, ReleaseChannel channel, boolean installed, String storedTag, Set<String> installedNames) {
             this.record = record;
             this.release = release;
+            this.channel = channel;
             this.installed = installed;
             this.storedTag = storedTag;
             this.installedNames = installedNames;
@@ -34,6 +38,7 @@ public class InfoController {
 
         public ProjectRecord getRecord() { return record; }
         public ReleaseInfo getRelease() { return release; }
+        public ReleaseChannel getChannel() { return channel; }
         public boolean isInstalled() { return installed; }
         public String getStoredTag() { return storedTag; }
 
@@ -56,13 +61,16 @@ public class InfoController {
     private final GitHubReleaseRepository gitHubReleaseRepository;
     private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
+    private final ChannelRepository channelRepository;
 
     public InfoController(ProjectRecordRepository projectRecordRepository, GitHubReleaseRepository gitHubReleaseRepository,
-                          PluginFileRepository pluginFileRepository, VersionRepository versionRepository) {
+                          PluginFileRepository pluginFileRepository, VersionRepository versionRepository,
+                          ChannelRepository channelRepository) {
         this.projectRecordRepository = projectRecordRepository;
         this.gitHubReleaseRepository = gitHubReleaseRepository;
         this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
+        this.channelRepository = channelRepository;
     }
 
     public ProjectRecord getRecord(String name) {
@@ -71,11 +79,12 @@ public class InfoController {
 
     // Touches the GitHub API — callers must invoke this off the main thread.
     public PluginInfo getInfo(ProjectRecord record) {
-        ReleaseInfo release = gitHubReleaseRepository.getLatestReleaseMetadata(record.getOwner(), record.getRepo());
+        ReleaseChannel channel = channelRepository.getChannel(record.getName());
+        ReleaseInfo release = gitHubReleaseRepository.getReleaseMetadata(record.getOwner(), record.getRepo(), channel);
         Set<String> installedNames = installedNamesFor(record);
         boolean installed = installedNames.contains(record.getName());
         String storedTag = versionRepository.getStoredTag(record.getName());
-        return new PluginInfo(record, release, installed, storedTag, installedNames);
+        return new PluginInfo(record, release, channel, installed, storedTag, installedNames);
     }
 
     private Set<String> installedNamesFor(ProjectRecord record) {
@@ -97,3 +106,4 @@ public class InfoController {
         }
     }
 }
+

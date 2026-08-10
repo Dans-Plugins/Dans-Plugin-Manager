@@ -4,6 +4,8 @@ import dansplugins.dpm.controllers.RemoveController.Outcome;
 import dansplugins.dpm.controllers.RemoveController.RemovalPreview;
 import dansplugins.dpm.controllers.RemoveController.RemovalResult;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
@@ -44,12 +46,17 @@ class RemoveControllerTest {
         return new VersionRepository(new File(tempDir.toFile(), "dpm-versions.properties"), null);
     }
 
+    private static ChannelRepository channelRepository(Path tempDir) {
+        return new ChannelRepository(new File(tempDir.toFile(), "dpm-channels.properties"), null);
+    }
+
     private static RemoveController controller(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
-                                                VersionRepository versionRepository) {
+                                                VersionRepository versionRepository, ChannelRepository channelRepository) {
         return new RemoveController(
                 projectRecordRepository,
                 pluginFileRepository,
                 versionRepository,
+                channelRepository,
                 new DependencyResolutionService(projectRecordRepository, pluginFileRepository),
                 Logger.getLogger("RemoveControllerTest"));
     }
@@ -63,7 +70,7 @@ class RemoveControllerTest {
         ProjectRecord notInstalled = record("NotInstalled");
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(notInstalled);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         RemovalPreview preview = controller.preview(notInstalled);
 
@@ -78,7 +85,7 @@ class RemoveControllerTest {
         new File(tempDir.toFile(), "Installed.jar").createNewFile();
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         RemovalPreview preview = controller.preview(installed);
 
@@ -95,7 +102,7 @@ class RemoveControllerTest {
         new File(tempDir.toFile(), "Dependent.jar").createNewFile();
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(target, dependent);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         RemovalPreview preview = controller.preview(target);
 
@@ -111,7 +118,7 @@ class RemoveControllerTest {
         ProjectRecord notInstalled = record("NotInstalled");
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(notInstalled);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         RemovalResult result = controller.remove(notInstalled);
 
@@ -128,7 +135,7 @@ class RemoveControllerTest {
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed);
         VersionRepository versionRepository = versionRepository(tempDir);
         versionRepository.setTag("Installed", "v1.0.0");
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository);
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository, channelRepository(tempDir));
 
         RemovalResult result = controller.remove(installed);
 
@@ -145,12 +152,28 @@ class RemoveControllerTest {
         new File(tempDir.toFile(), "Dependent.jar").createNewFile();
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(target, dependent);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         RemovalResult result = controller.remove(target);
 
         assertEquals(Outcome.DELETED, result.getOutcome());
         assertEquals(List.of("Dependent"), result.getDependents());
+    }
+
+    @Test
+    void remove_clearsTheStoredChannelSoAReinstallStartsOnStable(@TempDir Path tempDir) throws Exception {
+        ProjectRecord installed = record("Installed");
+        new File(tempDir.toFile(), "Installed.jar").createNewFile();
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed);
+        ChannelRepository channelRepository = channelRepository(tempDir);
+        channelRepository.setChannel("Installed", ReleaseChannel.EXPERIMENTAL);
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository);
+
+        RemovalResult result = controller.remove(installed);
+
+        assertEquals(Outcome.DELETED, result.getOutcome());
+        assertEquals(ReleaseChannel.STABLE, channelRepository.getChannel("Installed"));
     }
 
     @Test
@@ -165,7 +188,7 @@ class RemoveControllerTest {
         ProjectRecord installed = record("Installed");
         PluginFileRepository pluginFileRepository = new PluginFileRepository(readOnlyDir.getAbsolutePath() + "/");
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         RemovalResult result = controller.remove(installed);
 
@@ -186,7 +209,7 @@ class RemoveControllerTest {
         new File(tempDir.toFile(), "Installed.jar").createNewFile();
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed, notInstalled);
-        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir));
+        RemoveController controller = controller(projectRecordRepository, pluginFileRepository, versionRepository(tempDir), channelRepository(tempDir));
 
         List<ProjectRecord> result = controller.getInstalledPlugins();
 

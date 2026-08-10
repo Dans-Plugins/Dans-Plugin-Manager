@@ -1,6 +1,7 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.repositories.ConfigRepository;
+import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
@@ -42,6 +43,9 @@ public class ConfigController {
         String webhook = configRepository.getString("discordWebhook");
         String webhookDisplay = (webhook != null && !webhook.isEmpty()) ? "(set)" : "(not set)";
         sender.sendMessage(ChatColor.AQUA + "discordWebhook: " + webhookDisplay);
+        sender.sendMessage(ChatColor.AQUA + "experimentalReleaseTag: "
+                + configRepository.getStringOrDefault("experimentalReleaseTag",
+                        GitHubReleaseRepository.DEFAULT_EXPERIMENTAL_TAG));
     }
 
     public boolean hasBeenAltered() {

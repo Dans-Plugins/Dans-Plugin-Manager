@@ -2,7 +2,9 @@ package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.controllers.InfoController.PluginInfo;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
@@ -43,16 +45,20 @@ class InfoControllerTest {
     private static GitHubReleaseRepository stubReleaseRepository(ReleaseInfo release) {
         return new GitHubReleaseRepository(null) {
             @Override
-            public ReleaseInfo getLatestReleaseMetadata(String owner, String repo) {
+            public ReleaseInfo getReleaseMetadata(String owner, String repo, ReleaseChannel channel) {
                 return release;
             }
         };
     }
 
+    private static ChannelRepository channelRepository(Path tempDir) {
+        return new ChannelRepository(new File(tempDir.toFile(), "dpm-channels.properties"), null);
+    }
+
     private static InfoController controller(Path tempDir, ReleaseInfo release, VersionRepository versionRepository,
                                              ProjectRecord... records) {
         return new InfoController(projectRecordRepository(records), stubReleaseRepository(release),
-                new PluginFileRepository(tempDir.toString()), versionRepository);
+                new PluginFileRepository(tempDir.toString()), versionRepository, channelRepository(tempDir));
     }
 
     // -------------------------------------------------------------------------

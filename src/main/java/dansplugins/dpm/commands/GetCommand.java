@@ -3,8 +3,10 @@ package dansplugins.dpm.commands;
 import dansplugins.dpm.controllers.GetController;
 import dansplugins.dpm.controllers.GetController.DependencyResolutionResult;
 import dansplugins.dpm.controllers.GetController.PluginResult;
+import dansplugins.dpm.controllers.GetController.Target;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -28,19 +30,59 @@ public class GetCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender sender) {
-        sender.sendMessage(ChatColor.RED + "Usage: /dpm get <plugin-name> [plugin-name ...]");
+        sender.sendMessage(ChatColor.RED + "Usage: /dpm get <plugin-name> [plugin-name ...] [--experimental|--stable]");
         return false;
     }
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        if (args.length == 1) {
-            return executeSingle(sender, args[0]);
+        ParsedArgs parsed = parseArgs(args);
+        if (parsed.error != null) {
+            sender.sendMessage(ChatColor.RED + parsed.error);
+            return false;
         }
-        return executeBatch(sender, args);
+        if (parsed.names.isEmpty()) {
+            return execute(sender);
+        }
+        if (parsed.names.size() == 1) {
+            return executeSingle(sender, parsed.names.get(0), parsed.requestedChannel);
+        }
+        return executeBatch(sender, parsed.names, parsed.requestedChannel);
     }
 
-    private boolean executeSingle(CommandSender sender, String name) {
+    // Flags may appear anywhere in the argument list, so they are stripped before name resolution.
+    static ParsedArgs parseArgs(String[] args) {
+        ParsedArgs parsed = new ParsedArgs();
+        for (String arg : args) {
+            if (!arg.startsWith("--")) {
+                parsed.names.add(arg);
+                continue;
+            }
+            ReleaseChannel flagged;
+            if (arg.equalsIgnoreCase("--experimental")) {
+                flagged = ReleaseChannel.EXPERIMENTAL;
+            } else if (arg.equalsIgnoreCase("--stable")) {
+                flagged = ReleaseChannel.STABLE;
+            } else {
+                parsed.error = "Unknown option: " + arg + ". Valid options are --experimental and --stable.";
+                return parsed;
+            }
+            if (parsed.requestedChannel != null && parsed.requestedChannel != flagged) {
+                parsed.error = "--experimental and --stable cannot be used together.";
+                return parsed;
+            }
+            parsed.requestedChannel = flagged;
+        }
+        return parsed;
+    }
+
+    static final class ParsedArgs {
+        final List<String> names = new ArrayList<>();
+        ReleaseChannel requestedChannel;
+        String error;
+    }
+
+    private boolean executeSingle(CommandSender sender, String name, ReleaseChannel requestedChannel) {
         ProjectRecord record = projectRecordRepository.getProjectRecord(name);
         if (record == null) {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
@@ -52,30 +94,33 @@ public class GetCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.YELLOW + "Warning: " + record.getName()
                     + " requires " + dep + ", which is not installed and is not a managed DPC plugin.");
         }
+        warnIfExperimental(sender, requestedChannel);
 
         List<ProjectRecord> depsToFetch = resolution.getDepsToFetch();
         if (depsToFetch.isEmpty()) {
-            sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + "...");
+            sender.sendMessage(ChatColor.AQUA + "Fetching " + record.getName() + channelSuffix(requestedChannel) + "...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                PluginResult result = getController.download(record);
+                PluginResult result = getController.download(record, requestedChannel);
                 Bukkit.getScheduler().runTask(plugin, () -> reportSingleResult(sender, result));
             });
         } else {
+            List<Target> allToFetch = new ArrayList<>();
             for (ProjectRecord dep : depsToFetch) {
                 sender.sendMessage(ChatColor.AQUA + "Info: Also downloading required dependency " + dep.getName() + ".");
+                allToFetch.add(Target.usingStoredChannel(dep));
             }
-            List<ProjectRecord> allToFetch = new ArrayList<>(depsToFetch);
-            allToFetch.add(record);
-            sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)...");
+            allToFetch.add(Target.of(record, requestedChannel));
+            sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)"
+                    + batchChannelSuffix(requestedChannel, !depsToFetch.isEmpty()) + "...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, allToFetch, 0));
         }
         return true;
     }
 
-    private boolean executeBatch(CommandSender sender, String[] args) {
+    private boolean executeBatch(CommandSender sender, List<String> names, ReleaseChannel requestedChannel) {
         List<ProjectRecord> records = new ArrayList<>();
         int notFound = 0;
-        for (String name : args) {
+        for (String name : names) {
             ProjectRecord record = projectRecordRepository.getProjectRecord(name);
             if (record == null) {
                 sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + " — skipping. Use /dpm search <keyword> to find the right name.");
@@ -90,23 +135,57 @@ public class GetCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.YELLOW + "Warning: required dependency '" + dep
                     + "' is not installed and is not a managed DPC plugin.");
         }
+        warnIfExperimental(sender, requestedChannel);
 
         List<ProjectRecord> depsToFetch = resolution.getDepsToFetch();
-        List<ProjectRecord> allToFetch = new ArrayList<>(depsToFetch);
+        List<Target> allToFetch = new ArrayList<>();
         for (ProjectRecord dep : depsToFetch) {
             sender.sendMessage(ChatColor.AQUA + "Info: Also downloading required dependency " + dep.getName() + ".");
+            // Dependencies keep their own channel — the flag applies only to the named plugins.
+            allToFetch.add(Target.usingStoredChannel(dep));
         }
-        allToFetch.addAll(records);
+        for (ProjectRecord record : records) {
+            allToFetch.add(Target.of(record, requestedChannel));
+        }
 
         if (allToFetch.isEmpty()) return false;
-        sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)...");
+        sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)"
+                + batchChannelSuffix(requestedChannel, !depsToFetch.isEmpty()) + "...");
         final int fn = notFound;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, allToFetch, fn));
         return true;
     }
 
-    private void runBatch(CommandSender sender, List<ProjectRecord> records, int notFound) {
-        List<PluginResult> results = getController.runBatch(records);
+    private void warnIfExperimental(CommandSender sender, ReleaseChannel requestedChannel) {
+        if (requestedChannel != ReleaseChannel.EXPERIMENTAL) return;
+        sender.sendMessage(ChatColor.YELLOW + "Warning: experimental builds are unreleased main-branch code. "
+                + "They are not tested and a broken build can stop the server from starting. "
+                + "Use /dpm get <plugin-name> --stable to switch back.");
+    }
+
+    private String channelSuffix(ReleaseChannel requestedChannel) {
+        return requestedChannel == ReleaseChannel.EXPERIMENTAL ? " (experimental)" : "";
+    }
+
+    // The flag applies only to the named plugins, so a batch that also carries dependencies must not
+    // claim the whole batch is experimental — the dependencies are on whatever channel they are pinned to.
+    private String batchChannelSuffix(ReleaseChannel requestedChannel, boolean includesDependencies) {
+        if (requestedChannel != ReleaseChannel.EXPERIMENTAL) return "";
+        return includesDependencies
+                ? " (experimental — dependencies keep their own channel)"
+                : " (experimental)";
+    }
+
+    // On the experimental channel a 404 means the repository publishes no main-branch build, which
+    // is a different situation from a project that has simply never cut a release.
+    private String noReleaseSuffix(PluginResult result) {
+        return result.getChannel() == ReleaseChannel.EXPERIMENTAL
+                ? " has no experimental build published yet."
+                : " has no published release yet.";
+    }
+
+    private void runBatch(CommandSender sender, List<Target> targets, int notFound) {
+        List<PluginResult> results = getController.runTargets(targets);
         int downloaded = 0, upToDate = 0, skipped = 0, failed = 0;
         for (PluginResult result : results) {
             ProjectRecord record = result.getRecord();
@@ -114,7 +193,7 @@ public class GetCommand extends AbstractPluginCommand {
             switch (result.getOutcome()) {
                 case NO_RELEASE:
                     skipped++;
-                    msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
+                    msg = ChatColor.YELLOW + record.getName() + noReleaseSuffix(result);
                     break;
                 case ALREADY_UP_TO_DATE:
                     upToDate++;
@@ -163,7 +242,7 @@ public class GetCommand extends AbstractPluginCommand {
         ProjectRecord record = result.getRecord();
         switch (result.getOutcome()) {
             case NO_RELEASE:
-                sender.sendMessage(ChatColor.YELLOW + record.getName() + " has no published release yet. Try again later.");
+                sender.sendMessage(ChatColor.YELLOW + record.getName() + noReleaseSuffix(result) + " Try again later.");
                 break;
             case ALREADY_UP_TO_DATE:
                 String tag = result.getStoredTag();

@@ -1,6 +1,7 @@
 package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
@@ -39,13 +40,23 @@ public class DownloadService {
     }
 
     public int downloadLatest(ProjectRecord projectRecord) {
-        return downloadLatest(projectRecord, pluginFileRepository.isInstalled(projectRecord));
+        return downloadLatest(projectRecord, ReleaseChannel.STABLE);
+    }
+
+    public int downloadLatest(ProjectRecord projectRecord, ReleaseChannel channel) {
+        return downloadLatest(projectRecord, channel, pluginFileRepository.isInstalled(projectRecord));
     }
 
     // physicallyInstalled lets callers that have already confirmed the JAR is present (e.g. via
     // filterInstalled()) skip the per-call isInstalled() directory scan.
     public int downloadLatest(ProjectRecord projectRecord, boolean physicallyInstalled) {
-        ReleaseInfo release = gitHubReleaseRepository.getLatestRelease(projectRecord.getOwner(), projectRecord.getRepo());
+        return downloadLatest(projectRecord, ReleaseChannel.STABLE, physicallyInstalled);
+    }
+
+    // A channel switch needs no special handling: the stored tag from one channel never matches the
+    // other channel's tag, so the up-to-date check falls through and the JAR is re-downloaded.
+    public int downloadLatest(ProjectRecord projectRecord, ReleaseChannel channel, boolean physicallyInstalled) {
+        ReleaseInfo release = gitHubReleaseRepository.getRelease(projectRecord.getOwner(), projectRecord.getRepo(), channel);
         if (release == ReleaseInfo.NO_RELEASE) {
             return NO_RELEASE;
         }

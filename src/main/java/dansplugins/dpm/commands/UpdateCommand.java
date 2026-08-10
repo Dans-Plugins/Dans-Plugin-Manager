@@ -4,6 +4,7 @@ import dansplugins.dpm.controllers.UpdateController;
 import dansplugins.dpm.controllers.UpdateController.PluginResult;
 import dansplugins.dpm.controllers.UpdateController.SelectionResult;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -62,6 +63,18 @@ public class UpdateCommand extends AbstractPluginCommand {
                 .stream().map(ProjectRecord::getName).collect(Collectors.toList());
     }
 
+    // A plugin pinned to experimental is skipped by every update run for as long as its repository
+    // publishes no main-branch build, so the message has to name the pin and the way out of it —
+    // otherwise it reads as "this project has never cut a release", which is a different problem.
+    private String noReleaseSuffix(PluginResult result) {
+        if (result.getChannel() != ReleaseChannel.EXPERIMENTAL) {
+            return " has no published release yet.";
+        }
+        return " has no experimental build published — it stays pinned to the experimental channel"
+                + " and will be skipped until one is published. Use /dpm get " + result.getRecord().getName()
+                + " --stable to switch it back to published releases.";
+    }
+
     private void runUpdates(CommandSender sender, List<ProjectRecord> records) {
         List<PluginResult> results = updateController.runBatch(records);
         int updated = 0, upToDate = 0, skipped = 0, failed = 0;
@@ -76,7 +89,7 @@ public class UpdateCommand extends AbstractPluginCommand {
                     break;
                 case NO_RELEASE:
                     skipped++;
-                    msg = ChatColor.YELLOW + record.getName() + " has no published release yet.";
+                    msg = ChatColor.YELLOW + record.getName() + noReleaseSuffix(result);
                     break;
                 case UPDATED:
                     updated++;

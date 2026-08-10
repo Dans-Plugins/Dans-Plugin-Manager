@@ -7,6 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Experimental release channel. `/dpm get <plugin-name> --experimental` installs a build of the plugin's `main` branch instead of its latest published release, so changes can be picked up as soon as they are merged. The choice is remembered per plugin: plain `/dpm get` and `/dpm update` then keep that plugin on experimental builds until `/dpm get <plugin-name> --stable` switches it back. Experimental builds are read from a rolling `dev` prerelease published by each plugin repository's CI, and are unreleased, unreviewed code — see the Release channels section of `USER_GUIDE.md`
+- `ReleaseChannel` and `ChannelRepository` — the per-plugin channel is persisted in `dpm-channels.properties` alongside the existing `dpm-versions.properties`, whose format is unchanged. Plugins with no stored channel are treated as stable, so existing installations are unaffected
+- `GitHubReleaseRepository.getExperimentalRelease()` — fetches `releases/tags/<experimentalReleaseTag>`, caches per channel so the two channels cannot serve each other's releases, and synthesises a version identity of `dev-<short commit sha>` from the release's `target_commitish` (falling back to `dev@<published_at>`). Without this every experimental build would share the tag `dev` and report as already up to date forever
+- `experimentalReleaseTag` config option (default `dev`) — the release tag experimental builds are read from. Applied on `/dpm reload`
+
+### Changed
+- `/dpm update` now updates each plugin on the channel it is pinned to, rather than always using the latest published release. It takes no channel flags — channels are switched with `/dpm get`
+- `/dpm info` now shows a `Channel:` line and reports the latest build on that plugin's channel, so the "Update available" status matches what `/dpm update` would install
+- `/dpm list` and `/dpm list installed` now mark plugins on experimental builds with a trailing `[experimental]`
+- `/dpm remove --confirm` now clears the stored release channel along with the stored version tag, so a later reinstall starts on stable
+- Tab completion for `/dpm get` now suggests `--experimental` and `--stable` alongside plugin names
+
+### Fixed
+- `/dpm update` no longer reports a plugin pinned to the experimental channel as having "no published release yet" when its repository publishes no main-branch build. That wording describes a project that has never cut a release, while the real situation is a plugin pinned to a channel with nothing on it, silently skipped by every update run. The message now names the pin and the way out of it, and a matching warning is written to the console
+- `/dpm get <plugin-name> --experimental` no longer labels a whole batch "(experimental)" when that batch also carries automatically resolved dependencies, which are downloaded on their own channel
+- Tab completion no longer withdraws `--experimental` / `--stable` at the moment the flag is fully typed. The token under the cursor was counted as an argument already entered, so completing the flag suppressed the suggestion being completed
+- An unrecognised value in `dpm-channels.properties` now logs a warning naming the value instead of silently treating the plugin as stable
+- The default experimental release tag is read from a single constant rather than repeated as a `"dev"` literal in the config defaults and the config listing
+
+## [0.7.0-SNAPSHOT-8-8-2026] – 2026-08-08
+
+### Changed
+- Dans-Plugin-Manager is now developed AI-first. Day-to-day feature work, grooming, review and maintenance run through AI agents working directly against this repository, with the maintainers setting direction and approving what lands. The version bump marks that change in how the project is built — it is not a break in behaviour, configuration or stored data, and existing installations can upgrade in place. Released as `0.7.0-SNAPSHOT-8-8-2026`: the AI-first line has not yet been verified in live operation, and the dated snapshot designation stays until it has.
+
+### Added
 - Local test server scripts (`up.sh`, `down.sh`, `reload-plugin.sh`, `dpm-cmd.sh`, `test-integration.sh`) that drive [OMCSI](https://github.com/dmccoystephenson/open-mc-server-infrastructure) for manual plugin testing during development — same Spigot stack and plugin-deploy API used by the CI integration tests
 - `sample.env` documenting the env vars used by the local test server scripts
 

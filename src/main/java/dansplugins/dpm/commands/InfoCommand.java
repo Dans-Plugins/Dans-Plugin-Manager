@@ -3,6 +3,7 @@ package dansplugins.dpm.commands;
 import dansplugins.dpm.controllers.InfoController;
 import dansplugins.dpm.controllers.InfoController.PluginInfo;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -48,6 +49,7 @@ public class InfoCommand extends AbstractPluginCommand {
     private void showInfo(CommandSender sender, PluginInfo info) {
         ProjectRecord record = info.getRecord();
         ReleaseInfo release = info.getRelease();
+        ReleaseChannel channel = info.getChannel();
         sender.sendMessage(ChatColor.AQUA + "=== " + record.getName() + " ===");
 
         if (record.getDescription() != null) {
@@ -56,13 +58,17 @@ public class InfoCommand extends AbstractPluginCommand {
 
         sender.sendMessage(ChatColor.WHITE + "Owner: " + ChatColor.AQUA + record.getOwner());
         sender.sendMessage(ChatColor.WHITE + "Repository: " + ChatColor.AQUA + record.getRepo());
+        sender.sendMessage(ChatColor.WHITE + "Channel: "
+                + (channel == ReleaseChannel.EXPERIMENTAL ? ChatColor.YELLOW : ChatColor.AQUA)
+                + channel.getDisplayName());
 
+        String releaseLabel = channel == ReleaseChannel.EXPERIMENTAL ? "Latest experimental build" : "Latest release";
         if (release == ReleaseInfo.NO_RELEASE) {
-            sender.sendMessage(ChatColor.YELLOW + "Latest release: None published yet");
+            sender.sendMessage(ChatColor.YELLOW + releaseLabel + ": None published yet");
         } else if (release == null) {
-            sender.sendMessage(ChatColor.RED + "Latest release: (could not fetch — check console for details)");
+            sender.sendMessage(ChatColor.RED + releaseLabel + ": (could not fetch — check console for details)");
         } else {
-            sender.sendMessage(ChatColor.WHITE + "Latest release: " + ChatColor.GREEN + release.getTagName());
+            sender.sendMessage(ChatColor.WHITE + releaseLabel + ": " + ChatColor.GREEN + release.getTagName());
             if (release.getPublishedAt() != null) {
                 sender.sendMessage(ChatColor.WHITE + "Published: " + ChatColor.AQUA + formatDate(release.getPublishedAt()));
             }

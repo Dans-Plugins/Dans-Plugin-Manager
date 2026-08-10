@@ -1,6 +1,7 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
@@ -50,15 +51,17 @@ public class RemoveController {
     private final ProjectRecordRepository projectRecordRepository;
     private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
+    private final ChannelRepository channelRepository;
     private final DependencyResolutionService dependencyResolutionService;
     private final Logger logger;
 
     public RemoveController(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
-                            VersionRepository versionRepository, DependencyResolutionService dependencyResolutionService,
-                            Logger logger) {
+                            VersionRepository versionRepository, ChannelRepository channelRepository,
+                            DependencyResolutionService dependencyResolutionService, Logger logger) {
         this.projectRecordRepository = projectRecordRepository;
         this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
+        this.channelRepository = channelRepository;
         this.dependencyResolutionService = dependencyResolutionService;
         this.logger = logger;
     }
@@ -81,6 +84,7 @@ public class RemoveController {
         File jar = preview.getJar();
         if (jar.delete()) {
             versionRepository.removeTag(record.getName());
+            channelRepository.removeChannel(record.getName());
             logger.info("[DPM] Removed " + record.getName() + ".");
             return new RemovalResult(Outcome.DELETED, jar, preview.getDependents());
         }
