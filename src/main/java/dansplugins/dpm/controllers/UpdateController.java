@@ -27,18 +27,22 @@ public class UpdateController {
         private final Outcome outcome;
         private final String oldTag;
         private final String newTag;
+        private final ReleaseChannel channel;
 
-        PluginResult(ProjectRecord record, Outcome outcome, String oldTag, String newTag) {
+        PluginResult(ProjectRecord record, Outcome outcome, String oldTag, String newTag, ReleaseChannel channel) {
             this.record = record;
             this.outcome = outcome;
             this.oldTag = oldTag;
             this.newTag = newTag;
+            this.channel = channel;
         }
 
         public ProjectRecord getRecord() { return record; }
         public Outcome getOutcome() { return outcome; }
         public String getOldTag() { return oldTag; }
         public String getNewTag() { return newTag; }
+        /** The channel this plugin is pinned to, and so the one the update ran against. */
+        public ReleaseChannel getChannel() { return channel; }
     }
 
     public static final class SelectionResult {
@@ -122,27 +126,34 @@ public class UpdateController {
         ReleaseChannel channel = channelRepository.getChannel(record.getName());
         int result = downloadService.downloadLatest(record, channel, true);
         if (result == DownloadService.ALREADY_UP_TO_DATE) {
-            return new PluginResult(record, Outcome.ALREADY_UP_TO_DATE, oldTag, oldTag);
+            return new PluginResult(record, Outcome.ALREADY_UP_TO_DATE, oldTag, oldTag, channel);
         }
         if (result == DownloadService.NO_RELEASE) {
-            return new PluginResult(record, Outcome.NO_RELEASE, oldTag, null);
+            // A plugin pinned to a channel that publishes nothing is skipped on every run, so the
+            // console gets a warning naming the pin — the chat message alone is easy to miss.
+            if (channel == ReleaseChannel.EXPERIMENTAL) {
+                logger.warning("[DPM] " + record.getName() + " is pinned to the experimental channel but "
+                        + "no experimental build is published — it will be skipped by /dpm update until "
+                        + "one is published or it is switched back with /dpm get " + record.getName() + " --stable.");
+            }
+            return new PluginResult(record, Outcome.NO_RELEASE, oldTag, null, channel);
         }
         if (result > 0) {
             String newTag = versionRepository.getStoredTag(record.getName());
             String versionDiff = versionDiffSuffix(oldTag, newTag);
             logger.info("[DPM] Updated " + record.getName() + versionDiff + ".");
-            return new PluginResult(record, Outcome.UPDATED, oldTag, newTag);
+            return new PluginResult(record, Outcome.UPDATED, oldTag, newTag, channel);
         }
         if (result == DownloadService.NETWORK_ERROR) {
             logger.warning("[DPM] Failed to update " + record.getName() + " — could not reach GitHub.");
-            return new PluginResult(record, Outcome.NETWORK_ERROR, oldTag, null);
+            return new PluginResult(record, Outcome.NETWORK_ERROR, oldTag, null, channel);
         }
         if (result == DownloadService.FILE_ERROR) {
             logger.warning("[DPM] Failed to update " + record.getName() + " — could not write to plugins folder.");
-            return new PluginResult(record, Outcome.FILE_ERROR, oldTag, null);
+            return new PluginResult(record, Outcome.FILE_ERROR, oldTag, null, channel);
         }
         logger.warning("[DPM] Failed to update " + record.getName() + ".");
-        return new PluginResult(record, Outcome.OTHER_FAILURE, oldTag, null);
+        return new PluginResult(record, Outcome.OTHER_FAILURE, oldTag, null, channel);
     }
 
     private void sendUpdateNotification(List<PluginResult> results) {

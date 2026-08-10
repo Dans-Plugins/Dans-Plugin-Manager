@@ -113,6 +113,16 @@ class TabCompletionTest {
     }
 
     @Test
+    void pluginNamesWithChannelFlags_stillOffersTheFlagBeingTypedAsTheCurrentToken() {
+        List<String> options = TabCompleter.pluginNamesWithChannelFlags(
+                List.of("currencies"), new String[]{"get", "currencies", "--experimental"});
+
+        assertEquals(List.of("--experimental"), TabCompleter.filterByPrefix(options, "--experimental"),
+                "The token under the cursor is being typed, not already entered, so completing it "
+                        + "must not withdraw the suggestion");
+    }
+
+    @Test
     void pluginNamesWithChannelFlags_isCaseInsensitiveWhenDetectingAnExistingFlag() {
         List<String> options = TabCompleter.pluginNamesWithChannelFlags(
                 List.of("currencies"), new String[]{"get", "currencies", "--STABLE", ""});

@@ -111,7 +111,7 @@ public class GetCommand extends AbstractPluginCommand {
             }
             allToFetch.add(Target.of(record, requestedChannel));
             sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)"
-                    + channelSuffix(requestedChannel) + "...");
+                    + batchChannelSuffix(requestedChannel, !depsToFetch.isEmpty()) + "...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, allToFetch, 0));
         }
         return true;
@@ -150,7 +150,7 @@ public class GetCommand extends AbstractPluginCommand {
 
         if (allToFetch.isEmpty()) return false;
         sender.sendMessage(ChatColor.AQUA + "Fetching " + allToFetch.size() + " plugin(s)"
-                + channelSuffix(requestedChannel) + "...");
+                + batchChannelSuffix(requestedChannel, !depsToFetch.isEmpty()) + "...");
         final int fn = notFound;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> runBatch(sender, allToFetch, fn));
         return true;
@@ -165,6 +165,15 @@ public class GetCommand extends AbstractPluginCommand {
 
     private String channelSuffix(ReleaseChannel requestedChannel) {
         return requestedChannel == ReleaseChannel.EXPERIMENTAL ? " (experimental)" : "";
+    }
+
+    // The flag applies only to the named plugins, so a batch that also carries dependencies must not
+    // claim the whole batch is experimental — the dependencies are on whatever channel they are pinned to.
+    private String batchChannelSuffix(ReleaseChannel requestedChannel, boolean includesDependencies) {
+        if (requestedChannel != ReleaseChannel.EXPERIMENTAL) return "";
+        return includesDependencies
+                ? " (experimental — dependencies keep their own channel)"
+                : " (experimental)";
     }
 
     // On the experimental channel a 404 means the repository publishes no main-branch build, which

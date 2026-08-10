@@ -29,7 +29,15 @@ public class ChannelRepository {
 
     /** Returns the channel the given plugin is pinned to, defaulting to STABLE. */
     public ReleaseChannel getChannel(String pluginName) {
-        return ReleaseChannel.fromStored(props.getProperty(pluginName.toLowerCase()));
+        String stored = props.getProperty(pluginName.toLowerCase());
+        ReleaseChannel channel = ReleaseChannel.fromStored(stored);
+        // A hand-edited or corrupted entry silently demotes a plugin to stable, which looks like the
+        // pin was forgotten rather than rejected — so say which value was not understood.
+        if (stored != null && !stored.trim().isEmpty() && !stored.trim().equalsIgnoreCase(channel.name())) {
+            warn("Unrecognised channel '" + stored + "' stored for " + pluginName
+                    + " — treating it as " + channel.getDisplayName() + ".");
+        }
+        return channel;
     }
 
     /** Pins the given plugin to a channel. */

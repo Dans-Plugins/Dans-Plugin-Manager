@@ -19,6 +19,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `/dpm remove --confirm` now clears the stored release channel along with the stored version tag, so a later reinstall starts on stable
 - Tab completion for `/dpm get` now suggests `--experimental` and `--stable` alongside plugin names
 
+### Fixed
+- `/dpm update` no longer reports a plugin pinned to the experimental channel as having "no published release yet" when its repository publishes no main-branch build. That wording describes a project that has never cut a release, while the real situation is a plugin pinned to a channel with nothing on it, silently skipped by every update run. The message now names the pin and the way out of it, and a matching warning is written to the console
+- `/dpm get <plugin-name> --experimental` no longer labels a whole batch "(experimental)" when that batch also carries automatically resolved dependencies, which are downloaded on their own channel
+- Tab completion no longer withdraws `--experimental` / `--stable` at the moment the flag is fully typed. The token under the cursor was counted as an argument already entered, so completing the flag suppressed the suggestion being completed
+- An unrecognised value in `dpm-channels.properties` now logs a warning naming the value instead of silently treating the plugin as stable
+- The default experimental release tag is read from a single constant rather than repeated as a `"dev"` literal in the config defaults and the config listing
+
 ## [0.7.0-SNAPSHOT-8-8-2026] – 2026-08-08
 
 ### Changed
