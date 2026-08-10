@@ -1,10 +1,12 @@
 package dansplugins.dpm.commands;
 
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -22,16 +24,18 @@ public class InfoCommand extends AbstractPluginCommand {
     private final GitHubReleaseRepository gitHubReleaseRepository;
     private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
+    private final ChannelRepository channelRepository;
     private final Plugin plugin;
 
     public InfoCommand(ProjectRecordRepository projectRecordRepository, GitHubReleaseRepository gitHubReleaseRepository,
                        PluginFileRepository pluginFileRepository, VersionRepository versionRepository,
-                       Plugin plugin) {
+                       ChannelRepository channelRepository, Plugin plugin) {
         super(new ArrayList<>(List.of("info")), new ArrayList<>(List.of("dpm.info")));
         this.projectRecordRepository = projectRecordRepository;
         this.gitHubReleaseRepository = gitHubReleaseRepository;
         this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
+        this.channelRepository = channelRepository;
         this.plugin = plugin;
     }
 
@@ -50,14 +54,17 @@ public class InfoCommand extends AbstractPluginCommand {
             return false;
         }
         sender.sendMessage(ChatColor.AQUA + "Fetching release info for " + record.getName() + "...");
+        // Report against the channel this plugin tracks, so "Update available" reflects what
+        // /dpm update would actually install.
+        ReleaseChannel channel = channelRepository.getChannel(record.getName());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            ReleaseInfo release = gitHubReleaseRepository.getLatestReleaseMetadata(record.getOwner(), record.getRepo());
-            Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, record, release));
+            ReleaseInfo release = gitHubReleaseRepository.getReleaseMetadata(record.getOwner(), record.getRepo(), channel);
+            Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, record, release, channel));
         });
         return true;
     }
 
-    private void showInfo(CommandSender sender, ProjectRecord record, ReleaseInfo release) {
+    private void showInfo(CommandSender sender, ProjectRecord record, ReleaseInfo release, ReleaseChannel channel) {
         sender.sendMessage(ChatColor.AQUA + "=== " + record.getName() + " ===");
 
         if (record.getDescription() != null) {
@@ -66,13 +73,17 @@ public class InfoCommand extends AbstractPluginCommand {
 
         sender.sendMessage(ChatColor.WHITE + "Owner: " + ChatColor.AQUA + record.getOwner());
         sender.sendMessage(ChatColor.WHITE + "Repository: " + ChatColor.AQUA + record.getRepo());
+        sender.sendMessage(ChatColor.WHITE + "Channel: "
+                + (channel == ReleaseChannel.EXPERIMENTAL ? ChatColor.YELLOW : ChatColor.AQUA)
+                + channel.getDisplayName());
 
+        String releaseLabel = channel == ReleaseChannel.EXPERIMENTAL ? "Latest experimental build" : "Latest release";
         if (release == ReleaseInfo.NO_RELEASE) {
-            sender.sendMessage(ChatColor.YELLOW + "Latest release: None published yet");
+            sender.sendMessage(ChatColor.YELLOW + releaseLabel + ": None published yet");
         } else if (release == null) {
-            sender.sendMessage(ChatColor.RED + "Latest release: (could not fetch — check console for details)");
+            sender.sendMessage(ChatColor.RED + releaseLabel + ": (could not fetch — check console for details)");
         } else {
-            sender.sendMessage(ChatColor.WHITE + "Latest release: " + ChatColor.GREEN + release.getTagName());
+            sender.sendMessage(ChatColor.WHITE + releaseLabel + ": " + ChatColor.GREEN + release.getTagName());
             if (release.getPublishedAt() != null) {
                 sender.sendMessage(ChatColor.WHITE + "Published: " + ChatColor.AQUA + formatDate(release.getPublishedAt()));
             }

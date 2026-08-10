@@ -1,6 +1,7 @@
 package dansplugins.dpm.services;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
 import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
@@ -201,6 +202,112 @@ class DownloadServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // downloadLatest(record, channel[, physicallyInstalled])
+    // -------------------------------------------------------------------------
+
+    @Test
+    void downloadLatest_experimentalChannel_persistsTheSynthesizedDevVersion(@TempDir Path tempDir) throws IOException {
+        File src = tempDir.resolve("plugin.jar").toFile();
+        Files.write(src.toPath(), new byte[]{1, 2, 3});
+
+        VersionRepository versionRepository = versionRepository(tempDir);
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        DownloadService svc = noSleepService(null,
+                fakeChannelledRelease("v1.0.0", "dev-abc1234", src.toURI().toString()),
+                pluginFileRepository, versionRepository);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertTrue(svc.downloadLatest(record, ReleaseChannel.EXPERIMENTAL) > 0);
+        assertEquals("dev-abc1234", versionRepository.getStoredTag("testplugin"));
+    }
+
+    @Test
+    void downloadLatest_switchingFromStableToExperimental_reDownloadsEvenThoughTheJarIsPresent(@TempDir Path tempDir) throws IOException {
+        // Installed on stable at v1.0.0, with the JAR physically present.
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "v1.0.0");
+        Files.write(tempDir.resolve("testplugin.jar"), new byte[]{9});
+
+        File src = tempDir.resolve("source.jar").toFile();
+        Files.write(src.toPath(), new byte[]{1, 2, 3});
+
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        DownloadService svc = noSleepService(null,
+                fakeChannelledRelease("v1.0.0", "dev-abc1234", src.toURI().toString()),
+                pluginFileRepository, versionRepository);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertTrue(svc.downloadLatest(record, ReleaseChannel.EXPERIMENTAL) > 0,
+                "A channel switch must re-download — the other channel's tag never matches the stored one");
+        assertEquals("dev-abc1234", versionRepository.getStoredTag("testplugin"));
+    }
+
+    @Test
+    void downloadLatest_switchingFromExperimentalBackToStable_reDownloads(@TempDir Path tempDir) throws IOException {
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "dev-abc1234");
+        Files.write(tempDir.resolve("testplugin.jar"), new byte[]{9});
+
+        File src = tempDir.resolve("source.jar").toFile();
+        Files.write(src.toPath(), new byte[]{1, 2, 3});
+
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        DownloadService svc = noSleepService(null,
+                fakeChannelledRelease("v1.0.0", "dev-abc1234", src.toURI().toString()),
+                pluginFileRepository, versionRepository);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertTrue(svc.downloadLatest(record, ReleaseChannel.STABLE) > 0);
+        assertEquals("v1.0.0", versionRepository.getStoredTag("testplugin"));
+    }
+
+    @Test
+    void downloadLatest_experimentalChannel_returnsAlreadyUpToDateWhenTheDevBuildIsUnchanged(@TempDir Path tempDir) throws IOException {
+        VersionRepository versionRepository = versionRepository(tempDir);
+        versionRepository.setTag("testplugin", "dev-abc1234");
+        Files.write(tempDir.resolve("testplugin.jar"), new byte[]{1});
+
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        DownloadService svc = new DownloadService(null,
+                fakeChannelledRelease("v1.0.0", "dev-abc1234", "http://unused"),
+                pluginFileRepository, versionRepository);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.ALREADY_UP_TO_DATE, svc.downloadLatest(record, ReleaseChannel.EXPERIMENTAL));
+    }
+
+    @Test
+    void downloadLatest_experimentalChannel_returnsNoReleaseWhenRepoPublishesNoDevBuild(@TempDir Path tempDir) {
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        GitHubReleaseRepository noDevBuild = new GitHubReleaseRepository(null) {
+            @Override
+            public ReleaseInfo getExperimentalRelease(String owner, String repo) {
+                return ReleaseInfo.NO_RELEASE;
+            }
+        };
+        DownloadService svc = new DownloadService(null, noDevBuild, pluginFileRepository, versionRepository(tempDir));
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertEquals(DownloadService.NO_RELEASE, svc.downloadLatest(record, ReleaseChannel.EXPERIMENTAL));
+    }
+
+    @Test
+    void downloadLatest_defaultOverloadsStillUseTheStableChannel(@TempDir Path tempDir) throws IOException {
+        File src = tempDir.resolve("plugin.jar").toFile();
+        Files.write(src.toPath(), new byte[]{1, 2, 3});
+
+        VersionRepository versionRepository = versionRepository(tempDir);
+        PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
+        DownloadService svc = noSleepService(null,
+                fakeChannelledRelease("v1.0.0", "dev-abc1234", src.toURI().toString()),
+                pluginFileRepository, versionRepository);
+
+        ProjectRecord record = ProjectRecord.forGitHub("testplugin", "Org", "Repo");
+        assertTrue(svc.downloadLatest(record) > 0);
+        assertEquals("v1.0.0", versionRepository.getStoredTag("testplugin"));
+    }
+
+    // -------------------------------------------------------------------------
     // removeConflictingJars — ordering relative to download
     // -------------------------------------------------------------------------
 
@@ -343,6 +450,20 @@ class DownloadServiceTest {
             @Override
             public ReleaseInfo getLatestRelease(String owner, String repo) {
                 return new ReleaseInfo(tag, jarUrl);
+            }
+        };
+    }
+
+    // Serves a different tag per channel, as the real repository does.
+    private GitHubReleaseRepository fakeChannelledRelease(String stableTag, String experimentalTag, String jarUrl) {
+        return new GitHubReleaseRepository(null) {
+            @Override
+            public ReleaseInfo getLatestRelease(String owner, String repo) {
+                return new ReleaseInfo(stableTag, jarUrl);
+            }
+            @Override
+            public ReleaseInfo getExperimentalRelease(String owner, String repo) {
+                return new ReleaseInfo(experimentalTag, jarUrl);
             }
         };
     }

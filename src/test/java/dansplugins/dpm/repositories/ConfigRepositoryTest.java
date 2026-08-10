@@ -25,6 +25,18 @@ class ConfigRepositoryTest {
         assertFalse(config.getBoolean("debugMode"));
         assertEquals("", config.getString("githubToken"));
         assertEquals("", config.getString("discordWebhook"));
+        assertEquals("dev", config.getString("experimentalReleaseTag"));
+    }
+
+    @Test
+    void saveMissingConfigDefaultsIfNotPresent_doesNotOverwriteExistingExperimentalReleaseTag() {
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("experimentalReleaseTag", "nightly");
+        ConfigRepository repository = repository(config, "v1.0", new ArrayList<>());
+
+        repository.saveMissingConfigDefaultsIfNotPresent();
+
+        assertEquals("nightly", config.getString("experimentalReleaseTag"));
     }
 
     @Test

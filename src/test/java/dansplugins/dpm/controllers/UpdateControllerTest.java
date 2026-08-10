@@ -4,6 +4,8 @@ import dansplugins.dpm.controllers.UpdateController.Outcome;
 import dansplugins.dpm.controllers.UpdateController.PluginResult;
 import dansplugins.dpm.controllers.UpdateController.SelectionResult;
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.repositories.ChannelRepository;
 import dansplugins.dpm.repositories.ConfigRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
@@ -33,6 +35,10 @@ class UpdateControllerTest {
         return new VersionRepository(new File(tempDir.toFile(), "dpm-versions.properties"), null);
     }
 
+    private static ChannelRepository channelRepository(Path tempDir) {
+        return new ChannelRepository(new File(tempDir.toFile(), "dpm-channels.properties"), null);
+    }
+
     private static DiscordNotificationService recordingDiscordService(List<String> sent) {
         return new DiscordNotificationService((ConfigRepository) null) {
             @Override
@@ -43,9 +49,15 @@ class UpdateControllerTest {
     }
 
     private static DownloadService stubDownloadService(Map<String, Integer> resultsByName) {
+        return stubDownloadService(resultsByName, new ArrayList<>());
+    }
+
+    // Records the channel each update was attempted on, so channel routing can be asserted.
+    private static DownloadService stubDownloadService(Map<String, Integer> resultsByName, List<ReleaseChannel> channelsUsed) {
         return new DownloadService(null, null, null, null) {
             @Override
-            public int downloadLatest(ProjectRecord projectRecord, boolean physicallyInstalled) {
+            public int downloadLatest(ProjectRecord projectRecord, ReleaseChannel channel, boolean physicallyInstalled) {
+                channelsUsed.add(channel);
                 return resultsByName.get(projectRecord.getName());
             }
         };
@@ -61,12 +73,13 @@ class UpdateControllerTest {
 
     private static UpdateController controller(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
                                                 Map<String, Integer> resultsByName, VersionRepository versionRepository,
-                                                List<String> sentDiscordMessages) {
+                                                ChannelRepository channelRepository, List<String> sentDiscordMessages) {
         return new UpdateController(
                 projectRecordRepository,
                 pluginFileRepository,
                 stubDownloadService(resultsByName),
                 versionRepository,
+                channelRepository,
                 recordingDiscordService(sentDiscordMessages),
                 Logger.getLogger("UpdateControllerTest"));
     }
@@ -82,7 +95,7 @@ class UpdateControllerTest {
         new File(tempDir.toFile(), "Installed.jar").createNewFile();
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed, notInstalled);
-        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         List<ProjectRecord> result = controller.getInstalledPlugins();
 
@@ -98,7 +111,7 @@ class UpdateControllerTest {
     void selectForUpdate_returnsNotFoundForUnknownPluginName(@TempDir Path tempDir) {
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository();
-        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         SelectionResult result = controller.selectForUpdate(new String[]{"Unknown"});
 
@@ -112,7 +125,7 @@ class UpdateControllerTest {
         ProjectRecord notInstalled = record("NotInstalled");
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(notInstalled);
-        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         SelectionResult result = controller.selectForUpdate(new String[]{"NotInstalled"});
 
@@ -127,7 +140,7 @@ class UpdateControllerTest {
         new File(tempDir.toFile(), "Installed.jar").createNewFile();
         PluginFileRepository pluginFileRepository = new PluginFileRepository(tempDir.toString());
         ProjectRecordRepository projectRecordRepository = projectRecordRepository(installed);
-        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository, pluginFileRepository, new HashMap<>(), versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         SelectionResult result = controller.selectForUpdate(new String[]{"Installed"});
 
@@ -146,7 +159,7 @@ class UpdateControllerTest {
         versionRepository.setTag("MyPlugin", "v1.2.3");
         Map<String, Integer> results = new HashMap<>();
         results.put("MyPlugin", DownloadService.ALREADY_UP_TO_DATE);
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository, new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository, channelRepository(tempDir), new ArrayList<>());
 
         List<PluginResult> batchResults = controller.runBatch(List.of(record("MyPlugin")));
 
@@ -159,7 +172,7 @@ class UpdateControllerTest {
     void runBatch_returnsNoReleaseOutcomeWhenNoPublishedRelease(@TempDir Path tempDir) {
         Map<String, Integer> results = new HashMap<>();
         results.put("MyPlugin", DownloadService.NO_RELEASE);
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         List<PluginResult> batchResults = controller.runBatch(List.of(record("MyPlugin")));
 
@@ -172,7 +185,7 @@ class UpdateControllerTest {
         versionRepository.setTag("MyPlugin", "v1.0.0");
         Map<String, Integer> results = new HashMap<>();
         results.put("MyPlugin", 4096);
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository, new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository, channelRepository(tempDir), new ArrayList<>());
 
         List<PluginResult> batchResults = controller.runBatch(List.of(record("MyPlugin")));
 
@@ -185,7 +198,7 @@ class UpdateControllerTest {
     void runBatch_returnsNetworkErrorOutcomeForNetworkFailure(@TempDir Path tempDir) {
         Map<String, Integer> results = new HashMap<>();
         results.put("MyPlugin", DownloadService.NETWORK_ERROR);
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         List<PluginResult> batchResults = controller.runBatch(List.of(record("MyPlugin")));
 
@@ -196,7 +209,7 @@ class UpdateControllerTest {
     void runBatch_returnsFileErrorOutcomeForFileWriteFailure(@TempDir Path tempDir) {
         Map<String, Integer> results = new HashMap<>();
         results.put("MyPlugin", DownloadService.FILE_ERROR);
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         List<PluginResult> batchResults = controller.runBatch(List.of(record("MyPlugin")));
 
@@ -207,11 +220,30 @@ class UpdateControllerTest {
     void runBatch_returnsOtherFailureOutcomeForUnrecognizedNegativeResult(@TempDir Path tempDir) {
         Map<String, Integer> results = new HashMap<>();
         results.put("MyPlugin", -99);
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), new ArrayList<>());
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), channelRepository(tempDir), new ArrayList<>());
 
         List<PluginResult> batchResults = controller.runBatch(List.of(record("MyPlugin")));
 
         assertEquals(Outcome.OTHER_FAILURE, batchResults.get(0).getOutcome());
+    }
+
+    @Test
+    void runBatch_updatesEachPluginOnItsOwnStoredChannel(@TempDir Path tempDir) {
+        ChannelRepository channelRepository = channelRepository(tempDir);
+        channelRepository.setChannel("OnExperimental", ReleaseChannel.EXPERIMENTAL);
+        List<ReleaseChannel> channelsUsed = new ArrayList<>();
+        Map<String, Integer> results = new HashMap<>();
+        results.put("OnStable", 1024);
+        results.put("OnExperimental", 2048);
+        UpdateController controller = new UpdateController(
+                projectRecordRepository(), new PluginFileRepository(tempDir.toString()),
+                stubDownloadService(results, channelsUsed), versionRepository(tempDir), channelRepository,
+                recordingDiscordService(new ArrayList<>()), Logger.getLogger("UpdateControllerTest"));
+
+        controller.runBatch(List.of(record("OnStable"), record("OnExperimental")));
+
+        assertEquals(List.of(ReleaseChannel.STABLE, ReleaseChannel.EXPERIMENTAL), channelsUsed,
+                "/dpm update must follow each plugin's pinned channel");
     }
 
     @Test
@@ -224,7 +256,7 @@ class UpdateControllerTest {
         results.put("UpToDate", DownloadService.ALREADY_UP_TO_DATE);
         results.put("Failed", DownloadService.NETWORK_ERROR);
         List<String> sent = new ArrayList<>();
-        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository, sent);
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository, channelRepository(tempDir), sent);
 
         controller.runBatch(List.of(record("Updated"), record("UpToDate"), record("Failed")));
 

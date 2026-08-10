@@ -26,11 +26,16 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | 10 | `dpm search faction` | `=== Search Results` — confirms registry search |
 | 11 | `dpm get nonexistentplugin` | `Plugin not found: nonexistentplugin` — confirms error path doesn't crash the server |
 | 12 | `dpm stats` | `Available plugins:` — confirms available count line renders after 0.6.0 stat addition |
+| 13 | `dpm get medievalfactions --experimental` | `has no experimental build published yet` / `Downloaded` / `already up to date` — confirms the experimental channel routes to the `dev` tag and handles a repository that publishes no main-branch build |
+| 14 | `dpm get medievalfactions --bogus` | `Unknown option: --bogus` — confirms unknown options are rejected rather than treated as plugin names |
+| 15 | `dpm get medievalfactions --experimental --stable` | `--experimental and --stable cannot be used together` — confirms conflicting channel flags are rejected |
 
 ## What is not yet covered
 
 | Area | Notes |
 |------|-------|
+| Successful experimental download | Step 13 accepts either outcome because no DPC repository publishes a rolling `dev` prerelease yet. Once one does, tighten the assertion to `Downloaded` and add a follow-up `dpm get <name> --stable` step asserting the switch back re-downloads |
+| `dpm list installed` experimental marker | The `[experimental]` marker cannot be asserted until a plugin can actually be installed from the experimental channel |
 | `dpm update` / `dpm update <name>` | Exercises the same download path as `dpm get` but with version comparison; low incremental value |
 | `dpm clean [--confirm]` | Requires duplicate JARs to be present; hard to set up reliably in CI |
 | `dpm info <name>` | Mainly a display command; low regression risk |

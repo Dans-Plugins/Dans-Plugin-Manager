@@ -177,6 +177,30 @@ def main():
     cursor = send_command("dpm stats")
     assert_log_contains("Available plugins:", cursor=cursor)
 
+    print("\n[13] /dpm get medievalfactions --experimental — confirm the experimental channel path...")
+    cursor = send_command("dpm get medievalfactions --experimental")
+    # Until every plugin repository publishes a rolling main-branch prerelease, the only outcome
+    # this can rely on is the "nothing published" path. Once a repo is publishing, "Downloaded"
+    # becomes reachable here too — both are accepted so this step does not break on the rollout.
+    assert_log_contains_any(
+        [
+            "has no experimental build published yet",
+            "Downloaded",
+            "already up to date",
+        ],
+        cursor=cursor,
+        retries=8,
+        delay=5,
+    )
+
+    print("\n[14] /dpm get medievalfactions --bogus — confirm unknown options are rejected...")
+    cursor = send_command("dpm get medievalfactions --bogus")
+    assert_log_contains("Unknown option: --bogus", cursor=cursor)
+
+    print("\n[15] /dpm get medievalfactions --experimental --stable — confirm conflicting flags are rejected...")
+    cursor = send_command("dpm get medievalfactions --experimental --stable")
+    assert_log_contains("--experimental and --stable cannot be used together", cursor=cursor)
+
     print("\n=== All integration tests passed ===")
 
 
