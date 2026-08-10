@@ -32,7 +32,7 @@ public class ConfigRepository {
             config.set("discordWebhook", "");
         }
         if (!isSet("experimentalReleaseTag")) {
-            config.set("experimentalReleaseTag", "dev");
+            config.set("experimentalReleaseTag", GitHubReleaseRepository.DEFAULT_EXPERIMENTAL_TAG);
         }
         config.options().copyDefaults(true);
         saveAction.run();

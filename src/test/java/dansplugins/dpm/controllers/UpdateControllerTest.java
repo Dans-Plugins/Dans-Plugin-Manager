@@ -247,6 +247,24 @@ class UpdateControllerTest {
     }
 
     @Test
+    void runBatch_reportsThePinnedChannelOnEachResult(@TempDir Path tempDir) {
+        ChannelRepository channelRepository = channelRepository(tempDir);
+        channelRepository.setChannel("OnExperimental", ReleaseChannel.EXPERIMENTAL);
+        Map<String, Integer> results = new HashMap<>();
+        results.put("OnStable", DownloadService.NO_RELEASE);
+        results.put("OnExperimental", DownloadService.NO_RELEASE);
+        UpdateController controller = controller(projectRecordRepository(), new PluginFileRepository(tempDir.toString()), results, versionRepository(tempDir), channelRepository, new ArrayList<>());
+
+        List<PluginResult> batchResults = controller.runBatch(List.of(record("OnStable"), record("OnExperimental")));
+
+        // Without the channel on the result, a plugin pinned to experimental whose repository
+        // publishes no main-branch build is reported as "no published release yet" — indistinguishable
+        // from a project that never cut a release, while it is silently skipped by every update run.
+        assertEquals(ReleaseChannel.STABLE, batchResults.get(0).getChannel());
+        assertEquals(ReleaseChannel.EXPERIMENTAL, batchResults.get(1).getChannel());
+    }
+
+    @Test
     void runBatch_sendsDiscordSummaryWithCountsAndVersionDiff(@TempDir Path tempDir) throws Exception {
         VersionRepository versionRepository = versionRepository(tempDir);
         versionRepository.setTag("Updated", "v1.0.0");

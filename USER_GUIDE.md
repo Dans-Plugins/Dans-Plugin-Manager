@@ -51,6 +51,7 @@ Notes:
 - **`/dpm list installed` marks them.** Plugins on experimental builds are shown with a trailing `[experimental]`.
 - **Switching channels always re-downloads**, because the two channels never share a version identity.
 - **Not every plugin publishes experimental builds.** If a repository has no rolling build, `/dpm get <plugin> --experimental` reports that no experimental build is published and leaves the plugin on its current channel.
+- **If a repository stops publishing them, the plugin stops updating.** A plugin already pinned to experimental stays pinned even when its rolling build disappears, so `/dpm update` skips it on every run rather than quietly moving it back to releases. Both the chat message and the console say so and name the plugin; `/dpm get <plugin> --stable` returns it to published releases.
 - **Removing a plugin resets it to stable**, so a later reinstall does not silently return to experimental builds.
 
 ## Permissions
