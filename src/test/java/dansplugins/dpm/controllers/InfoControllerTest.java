@@ -15,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -225,5 +226,39 @@ class InfoControllerTest {
         InfoController controller = controller(tempDir, new ReleaseInfo("v4.6.3", "url"), versionRepository, record);
 
         assertFalse(controller.getInfo(record).isUpToDate());
+    }
+
+    // -------------------------------------------------------------------------
+    // PluginInfo.getChannel()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void getInfo_reportsStableChannelWhenPluginIsNotPinned(@TempDir Path tempDir) {
+        ProjectRecord record = record("MedievalFactions");
+        InfoController controller = controller(tempDir, new ReleaseInfo("v4.6.3", "url"), versionRepository(tempDir), record);
+
+        assertEquals(ReleaseChannel.STABLE, controller.getInfo(record).getChannel());
+    }
+
+    @Test
+    void getInfo_reportsPinnedChannelAndFetchesTheReleaseOnIt(@TempDir Path tempDir) {
+        ProjectRecord record = record("MedievalFactions");
+        ChannelRepository channelRepository = channelRepository(tempDir);
+        channelRepository.setChannel("MedievalFactions", ReleaseChannel.EXPERIMENTAL);
+        List<ReleaseChannel> requestedChannels = new ArrayList<>();
+        GitHubReleaseRepository releaseRepository = new GitHubReleaseRepository(null) {
+            @Override
+            public ReleaseInfo getReleaseMetadata(String owner, String repo, ReleaseChannel channel) {
+                requestedChannels.add(channel);
+                return new ReleaseInfo("dev-abc1234", "url");
+            }
+        };
+        InfoController controller = new InfoController(projectRecordRepository(record), releaseRepository,
+                new PluginFileRepository(tempDir.toString()), versionRepository(tempDir), channelRepository);
+
+        PluginInfo info = controller.getInfo(record);
+
+        assertEquals(ReleaseChannel.EXPERIMENTAL, info.getChannel());
+        assertEquals(List.of(ReleaseChannel.EXPERIMENTAL), requestedChannels);
     }
 }
