@@ -1,32 +1,24 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.repositories.ChannelRepository;
-import dansplugins.dpm.repositories.PluginFileRepository;
-import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.controllers.ListController;
+import dansplugins.dpm.controllers.ListController.ListEntry;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.repositories.ChannelRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class ListCommand extends AbstractPluginCommand {
-    private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFileRepository pluginFileRepository;
-    private final VersionRepository versionRepository;
+    private final ListController listController;
     private final ChannelRepository channelRepository;
 
-    public ListCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
-                       VersionRepository versionRepository, ChannelRepository channelRepository) {
+    public ListCommand(ListController listController, ChannelRepository channelRepository) {
         super(new ArrayList<>(List.of("list")), new ArrayList<>(List.of("dpm.list")));
-        this.projectRecordRepository = projectRecordRepository;
-        this.pluginFileRepository = pluginFileRepository;
-        this.versionRepository = versionRepository;
+        this.listController = listController;
         this.channelRepository = channelRepository;
     }
 
@@ -39,19 +31,13 @@ public class ListCommand extends AbstractPluginCommand {
 
     @Override
     public boolean execute(CommandSender sender) {
-        List<ProjectRecord> records = projectRecordRepository.getAllProjectRecords();
-        Set<String> installedNames = new HashSet<>();
-        for (ProjectRecord r : pluginFileRepository.filterInstalled(records)) {
-            installedNames.add(r.getName());
-        }
-        sender.sendMessage(ChatColor.AQUA + "=== Plugins (" + records.size() + ") ===");
-        for (ProjectRecord record : records) {
-            if (installedNames.contains(record.getName())) {
-                String tag = versionRepository.getStoredTag(record.getName());
-                String version = tag != null ? " " + tag : "";
-                sender.sendMessage(ChatColor.GREEN + record.getName() + version + channelMarker(record));
+        List<ListEntry> entries = listController.listAll();
+        sender.sendMessage(ChatColor.AQUA + "=== Plugins (" + entries.size() + ") ===");
+        for (ListEntry entry : entries) {
+            if (entry.isInstalled()) {
+                sender.sendMessage(ChatColor.GREEN + entry.getRecord().getName() + versionSuffix(entry) + channelMarker(entry.getRecord()));
             } else {
-                sender.sendMessage(ChatColor.GRAY + record.getName() + " (not installed)");
+                sender.sendMessage(ChatColor.GRAY + entry.getRecord().getName() + " (not installed)");
             }
         }
         return true;
@@ -71,26 +57,16 @@ public class ListCommand extends AbstractPluginCommand {
     }
 
     private boolean executeInstalled(CommandSender sender) {
-        List<ProjectRecord> installed = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
-        sender.sendMessage(ChatColor.AQUA + "=== Installed Plugins (" + installed.size() + ") ===");
-        for (ProjectRecord record : installed) {
-            String tag = versionRepository.getStoredTag(record.getName());
-            String version = tag != null ? " " + tag : "";
-            sender.sendMessage(ChatColor.GREEN + record.getName() + version + channelMarker(record));
+        List<ListEntry> entries = listController.listInstalled();
+        sender.sendMessage(ChatColor.AQUA + "=== Installed Plugins (" + entries.size() + ") ===");
+        for (ListEntry entry : entries) {
+            sender.sendMessage(ChatColor.GREEN + entry.getRecord().getName() + versionSuffix(entry) + channelMarker(entry.getRecord()));
         }
         return true;
     }
 
     private boolean executeAvailable(CommandSender sender) {
-        List<ProjectRecord> all = projectRecordRepository.getAllProjectRecords();
-        Set<String> installedNames = new HashSet<>();
-        for (ProjectRecord r : pluginFileRepository.filterInstalled(all)) {
-            installedNames.add(r.getName());
-        }
-        List<ProjectRecord> available = new ArrayList<>();
-        for (ProjectRecord r : all) {
-            if (!installedNames.contains(r.getName())) available.add(r);
-        }
+        List<ProjectRecord> available = listController.listAvailable();
         sender.sendMessage(ChatColor.AQUA + "=== Available Plugins (" + available.size() + ") ===");
         for (ProjectRecord record : available) {
             String desc = record.getDescription();
@@ -98,5 +74,9 @@ public class ListCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.GRAY + record.getName() + suffix);
         }
         return true;
+    }
+
+    private String versionSuffix(ListEntry entry) {
+        return entry.getStoredTag() != null ? " " + entry.getStoredTag() : "";
     }
 }

@@ -1,10 +1,7 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.repositories.ChannelRepository;
-import dansplugins.dpm.repositories.GitHubReleaseRepository;
-import dansplugins.dpm.repositories.PluginFileRepository;
-import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.controllers.InfoController;
+import dansplugins.dpm.controllers.InfoController.PluginInfo;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
@@ -15,27 +12,15 @@ import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class InfoCommand extends AbstractPluginCommand {
-    private final ProjectRecordRepository projectRecordRepository;
-    private final GitHubReleaseRepository gitHubReleaseRepository;
-    private final PluginFileRepository pluginFileRepository;
-    private final VersionRepository versionRepository;
-    private final ChannelRepository channelRepository;
+    private final InfoController infoController;
     private final Plugin plugin;
 
-    public InfoCommand(ProjectRecordRepository projectRecordRepository, GitHubReleaseRepository gitHubReleaseRepository,
-                       PluginFileRepository pluginFileRepository, VersionRepository versionRepository,
-                       ChannelRepository channelRepository, Plugin plugin) {
+    public InfoCommand(InfoController infoController, Plugin plugin) {
         super(new ArrayList<>(List.of("info")), new ArrayList<>(List.of("dpm.info")));
-        this.projectRecordRepository = projectRecordRepository;
-        this.gitHubReleaseRepository = gitHubReleaseRepository;
-        this.pluginFileRepository = pluginFileRepository;
-        this.versionRepository = versionRepository;
-        this.channelRepository = channelRepository;
+        this.infoController = infoController;
         this.plugin = plugin;
     }
 
@@ -48,23 +33,23 @@ public class InfoCommand extends AbstractPluginCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         String name = args[0];
-        ProjectRecord record = projectRecordRepository.getProjectRecord(name);
+        ProjectRecord record = infoController.getRecord(name);
         if (record == null) {
             sender.sendMessage(ChatColor.RED + "Plugin not found: " + name + ". Use /dpm search <keyword> to find the right name.");
             return false;
         }
         sender.sendMessage(ChatColor.AQUA + "Fetching release info for " + record.getName() + "...");
-        // Report against the channel this plugin tracks, so "Update available" reflects what
-        // /dpm update would actually install.
-        ReleaseChannel channel = channelRepository.getChannel(record.getName());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            ReleaseInfo release = gitHubReleaseRepository.getReleaseMetadata(record.getOwner(), record.getRepo(), channel);
-            Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, record, release, channel));
+            PluginInfo info = infoController.getInfo(record);
+            Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, info));
         });
         return true;
     }
 
-    private void showInfo(CommandSender sender, ProjectRecord record, ReleaseInfo release, ReleaseChannel channel) {
+    private void showInfo(CommandSender sender, PluginInfo info) {
+        ProjectRecord record = info.getRecord();
+        ReleaseInfo release = info.getRelease();
+        ReleaseChannel channel = info.getChannel();
         sender.sendMessage(ChatColor.AQUA + "=== " + record.getName() + " ===");
 
         if (record.getDescription() != null) {
@@ -89,15 +74,11 @@ public class InfoCommand extends AbstractPluginCommand {
             }
         }
 
-        Set<String> installedNames = installedNamesFor(record);
-        boolean installed = installedNames.contains(record.getName());
-        String storedTag = versionRepository.getStoredTag(record.getName());
-
-        if (installed) {
-            String version = storedTag != null ? storedTag : "(version unknown)";
+        if (info.isInstalled()) {
+            String version = info.getStoredTag() != null ? info.getStoredTag() : "(version unknown)";
             sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GREEN + "Yes (" + version + ")");
-            if (release != null && release != ReleaseInfo.NO_RELEASE) {
-                if (storedTag != null && storedTag.equals(release.getTagName())) {
+            if (info.hasPublishedRelease()) {
+                if (info.isUpToDate()) {
                     sender.sendMessage(ChatColor.WHITE + "Status: " + ChatColor.GREEN + "Up to date");
                 } else {
                     sender.sendMessage(ChatColor.WHITE + "Status: " + ChatColor.YELLOW + "Update available");
@@ -107,32 +88,14 @@ public class InfoCommand extends AbstractPluginCommand {
             sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GRAY + "No");
         }
 
-        showDependencies(sender, record.getHardDependencies(), "Requires", installedNames);
-        showDependencies(sender, record.getSoftDependencies(), "Integrates with", installedNames);
+        showDependencies(sender, record.getHardDependencies(), "Requires", info);
+        showDependencies(sender, record.getSoftDependencies(), "Integrates with", info);
     }
 
-    private Set<String> installedNamesFor(ProjectRecord record) {
-        List<ProjectRecord> toScan = new ArrayList<>();
-        toScan.add(record);
-        for (String dep : record.getHardDependencies()) {
-            ProjectRecord r = projectRecordRepository.getProjectRecord(dep);
-            if (r != null) toScan.add(r);
-        }
-        for (String dep : record.getSoftDependencies()) {
-            ProjectRecord r = projectRecordRepository.getProjectRecord(dep);
-            if (r != null) toScan.add(r);
-        }
-        Set<String> names = new HashSet<>();
-        for (ProjectRecord r : pluginFileRepository.filterInstalled(toScan)) {
-            names.add(r.getName());
-        }
-        return names;
-    }
-
-    private void showDependencies(CommandSender sender, List<String> deps, String label, Set<String> installedNames) {
+    private void showDependencies(CommandSender sender, List<String> deps, String label, PluginInfo info) {
         if (deps.isEmpty()) return;
         for (String dep : deps) {
-            String status = installedNames.contains(dep)
+            String status = info.isDependencyInstalled(dep)
                     ? ChatColor.GREEN + dep + " (installed)"
                     : ChatColor.RED + dep + " (not installed)";
             sender.sendMessage(ChatColor.WHITE + label + ": " + status);
