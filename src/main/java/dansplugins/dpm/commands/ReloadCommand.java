@@ -1,6 +1,6 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.DansPluginManager;
+import dansplugins.dpm.controllers.ReloadController;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
@@ -9,16 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReloadCommand extends AbstractPluginCommand {
-    private final DansPluginManager plugin;
+    private final ReloadController reloadController;
 
-    public ReloadCommand(DansPluginManager plugin) {
+    public ReloadCommand(ReloadController reloadController) {
         super(new ArrayList<>(List.of("reload")), new ArrayList<>(List.of("dpm.reload")));
-        this.plugin = plugin;
+        this.reloadController = reloadController;
     }
 
     @Override
     public boolean execute(CommandSender sender) {
-        plugin.reloadDpm();
+        reloadController.reload();
         sender.sendMessage(ChatColor.GREEN + "DPM config reloaded.");
         return true;
     }
