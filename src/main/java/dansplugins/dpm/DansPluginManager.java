@@ -1,9 +1,11 @@
 package dansplugins.dpm;
 
 import dansplugins.dpm.commands.*;
+import dansplugins.dpm.controllers.CleanController;
 import dansplugins.dpm.controllers.GetController;
 import dansplugins.dpm.controllers.InfoController;
 import dansplugins.dpm.controllers.ListController;
+import dansplugins.dpm.controllers.ReloadController;
 import dansplugins.dpm.controllers.RemoveController;
 import dansplugins.dpm.controllers.SearchController;
 import dansplugins.dpm.controllers.StatsController;
@@ -60,15 +62,16 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private SearchController searchController;
     private ListController listController;
     private InfoController infoController;
+    private CleanController cleanController;
+    private ReloadController reloadController;
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
     @Override
     public void onEnable() {
         initializeConfig();
-        gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
-        gitHubReleaseRepository.setExperimentalTag(configRepository.getStringOrDefault("experimentalReleaseTag",
-                GitHubReleaseRepository.DEFAULT_EXPERIMENTAL_TAG));
+        reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository);
+        reloadController.applySettings();
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
         channelRepository = new ChannelRepository(new File(getDataFolder(), "dpm-channels.properties"), logger);
         downloadService = new DownloadService(logger, gitHubReleaseRepository, pluginFileRepository, versionRepository);
@@ -78,6 +81,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         searchController = new SearchController(projectRecordRepository, pluginFileRepository, versionRepository);
         listController = new ListController(projectRecordRepository, pluginFileRepository, versionRepository);
         infoController = new InfoController(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, channelRepository);
+        cleanController = new CleanController(projectRecordRepository, pluginFileRepository, getLogger());
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
     }
@@ -152,14 +156,6 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         return configRepository.getBoolean("debugMode");
     }
 
-    public void reloadDpm() {
-        reloadConfig();
-        gitHubReleaseRepository.setApiToken(configRepository.getStringOrDefault("githubToken", ""));
-        gitHubReleaseRepository.setExperimentalTag(configRepository.getStringOrDefault("experimentalReleaseTag",
-                GitHubReleaseRepository.DEFAULT_EXPERIMENTAL_TAG));
-        gitHubReleaseRepository.clearCache();
-    }
-
     private void initializeConfig() {
         if (configFileExists()) {
             performCompatibilityChecks();
@@ -186,10 +182,10 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 new GetCommand(projectRecordRepository, getController, this),
                 new ListCommand(listController, channelRepository),
                 new StatsCommand(statsController),
-                new CleanCommand(projectRecordRepository, pluginFileRepository, this),
+                new CleanCommand(cleanController, this),
                 updateCommand = new UpdateCommand(updateController, this),
                 new InfoCommand(infoController, this),
-                new ReloadCommand(this),
+                new ReloadCommand(reloadController),
                 removeCommand = new RemoveCommand(projectRecordRepository, removeController),
                 new SearchCommand(searchController)
         ));

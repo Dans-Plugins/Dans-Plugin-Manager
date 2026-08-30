@@ -1,27 +1,24 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.repositories.PluginFileRepository;
-import dansplugins.dpm.repositories.ProjectRecordRepository;
+import dansplugins.dpm.controllers.CleanController;
+import dansplugins.dpm.controllers.CleanController.CleanResult;
+import dansplugins.dpm.controllers.CleanController.Conflict;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class CleanCommand extends AbstractPluginCommand {
-    private final ProjectRecordRepository projectRecordRepository;
-    private final PluginFileRepository pluginFileRepository;
+    private final CleanController cleanController;
     private final Plugin plugin;
 
-    public CleanCommand(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository, Plugin plugin) {
+    public CleanCommand(CleanController cleanController, Plugin plugin) {
         super(new ArrayList<>(List.of("clean")), new ArrayList<>(List.of("dpm.clean")));
-        this.projectRecordRepository = projectRecordRepository;
-        this.pluginFileRepository = pluginFileRepository;
+        this.cleanController = cleanController;
         this.plugin = plugin;
     }
 
@@ -29,19 +26,8 @@ public class CleanCommand extends AbstractPluginCommand {
     public boolean execute(CommandSender sender) {
         sender.sendMessage(ChatColor.AQUA + "Scanning for duplicate plugin JARs...");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> conflicts = buildConflictLabels(
-                    pluginFileRepository.findAllConflictingJars(projectRecordRepository.getAllProjectRecords()));
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (conflicts.isEmpty()) {
-                    sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
-                } else {
-                    sender.sendMessage(ChatColor.YELLOW + "Found " + conflicts.size() + " duplicate JAR(s) to remove:");
-                    for (String entry : conflicts) {
-                        sender.sendMessage(ChatColor.AQUA + "  - " + entry);
-                    }
-                    sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm clean --confirm" + ChatColor.YELLOW + " to delete them.");
-                }
-            });
+            List<Conflict> conflicts = cleanController.findConflicts();
+            Bukkit.getScheduler().runTask(plugin, () -> sendPreview(sender, conflicts));
         });
         return true;
     }
@@ -51,55 +37,47 @@ public class CleanCommand extends AbstractPluginCommand {
         if (args.length > 0 && args[0].equalsIgnoreCase("--confirm")) {
             sender.sendMessage(ChatColor.AQUA + "Removing duplicate plugin JARs...");
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                Map<String, List<File>> conflictMap =
-                        pluginFileRepository.findAllConflictingJars(projectRecordRepository.getAllProjectRecords());
-                List<String> removed = new ArrayList<>();
-                List<String> failed = new ArrayList<>();
-                for (Map.Entry<String, List<File>> entry : conflictMap.entrySet()) {
-                    String pluginName = entry.getKey();
-                    for (File conflict : entry.getValue()) {
-                        String label = conflict.getName() + " (" + pluginName + ")";
-                        if (conflict.delete()) {
-                            plugin.getLogger().info("[DPM] Cleaned duplicate JAR: " + label);
-                            removed.add(label);
-                        } else {
-                            plugin.getLogger().warning("[DPM] Failed to delete duplicate JAR: " + label + " — check file permissions.");
-                            failed.add(label);
-                        }
-                    }
-                }
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (removed.isEmpty() && failed.isEmpty()) {
-                        sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
-                        return;
-                    }
-                    if (!removed.isEmpty()) {
-                        sender.sendMessage(ChatColor.GREEN + "Removed " + removed.size() + " duplicate JAR(s):");
-                        for (String entry : removed) {
-                            sender.sendMessage(ChatColor.AQUA + "  - " + entry);
-                        }
-                        sender.sendMessage(ChatColor.YELLOW + "Restart the server to apply changes.");
-                    }
-                    if (!failed.isEmpty()) {
-                        sender.sendMessage(ChatColor.RED + "Failed to delete " + failed.size() + " JAR(s) — check server file permissions:");
-                        for (String entry : failed) {
-                            sender.sendMessage(ChatColor.RED + "  - " + entry);
-                        }
-                    }
-                });
+                CleanResult result = cleanController.clean();
+                Bukkit.getScheduler().runTask(plugin, () -> sendResult(sender, result));
             });
             return true;
         }
         return execute(sender);
     }
 
-    private List<String> buildConflictLabels(Map<String, List<File>> conflictMap) {
-        List<String> labels = new ArrayList<>();
-        for (Map.Entry<String, List<File>> entry : conflictMap.entrySet()) {
-            for (File f : entry.getValue()) {
-                labels.add(f.getName() + " (" + entry.getKey() + ")");
+    private void sendPreview(CommandSender sender, List<Conflict> conflicts) {
+        if (conflicts.isEmpty()) {
+            sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
+            return;
+        }
+        sender.sendMessage(ChatColor.YELLOW + "Found " + conflicts.size() + " duplicate JAR(s) to remove:");
+        for (Conflict conflict : conflicts) {
+            sender.sendMessage(ChatColor.AQUA + "  - " + label(conflict));
+        }
+        sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm clean --confirm" + ChatColor.YELLOW + " to delete them.");
+    }
+
+    private void sendResult(CommandSender sender, CleanResult result) {
+        if (result.isEmpty()) {
+            sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
+            return;
+        }
+        if (!result.getRemoved().isEmpty()) {
+            sender.sendMessage(ChatColor.GREEN + "Removed " + result.getRemoved().size() + " duplicate JAR(s):");
+            for (Conflict conflict : result.getRemoved()) {
+                sender.sendMessage(ChatColor.AQUA + "  - " + label(conflict));
+            }
+            sender.sendMessage(ChatColor.YELLOW + "Restart the server to apply changes.");
+        }
+        if (!result.getFailed().isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "Failed to delete " + result.getFailed().size() + " JAR(s) — check server file permissions:");
+            for (Conflict conflict : result.getFailed()) {
+                sender.sendMessage(ChatColor.RED + "  - " + label(conflict));
             }
         }
-        return labels;
+    }
+
+    private String label(Conflict conflict) {
+        return conflict.getJar().getName() + " (" + conflict.getPluginName() + ")";
     }
 }
