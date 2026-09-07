@@ -161,9 +161,14 @@ class PluginFileRepositoryTest {
     }
 
     @Test
-    void findConflictingJars_caseInsensitiveManagedFileExclusion(@TempDir Path tempDir) throws IOException {
-        // MEDIEVALFACTIONS.JAR normalizes to "medievalfactions" and matches equalsIgnoreCase —
-        // it must be excluded as the canonical copy, not returned as a conflict.
+    void findConflictingJars_reportsAJarWhoseNameDiffersOnlyInCase(@TempDir Path tempDir) throws IOException {
+        // This previously asserted the opposite: that MEDIEVALFACTIONS.JAR was
+        // "the canonical copy" and had to be excluded. It is not. Installs write
+        // exactly "medievalfactions.jar", so on a case-sensitive filesystem the
+        // two are separate files and excluding one leaves the server with two
+        // jars for one plugin — which is what #130 was. Where case does not
+        // distinguish files they are the same file, which the install replaces
+        // anyway, so reporting it costs nothing.
         createFile(tempDir, "MEDIEVALFACTIONS.JAR");
         createFile(tempDir, "Medieval-Factions-4.6.3.jar");
 
@@ -171,8 +176,8 @@ class PluginFileRepositoryTest {
         ProjectRecord record = ProjectRecord.forGitHub("medievalfactions", "Dans-Plugins", "Medieval-Factions");
 
         List<File> conflicts = svc.findConflictingJars(record);
-        assertEquals(1, conflicts.size());
-        assertEquals("Medieval-Factions-4.6.3.jar", conflicts.get(0).getName());
+        List<String> names = conflicts.stream().map(File::getName).sorted().toList();
+        assertEquals(List.of("MEDIEVALFACTIONS.JAR", "Medieval-Factions-4.6.3.jar"), names);
     }
 
     @Test
@@ -385,4 +390,119 @@ class PluginFileRepositoryTest {
     private void createFile(Path dir, String name) throws IOException {
         new File(dir.toFile(), name).createNewFile();
     }
+
+    // -------------------------------------------------------------------------
+    // Regression: jars that survived an install and broke the next restart (#130)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void findConflictingJars_reportsAJarDifferingOnlyInCase() throws IOException {
+        // On a case-sensitive filesystem these are two different files. Skipping
+        // the first as "the managed file" is what let it survive an install and
+        // leave Bukkit with two jars for one plugin.
+        createJar(tempDirOf("case"), "Herald.jar", "Herald");
+
+        PluginFileRepository svc = new PluginFileRepository(tempDirOf("case").toString());
+        ProjectRecord record = ProjectRecord.forGitHub("herald", "Dans-Plugins", "Herald");
+
+        List<File> conflicts = svc.findConflictingJars(record);
+        assertEquals(1, conflicts.size());
+        assertEquals("Herald.jar", conflicts.get(0).getName());
+    }
+
+    @Test
+    void findConflictingJars_reportsANonVersionBuildQualifier() throws IOException {
+        // "-ci-build" is not a version, so the filename heuristic normalises this
+        // to "wildpetscibuild" and misses it. The jar's own plugin.yml does not.
+        createJar(tempDirOf("qualifier"), "WildPets-ci-build.jar", "WildPets");
+
+        PluginFileRepository svc = new PluginFileRepository(tempDirOf("qualifier").toString());
+        ProjectRecord record = ProjectRecord.forGitHub("wildpets", "Dans-Plugins", "Wild-Pets");
+
+        List<File> conflicts = svc.findConflictingJars(record);
+        assertEquals(1, conflicts.size());
+        assertEquals("WildPets-ci-build.jar", conflicts.get(0).getName());
+    }
+
+    @Test
+    void findConflictingJars_stillIgnoresTheExactManagedFile() throws IOException {
+        createJar(tempDirOf("managed"), "herald.jar", "Herald");
+
+        PluginFileRepository svc = new PluginFileRepository(tempDirOf("managed").toString());
+        ProjectRecord record = ProjectRecord.forGitHub("herald", "Dans-Plugins", "Herald");
+
+        assertTrue(svc.findConflictingJars(record).isEmpty());
+    }
+
+    @Test
+    void findConflictingJars_doesNotClaimAnUnrelatedPluginByItsDeclaredName() throws IOException {
+        createJar(tempDirOf("unrelated"), "SomeOtherPlugin.jar", "SomeOtherPlugin");
+
+        PluginFileRepository svc = new PluginFileRepository(tempDirOf("unrelated").toString());
+        ProjectRecord record = ProjectRecord.forGitHub("herald", "Dans-Plugins", "Herald");
+
+        assertTrue(svc.findConflictingJars(record).isEmpty());
+    }
+
+    @Test
+    void findConflictingJars_fallsBackToTheFilenameWhenAJarIsUnreadable() throws IOException {
+        // Not a zip at all. An install must not fail because something odd is
+        // sitting in the plugins folder.
+        Path dir = tempDirOf("unreadable");
+        java.nio.file.Files.write(dir.resolve("Herald-1.2.3.jar"), "not a zip".getBytes());
+
+        PluginFileRepository svc = new PluginFileRepository(dir.toString());
+        ProjectRecord record = ProjectRecord.forGitHub("herald", "Dans-Plugins", "Herald");
+
+        List<File> conflicts = svc.findConflictingJars(record);
+        assertEquals(1, conflicts.size());
+        assertEquals("Herald-1.2.3.jar", conflicts.get(0).getName());
+    }
+
+    @Test
+    void readDeclaredPluginName_ignoresAnIndentedNameKey() throws IOException {
+        // `name:` inside a commands: block belongs to a command, not the plugin.
+        Path dir = tempDirOf("indented");
+        createJarWithYaml(dir, "Thing.jar", "commands:\n  foo:\n    name: NotThePlugin\nname: Thing\n");
+
+        PluginFileRepository svc = new PluginFileRepository(dir.toString());
+        assertEquals("Thing", svc.readDeclaredPluginName(dir.resolve("Thing.jar").toFile()));
+    }
+
+    @Test
+    void readDeclaredPluginName_returnsNullWhenThereIsNoPluginYml() throws IOException {
+        Path dir = tempDirOf("noyml");
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(
+                java.nio.file.Files.newOutputStream(dir.resolve("Empty.jar")))) {
+            zos.putNextEntry(new java.util.zip.ZipEntry("nothing.txt"));
+            zos.write("x".getBytes());
+            zos.closeEntry();
+        }
+        PluginFileRepository svc = new PluginFileRepository(dir.toString());
+        assertNull(svc.readDeclaredPluginName(dir.resolve("Empty.jar").toFile()));
+    }
+
+    // Each regression test gets its own directory so one cannot see another's jars.
+    private Path tempDirOf(String key) throws IOException {
+        Path dir = regressionRoot.resolve(key);
+        if (!java.nio.file.Files.exists(dir)) java.nio.file.Files.createDirectories(dir);
+        return dir;
+    }
+
+    private void createJar(Path dir, String filename, String declaredName) throws IOException {
+        createJarWithYaml(dir, filename, "name: " + declaredName + "\nversion: 1.0\nmain: a.B\n");
+    }
+
+    private void createJarWithYaml(Path dir, String filename, String yaml) throws IOException {
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(
+                java.nio.file.Files.newOutputStream(dir.resolve(filename)))) {
+            zos.putNextEntry(new java.util.zip.ZipEntry("plugin.yml"));
+            zos.write(yaml.getBytes());
+            zos.closeEntry();
+        }
+    }
+
+    @TempDir
+    Path regressionRoot;
+
 }
