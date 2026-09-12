@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -234,5 +235,50 @@ class ConfigRepositoryTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Test
+    void usageReportingTags_areEmptyByDefault() {
+        YamlConfiguration onDisk = new YamlConfiguration();
+        onDisk.setDefaults(bundledConfig());
+        ConfigRepository repository = repository(onDisk, "v1.0", new ArrayList<>());
+
+        assertTrue(repository.getUsageReportingTags().isEmpty(), "a normal install adds no static tags");
+    }
+
+    @Test
+    void usageReportingTags_comeFromTheOnDiskMapAndSkipBlanks() {
+        // What the integration-test server seeds before the jar is deployed.
+        YamlConfiguration onDisk = new YamlConfiguration();
+        onDisk.set("usage-reporting.tags.ci", "true");
+        onDisk.set("usage-reporting.tags.runner", "github-actions");
+        onDisk.set("usage-reporting.tags.blank", "  ");
+        onDisk.setDefaults(bundledConfig());
+        ConfigRepository repository = repository(onDisk, "v1.0", new ArrayList<>());
+
+        Map<String, String> tags = repository.getUsageReportingTags();
+        assertEquals("true", tags.get("ci"));
+        assertEquals("github-actions", tags.get("runner"));
+        assertFalse(tags.containsKey("blank"));
+        assertEquals(2, tags.size());
+    }
+
+    @Test
+    void saveMissingConfigDefaultsIfNotPresent_keepsSeededTagsWhileFillingInDefaults() {
+        // The integration-test server writes a config.yml holding only the
+        // tags before the plugin first starts; that file has no version, so
+        // it takes the version-mismatch path. The seeded tag must survive it.
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("usage-reporting.tags.ci", "true");
+        config.setDefaults(bundledConfig());
+        ConfigRepository repository = repository(config, "v1.0", new ArrayList<>());
+
+        repository.saveMissingConfigDefaultsIfNotPresent();
+        String saved = config.saveToString();
+
+        assertEquals("true", repository.getUsageReportingTags().get("ci"));
+        assertTrue(saved.contains("ci: 'true'") || saved.contains("ci: \"true\"") || saved.contains("ci: true"), saved);
+        assertTrue(saved.contains("key: " + bundledConfig().getString("usage-reporting.key")), saved);
+        assertTrue(repository.isUsageReportingEnabled());
     }
 }

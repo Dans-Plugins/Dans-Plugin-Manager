@@ -12,6 +12,7 @@ A `config.yml` is generated in `plugins/DansPluginManager/` on first run. The `u
 | `usage-reporting.enabled` | Boolean | `true` | Whether the plugin reports usage events (see below). Set to `false` to turn it off. Takes effect on the next server restart. |
 | `usage-reporting.endpoint` | String | `https://trace.danielstephenson.dev` | The trace server events are sent to. |
 | `usage-reporting.key` | String | the plugin's key | Identifies this plugin to the trace server so reports are attributed to it. Not a secret: it ships in the bundled config and can only report as DansPluginManager. Empty means reporting is off regardless of `enabled`. |
+| `usage-reporting.tags` | Map | `{}` | Optional static tags attached to every event this installation reports, e.g. to mark a test server. The integration-test server sets `ci: "true"` here so its events can be told apart from real installations. Blank values are ignored. |
 
 ## Usage reporting
 

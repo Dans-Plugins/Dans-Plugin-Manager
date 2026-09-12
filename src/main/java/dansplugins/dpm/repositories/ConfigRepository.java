@@ -1,5 +1,9 @@
 package dansplugins.dpm.repositories;
 
+import org.bukkit.configuration.ConfigurationSection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.function.Supplier;
@@ -8,6 +12,7 @@ public class ConfigRepository {
     private static final String USAGE_REPORTING_ENABLED_KEY = "usage-reporting.enabled";
     private static final String USAGE_REPORTING_ENDPOINT_KEY = "usage-reporting.endpoint";
     private static final String USAGE_REPORTING_KEY_KEY = "usage-reporting.key";
+    private static final String USAGE_REPORTING_TAGS_KEY = "usage-reporting.tags";
     private static final String DEFAULT_USAGE_REPORTING_ENDPOINT = "https://trace.danielstephenson.dev";
 
     private final Supplier<FileConfiguration> configSupplier;
@@ -91,5 +96,26 @@ public class ConfigRepository {
     public String getUsageReportingKey() {
         String key = getString(USAGE_REPORTING_KEY_KEY);
         return key != null ? key : "";
+    }
+
+    /**
+     * Static tags attached to every usage event this installation reports, from
+     * the optional {@code usage-reporting.tags} map. Empty by default. The
+     * integration-test server sets {@code ci: "true"} here so its events can be
+     * told apart from real installations.
+     */
+    public Map<String, String> getUsageReportingTags() {
+        ConfigurationSection section = getConfig().getConfigurationSection(USAGE_REPORTING_TAGS_KEY);
+        Map<String, String> tags = new LinkedHashMap<>();
+        if (section == null) {
+            return tags;
+        }
+        for (String key : section.getKeys(false)) {
+            String value = section.getString(key);
+            if (value != null && !value.trim().isEmpty()) {
+                tags.put(key, value);
+            }
+        }
+        return tags;
     }
 }
