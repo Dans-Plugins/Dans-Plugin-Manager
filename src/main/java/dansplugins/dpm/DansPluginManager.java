@@ -21,6 +21,7 @@ import dansplugins.dpm.factories.ProjectRecordFactory;
 import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
+import dansplugins.dpm.trace.TraceClient;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 import dansplugins.dpm.utils.TabCompleter;
@@ -67,9 +68,20 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private RemoveCommand removeCommand;
     private UpdateCommand updateCommand;
 
+    // A no-op until the config has been read, so a command arriving before
+    // onEnable() finishes has something safe to report to.
+    private TraceClient trace = TraceClient.disabled();
+
     @Override
     public void onEnable() {
         initializeConfig();
+        // usage reporting: one event now, one per command; see config.yml
+        trace = TraceClient.builder(configRepository.getUsageReportingEndpoint(), getName())
+                .key(configRepository.getUsageReportingKey())
+                .enabled(configRepository.isUsageReportingEnabled())
+                .logger(getLogger())
+                .build();
+        trace.report("startup", null, Collections.singletonMap("version", getDescription().getVersion()));
         reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository);
         reloadController.applySettings();
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
@@ -88,7 +100,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     @Override
     public void onDisable() {
-
+        trace.close();
     }
 
     @Override
@@ -131,6 +143,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        trace.report("command", null, Collections.singletonMap("name", cmd.getName()));
         if (args.length == 0) {
             DefaultCommand defaultCommand = new DefaultCommand(this);
             return defaultCommand.execute(sender);
