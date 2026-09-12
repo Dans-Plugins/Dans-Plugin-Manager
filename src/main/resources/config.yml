@@ -13,3 +13,6 @@ usage-reporting:
   # runs the plugin -- and it cannot do anything except report as this
   # plugin. Empty means reporting is off regardless of the switch above.
   key: "vbd0rNuUdSZ6QLMdr9axX2I9YPUxUiKya-EkqqVNLpw"
+  # Optional static tags attached to every event, e.g. to mark a test server.
+  # Leave empty on a normal installation.
+  tags: {}

@@ -36,6 +36,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 
 public final class DansPluginManager extends PonderBukkitPlugin {
@@ -71,6 +73,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     // A no-op until the config has been read, so a command arriving before
     // onEnable() finishes has something safe to report to.
     private TraceClient trace = TraceClient.disabled();
+    // Tags every event carries, from usage-reporting.tags; empty on a normal install.
+    private Map<String, String> traceTags = Collections.emptyMap();
 
     @Override
     public void onEnable() {
@@ -81,7 +85,8 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 .enabled(configRepository.isUsageReportingEnabled())
                 .logger(getLogger())
                 .build();
-        trace.report("startup", null, Collections.singletonMap("version", getDescription().getVersion()));
+        traceTags = configRepository.getUsageReportingTags();
+        trace.report("startup", null, withTraceTags("version", getDescription().getVersion()));
         reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository);
         reloadController.applySettings();
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
@@ -141,9 +146,16 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         return names;
     }
 
+    /** The configured static tags plus one event-specific tag; the event's wins on a clash. */
+    private Map<String, String> withTraceTags(String key, String value) {
+        Map<String, String> tags = new LinkedHashMap<>(traceTags);
+        tags.put(key, value);
+        return tags;
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
-        trace.report("command", null, Collections.singletonMap("name", cmd.getName()));
+        trace.report("command", null, withTraceTags("name", cmd.getName()));
         if (args.length == 0) {
             DefaultCommand defaultCommand = new DefaultCommand(this);
             return defaultCommand.execute(sender);

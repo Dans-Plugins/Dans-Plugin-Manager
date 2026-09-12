@@ -107,6 +107,31 @@ def assert_log_contains_any(candidates, cursor=None, tail=500, retries=6, delay=
     sys.exit(f"FAIL: none of {candidates!r} found after {retries} attempts")
 
 
+def seed_usage_reporting_tags():
+    """Mark this server's usage reports as CI before the plugin first starts.
+
+    DPM reports usage events to the author's trace service, and without this
+    every CI run would be indistinguishable from a real installation. The
+    plugin reads an optional usage-reporting.tags map from its config.yml and
+    attaches it to every event; seeding {ci: "true"} here, after the server
+    has finished its own setup (it wipes /mcserver only while empty, so this
+    must not run before wait_until_running) and before the jar is deployed,
+    means the very first startup event already carries the tag. DPM's config
+    initialisation keeps unknown keys when it fills in its defaults.
+    """
+    config = "usage-reporting:\n  tags:\n    ci: \"true\"\n"
+    subprocess.run(
+        [
+            "docker", "exec", CONTAINER, "sh", "-c",
+            "mkdir -p /mcserver/plugins/DansPluginManager"
+            " && printf '%s' \"$1\" > /mcserver/plugins/DansPluginManager/config.yml",
+            "sh", config,
+        ],
+        check=True,
+    )
+    print("  usage-reporting.tags.ci seeded.")
+
+
 def deploy_jar(path):
     with open(path, "rb") as jar:
         _api(
@@ -124,7 +149,10 @@ def main():
     print("[1] Waiting for Spigot server to start...")
     wait_until_running(timeout=300)
 
-    print("\n[2] Deploying DPM JAR...")
+    print("\n[2] Seeding config so usage reports from this run are tagged ci=true...")
+    seed_usage_reporting_tags()
+
+    print("\n[2b] Deploying DPM JAR...")
     deploy_jar(JAR_PATH)
 
     print("\n[3] Reloading server to activate plugin...")
