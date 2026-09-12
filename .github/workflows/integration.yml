@@ -72,6 +72,10 @@ jobs:
             echo "DISCORD_WEBHOOK_URL="
             echo "ALERT_MANAGER_ENABLED=false"
             echo "AGENT_ENABLED=false"
+            # OMCSI's minecraft-wrapper reports a startup event to the trace
+            # usage service; mark this run as CI so it is not counted as a
+            # real installation (the same tag DPM's own events carry).
+            echo "USAGE_REPORTING_TAGS=ci=true"
           } > omcsi/.env
 
       # On cache hit: load images and skip the 10–15 min Spigot compilation entirely.
