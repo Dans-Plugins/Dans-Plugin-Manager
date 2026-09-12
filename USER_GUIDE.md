@@ -86,6 +86,8 @@ The most useful option for operators running frequent updates is `githubToken`. 
 
 To receive Discord notifications when `/dpm update` completes or when a download fails, set `discordWebhook` in `config.yml` to a Discord webhook URL and run `/dpm reload`. Create a webhook in your Discord server under channel settings → Integrations → Webhooks. Leave the value empty to disable notifications.
 
+DPM reports usage events — `startup` when it is enabled and `command` each time `/dpm` is used — to the author's trace server so it is known which plugins are actually in use. Nothing about players or the server is sent. To turn it off, set `usage-reporting.enabled` to `false` in `config.yml` and restart the server. See [CONFIG.md](CONFIG.md#usage-reporting) for details.
+
 ## Support
 
 Ask questions in the [Discord server](https://discord.gg/xXtuAQ2) or open a [GitHub issue](https://github.com/Dans-Plugins/Dans-Plugin-Manager/issues).
