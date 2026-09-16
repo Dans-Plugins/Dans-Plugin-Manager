@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Usage reporting is now disclosed on every startup: the plugin logs whether reporting is on (and what is sent, and how to turn it off) or off (and why). A `config.yml` from before the `usage-reporting` block existed is completed with the bundled values so the switch is visible on disk, not only on a version change. Two new ways to turn reporting off: `enabled: false` in `plugins/trace/config.yml` (created on first start, shared by every plugin that reports this way) and the environment variables `TRACE_USAGE_REPORTING=off` or `DO_NOT_TRACK=1`. The vendored trace client is 0.2.0. Nothing about what is sent changed, and `usage-reporting.tags` is still attached to every event; see the README's Usage reporting section
+
 ### Added
 - `usage-reporting.tags`, an optional map of static tags attached to every usage event this installation reports. The integration-test workflow seeds `ci: "true"` into the test server's config before the jar is deployed, so events from CI runs are distinguishable from real installations instead of polluting the usage data
 - Experimental release channel. `/dpm get <plugin-name> --experimental` installs a build of the plugin's `main` branch instead of its latest published release, so changes can be picked up as soon as they are merged. The choice is remembered per plugin: plain `/dpm get` and `/dpm update` then keep that plugin on experimental builds until `/dpm get <plugin-name> --stable` switches it back. Experimental builds are read from a rolling `dev` prerelease published by each plugin repository's CI, and are unreleased, unreviewed code — see the Release channels section of `USER_GUIDE.md`

@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.List;
 
 public final class DansPluginManager extends PonderBukkitPlugin {
+    private static final String USAGE_REPORTING_DETAILS_URL = "https://github.com/Stephenson-Software/trace#usage-reporting";
     private static final List<String> CONFIRM_COMPLETION = List.of("--confirm");
 
     private final String pluginVersion = "v" + getDescription().getVersion();
@@ -79,12 +80,16 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     @Override
     public void onEnable() {
         initializeConfig();
-        // usage reporting: one event now, one per command; see config.yml
+        // usage reporting: one event now, one per command; see config.yml. The
+        // server-wide plugins/trace/config.yml and the environment get the last
+        // word over this plugin's own switch, and the outcome is said every startup.
         trace = TraceClient.builder(configRepository.getUsageReportingEndpoint(), getName())
                 .key(configRepository.getUsageReportingKey())
                 .enabled(configRepository.isUsageReportingEnabled())
+                .serverWideConfig(getDataFolder().getParentFile())
                 .logger(getLogger())
                 .build();
+        logUsageReportingState();
         traceTags = configRepository.getUsageReportingTags();
         trace.report("startup", null, withTraceTags("version", getDescription().getVersion()));
         reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository);
@@ -146,6 +151,19 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         return names;
     }
 
+    /** Says on every startup whether usage reporting is on, what is sent, and how to turn it off. */
+    private void logUsageReportingState() {
+        if (trace.isEnabled()) {
+            getLogger().info("Usage reporting is on: " + getName() + " sends its name, version and command names to "
+                    + configRepository.getUsageReportingEndpoint() + " - nothing about players or the server. "
+                    + "Turn it off with usage-reporting.enabled: false in this plugin's config.yml, "
+                    + "or for every plugin with enabled: false in plugins/trace/config.yml. "
+                    + "Details: " + USAGE_REPORTING_DETAILS_URL);
+        } else {
+            getLogger().info("Usage reporting is off (" + trace.disabledReason() + ").");
+        }
+    }
+
     /** The configured static tags plus one event-specific tag; the event's wins on a clash. */
     private Map<String, String> withTraceTags(String key, String value) {
         Map<String, String> tags = new LinkedHashMap<>(traceTags);
@@ -198,6 +216,9 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         if (isVersionMismatched()) {
             configRepository.saveMissingConfigDefaultsIfNotPresent();
         }
+        // A config.yml from before usage reporting only gets rewritten on a version
+        // change; make sure the switch reaches the disk regardless, so it can be found.
+        configRepository.saveUsageReportingDefaultsIfMissing();
         reloadConfig();
     }
 

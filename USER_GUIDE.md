@@ -86,7 +86,7 @@ The most useful option for operators running frequent updates is `githubToken`. 
 
 To receive Discord notifications when `/dpm update` completes or when a download fails, set `discordWebhook` in `config.yml` to a Discord webhook URL and run `/dpm reload`. Create a webhook in your Discord server under channel settings → Integrations → Webhooks. Leave the value empty to disable notifications.
 
-DPM reports usage events — `startup` when it is enabled and `command` each time `/dpm` is used — to the author's trace server so it is known which plugins are actually in use. Nothing about players or the server is sent. To turn it off, set `usage-reporting.enabled` to `false` in `config.yml` and restart the server. See [CONFIG.md](CONFIG.md#usage-reporting) for details.
+DPM reports usage events — `startup` when it is enabled and `command` each time `/dpm` is used — to the author's trace server so it is known which plugins are actually in use. Nothing about players or the server is sent, and DPM says on every startup whether reporting is on. To turn it off, set `usage-reporting.enabled` to `false` in `config.yml` and restart the server; `enabled: false` in `plugins/trace/config.yml` turns it off for every plugin that reports this way, and the environment variable `TRACE_USAGE_REPORTING=off` or `DO_NOT_TRACK=1` for the whole process. See [CONFIG.md](CONFIG.md#usage-reporting) and https://github.com/Stephenson-Software/trace#usage-reporting for details.
 
 ## Support
 
