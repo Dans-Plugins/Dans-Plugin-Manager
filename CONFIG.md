@@ -1,6 +1,6 @@
 # Dans Plugin Manager Configuration
 
-A `config.yml` is generated in `plugins/DansPluginManager/` on first run. The `usage-reporting` block also ships inside the jar, so a `config.yml` written by an older version that lacks it still reads the bundled values.
+A `config.yml` is generated in `plugins/DansPluginManager/` on first run. The `usage-reporting` block also ships inside the jar: a `config.yml` written by an older version that lacks it is completed with the bundled values the next time the plugin starts, and still reads the bundled values for anything it lacks.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -22,4 +22,10 @@ plugins are actually in use. An event carries the plugin's name, the event name 
 `command`), and either the plugin version or the command name — nothing about players, the world, or
 the server. Sending happens off the main thread, never delays a tick, and is dropped silently if the
 server cannot be reached. Set `usage-reporting.enabled` to `false` to turn it off; unlike the other
-options, this one is read once at startup, so `/dpm reload` does not apply a change to it.
+options, this one is read once at startup, so `/dpm reload` does not apply a change to it. The plugin
+says on every startup whether reporting is on, and why not when it is off.
+
+Two further switches win over this file: `enabled: false` in `plugins/trace/config.yml` (created the
+first time a plugin that reports this way starts) turns reporting off for every such plugin on the
+server, and the environment variables `TRACE_USAGE_REPORTING=off` or `DO_NOT_TRACK=1` turn it off for
+the whole process. Details: https://github.com/Stephenson-Software/trace#usage-reporting

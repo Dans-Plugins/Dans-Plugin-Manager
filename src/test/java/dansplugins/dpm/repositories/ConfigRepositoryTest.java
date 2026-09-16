@@ -219,6 +219,61 @@ class ConfigRepositoryTest {
         assertTrue(saved.contains("version: v1.0"), saved);
     }
 
+    @Test
+    void saveUsageReportingDefaultsIfMissing_putsTheBundledBlockOnDiskWhenTheFileLacksIt() {
+        // A config.yml from before usage reporting whose version already matches,
+        // which the version check alone would never rewrite.
+        YamlConfiguration onDisk = new YamlConfiguration();
+        onDisk.set("version", "v1.0");
+        onDisk.set("debugMode", true);
+        onDisk.setDefaults(bundledConfig());
+        List<String> saveCalls = new ArrayList<>();
+        ConfigRepository repository = repository(onDisk, "v1.0", saveCalls);
+
+        repository.saveUsageReportingDefaultsIfMissing();
+        String saved = onDisk.saveToString();
+
+        assertEquals(1, saveCalls.size());
+        assertTrue(saved.contains("enabled: true"), saved);
+        assertTrue(saved.contains("endpoint: https://trace.danielstephenson.dev"), saved);
+        assertTrue(saved.contains("key: " + bundledConfig().getString("usage-reporting.key")), saved);
+        assertTrue(saved.contains("debugMode: true"), "existing settings must survive: " + saved);
+    }
+
+    @Test
+    void saveUsageReportingDefaultsIfMissing_leavesAFileThatHasTheBlockAlone() {
+        // In particular an operator's enabled: false must never be undone.
+        YamlConfiguration onDisk = new YamlConfiguration();
+        onDisk.set("usage-reporting.enabled", false);
+        onDisk.setDefaults(bundledConfig());
+        List<String> saveCalls = new ArrayList<>();
+        ConfigRepository repository = repository(onDisk, "v1.0", saveCalls);
+
+        repository.saveUsageReportingDefaultsIfMissing();
+
+        assertTrue(saveCalls.isEmpty(), "a file with the block must not be rewritten");
+        assertFalse(onDisk.getBoolean("usage-reporting.enabled"));
+        assertNull(onDisk.get("usage-reporting.key", null), "nothing must be added beside the operator's switch");
+    }
+
+    @Test
+    void saveUsageReportingDefaultsIfMissing_leavesASeededTagsOnlyBlockAlone() {
+        // The integration-test server seeds only usage-reporting.tags before the
+        // jar first starts; the one-argument getters read the rest from the jar.
+        YamlConfiguration onDisk = new YamlConfiguration();
+        onDisk.set("usage-reporting.tags.ci", "true");
+        onDisk.setDefaults(bundledConfig());
+        List<String> saveCalls = new ArrayList<>();
+        ConfigRepository repository = repository(onDisk, "v1.0", saveCalls);
+
+        repository.saveUsageReportingDefaultsIfMissing();
+
+        assertTrue(saveCalls.isEmpty());
+        assertEquals("true", repository.getUsageReportingTags().get("ci"));
+        assertTrue(repository.isUsageReportingEnabled());
+        assertFalse(repository.getUsageReportingKey().isEmpty());
+    }
+
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------
