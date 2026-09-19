@@ -92,7 +92,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         logUsageReportingState();
         traceTags = configRepository.getUsageReportingTags();
         trace.report("startup", null, withTraceTags("version", getDescription().getVersion()));
-        reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository);
+        reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository, getLogger());
         reloadController.applySettings();
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
         channelRepository = new ChannelRepository(new File(getDataFolder(), "dpm-channels.properties"), logger);
