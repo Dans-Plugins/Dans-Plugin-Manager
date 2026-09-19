@@ -229,6 +229,14 @@ def main():
     cursor = send_command("dpm get medievalfactions --experimental --stable")
     assert_log_contains("--experimental and --stable cannot be used together", cursor=cursor)
 
+    # The CI server has no githubToken, so a reload must re-apply the settings and repeat the
+    # empty-token warning that startup logs — the one place an operator hears about the
+    # 60-requests-per-hour ceiling before an update run hits it.
+    print("\n[16] /dpm reload — confirm the config reloads and the empty-token warning is repeated...")
+    cursor = send_command("dpm reload")
+    assert_log_contains("DPM config reloaded", cursor=cursor)
+    assert_log_contains("githubToken is not set", cursor=cursor)
+
     print("\n=== All integration tests passed ===")
 
 

@@ -32,6 +32,21 @@ class DownloadServiceTest {
         };
     }
 
+    // Reports whether the directory is now genuinely unwritable, not merely whether the chmod
+    // succeeded: as root, setWritable(false) returns true yet the mode bits are bypassed, so a guard
+    // on its return value alone would run the test and watch the "unwritable" write succeed (#120).
+    private static boolean makeReadOnly(File dir) {
+        if (!dir.setWritable(false)) return false;
+        File probe = new File(dir, ".write-probe");
+        try {
+            if (!probe.createNewFile()) return false;
+        } catch (IOException e) {
+            return true; // the write was refused, so the restriction holds for this user
+        }
+        probe.delete();
+        return false;
+    }
+
     // -------------------------------------------------------------------------
     // readAndWrite()
     // -------------------------------------------------------------------------
@@ -378,8 +393,7 @@ class DownloadServiceTest {
 
         File readOnlyDir = tempDir.resolve("readonly").toFile();
         readOnlyDir.mkdir();
-        // setWritable(false) is a no-op when running as root (common in some CI environments).
-        assumeTrue(readOnlyDir.setWritable(false), "Skipped: cannot make directory read-only");
+        assumeTrue(makeReadOnly(readOnlyDir), "Skipped: directory permissions are not enforced for this user");
 
         Logger noOpLogger = new Logger(null) {
             @Override public void log(String message) {}

@@ -6,7 +6,7 @@ A `config.yml` is generated in `plugins/DansPluginManager/` on first run. The `u
 |--------|------|---------|-------------|
 | `version` | String | *(plugin version)* | Plugin version. Do not edit manually. |
 | `debugMode` | Boolean | `false` | Enables verbose debug logging to the console. |
-| `githubToken` | String | `""` | Personal access token for the GitHub API. When set, raises the rate limit from 60 to 5 000 requests per hour. Generate one at GitHub → Settings → Developer settings → Personal access tokens (no scopes required for public repos). |
+| `githubToken` | String | `""` | Personal access token for the GitHub API. When set, raises the rate limit from 60 to 5 000 requests per hour; while empty, a warning is logged on every startup and `/dpm reload`. Generate one at GitHub → Settings → Developer settings → Personal access tokens (no scopes required for public repos). |
 | `experimentalReleaseTag` | String | `"dev"` | The GitHub release tag experimental (main-branch) builds are published under. DPM fetches `releases/tags/<this value>` for plugins on the experimental channel. Only change this if the plugin repositories publish their rolling build under a different tag. Applied on `/dpm reload`. |
 | `discordWebhook` | String | `""` | Discord webhook URL. When set, DPM posts a summary to the channel after each `/dpm update` run and on any download failure from `/dpm get`. Leave empty to disable. Create one in your Discord server under channel settings → Integrations → Webhooks. |
 | `usage-reporting.enabled` | Boolean | `true` | Whether the plugin reports usage events (see below). Set to `false` to turn it off. Takes effect on the next server restart. |

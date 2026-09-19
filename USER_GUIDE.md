@@ -72,7 +72,7 @@ Notes:
 
 DPM generates a `config.yml` in `plugins/DansPluginManager/` on first run. See [CONFIG.md](CONFIG.md) for all options.
 
-The most useful option for operators running frequent updates is `githubToken`. GitHub limits unauthenticated API requests to 60 per hour. Setting a personal access token raises this to 5 000 per hour:
+The most useful option for operators running frequent updates is `githubToken`. GitHub limits unauthenticated API requests to 60 per hour, and DPM logs a console warning on every startup and `/dpm reload` while the token is empty. Setting a personal access token raises the limit to 5 000 per hour:
 
 1. Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Generate a new token with no scopes selected (public repo read access is granted by default)

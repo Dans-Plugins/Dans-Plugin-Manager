@@ -29,6 +29,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | 13 | `dpm get medievalfactions --experimental` | `has no experimental build published yet` / `Downloaded` / `already up to date` — confirms the experimental channel routes to the `dev` tag and handles a repository that publishes no main-branch build |
 | 14 | `dpm get medievalfactions --bogus` | `Unknown option: --bogus` — confirms unknown options are rejected rather than treated as plugin names |
 | 15 | `dpm get medievalfactions --experimental --stable` | `--experimental and --stable cannot be used together` — confirms conflicting channel flags are rejected |
+| 16 | `dpm reload` | `DPM config reloaded` + `githubToken is not set` — confirms the config re-applies without a restart and that the empty-token warning reaches the console (the CI server has no token) |
 
 ## What is not yet covered
 
@@ -39,7 +40,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | `dpm update` / `dpm update <name>` | Exercises the same download path as `dpm get` but with version comparison; low incremental value |
 | `dpm clean [--confirm]` | Requires duplicate JARs to be present; hard to set up reliably in CI |
 | `dpm info <name>` | Mainly a display command; low regression risk |
-| `dpm reload` | Would confirm `githubToken` config reloads without server restart |
+| `dpm reload` with a token present | Step 16 reloads with an empty token; the path where a token has been added and the warning stops is unit-tested only |
 | `dpm get <multiple names>` | Batch mode not tested; same download code path as single |
 | Permission enforcement | Console has all permissions; player-level permission checks cannot be exercised without a player login |
 | Network failure / download error paths | Hard to simulate reliably in CI |
