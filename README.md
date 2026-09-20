@@ -4,7 +4,8 @@
 This Minecraft plugin lets server operators download DPC plugins in-game or from the server console.
 
 ## Download
-https://github.com/Dans-Plugins/Dans-Plugin-Manager/releases
+- [SpigotMC](https://www.spigotmc.org/resources/dans-plugin-manager-early-access.100279/)
+- [GitHub releases](https://github.com/Dans-Plugins/Dans-Plugin-Manager/releases)
 
 ## Usage
 - [User Guide](USER_GUIDE.md)
