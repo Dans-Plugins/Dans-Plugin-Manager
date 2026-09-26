@@ -3,6 +3,7 @@ package dansplugins.dpm.commands;
 import dansplugins.dpm.controllers.CleanController;
 import dansplugins.dpm.controllers.CleanController.CleanResult;
 import dansplugins.dpm.controllers.CleanController.Conflict;
+import dansplugins.dpm.utils.ResultMessenger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -15,11 +16,13 @@ import java.util.List;
 public class CleanCommand extends AbstractPluginCommand {
     private final CleanController cleanController;
     private final Plugin plugin;
+    private final ResultMessenger messenger;
 
     public CleanCommand(CleanController cleanController, Plugin plugin) {
         super(new ArrayList<>(List.of("clean")), new ArrayList<>(List.of("dpm.clean")));
         this.cleanController = cleanController;
         this.plugin = plugin;
+        this.messenger = new ResultMessenger(plugin.getLogger());
     }
 
     @Override
@@ -47,32 +50,32 @@ public class CleanCommand extends AbstractPluginCommand {
 
     private void sendPreview(CommandSender sender, List<Conflict> conflicts) {
         if (conflicts.isEmpty()) {
-            sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
+            messenger.send(sender, ChatColor.GREEN + "No duplicate JARs found.");
             return;
         }
-        sender.sendMessage(ChatColor.YELLOW + "Found " + conflicts.size() + " duplicate JAR(s) to remove:");
+        messenger.send(sender, ChatColor.YELLOW + "Found " + conflicts.size() + " duplicate JAR(s) to remove:");
         for (Conflict conflict : conflicts) {
-            sender.sendMessage(ChatColor.AQUA + "  - " + label(conflict));
+            messenger.send(sender, ChatColor.AQUA + "  - " + label(conflict));
         }
-        sender.sendMessage(ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm clean --confirm" + ChatColor.YELLOW + " to delete them.");
+        messenger.send(sender, ChatColor.YELLOW + "Run " + ChatColor.WHITE + "/dpm clean --confirm" + ChatColor.YELLOW + " to delete them.");
     }
 
     private void sendResult(CommandSender sender, CleanResult result) {
         if (result.isEmpty()) {
-            sender.sendMessage(ChatColor.GREEN + "No duplicate JARs found.");
+            messenger.send(sender, ChatColor.GREEN + "No duplicate JARs found.");
             return;
         }
         if (!result.getRemoved().isEmpty()) {
-            sender.sendMessage(ChatColor.GREEN + "Removed " + result.getRemoved().size() + " duplicate JAR(s):");
+            messenger.send(sender, ChatColor.GREEN + "Removed " + result.getRemoved().size() + " duplicate JAR(s):");
             for (Conflict conflict : result.getRemoved()) {
-                sender.sendMessage(ChatColor.AQUA + "  - " + label(conflict));
+                messenger.send(sender, ChatColor.AQUA + "  - " + label(conflict));
             }
-            sender.sendMessage(ChatColor.YELLOW + "Restart the server to apply changes.");
+            messenger.send(sender, ChatColor.YELLOW + "Restart the server to apply changes.");
         }
         if (!result.getFailed().isEmpty()) {
-            sender.sendMessage(ChatColor.RED + "Failed to delete " + result.getFailed().size() + " JAR(s) — check server file permissions:");
+            messenger.send(sender, ChatColor.RED + "Failed to delete " + result.getFailed().size() + " JAR(s) — check server file permissions:");
             for (Conflict conflict : result.getFailed()) {
-                sender.sendMessage(ChatColor.RED + "  - " + label(conflict));
+                messenger.send(sender, ChatColor.RED + "  - " + label(conflict));
             }
         }
     }
