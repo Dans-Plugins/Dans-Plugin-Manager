@@ -5,7 +5,7 @@ All commands use `/dpm` or `/danspluginmanager` as the base.
 | Command | Description | Permission |
 |---------|-------------|------------|
 | `/dpm help` | View a list of commands. | `dpm.help` |
-| `/dpm list [installed\|available]` | List DPC plugins. Pass `installed` or `available` to filter. | `dpm.list` |
+| `/dpm list [installed\|available\|outdated]` | List DPC plugins. Pass `installed` or `available` to filter. `outdated` checks each installed plugin against the newest build on its channel and lists the ones behind, without downloading anything. | `dpm.list` |
 | `/dpm get <plugin-name> [plugin-name ...] [--experimental\|--stable]` | Download one or more DPC plugins to the server. `--experimental` switches the named plugins to main-branch builds and keeps them there; `--stable` switches them back to published releases. See [Release channels](USER_GUIDE.md#release-channels). | `dpm.get` |
 | `/dpm clean [--confirm]` | Preview duplicate plugin JARs, or delete them when `--confirm` is passed. | `dpm.clean` |
 | `/dpm stats` | View plugin statistics. | `dpm.stats` |

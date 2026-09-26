@@ -17,7 +17,7 @@ public class HelpCommand extends AbstractPluginCommand {
     public boolean execute(CommandSender commandSender) {
         commandSender.sendMessage(ChatColor.AQUA + "=== DPM Commands ===");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm help - View this list of commands.");
-        commandSender.sendMessage(ChatColor.AQUA + "/dpm list [installed|available] - List plugins, optionally filtered.");
+        commandSender.sendMessage(ChatColor.AQUA + "/dpm list [installed|available|outdated] - List plugins, optionally filtered; outdated checks for newer builds without installing them.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm get <plugin-name> [plugin-name ...] [--experimental|--stable] - Download one or more plugins, optionally switching release channel.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm clean [--confirm] - Preview or remove duplicate plugin JARs.");
         commandSender.sendMessage(ChatColor.AQUA + "/dpm stats - View plugin statistics.");
