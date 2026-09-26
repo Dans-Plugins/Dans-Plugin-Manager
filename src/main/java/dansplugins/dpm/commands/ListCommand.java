@@ -112,7 +112,8 @@ public class ListCommand extends AbstractPluginCommand {
         messenger.send(sender, ChatColor.AQUA + "=== Outdated Plugins (" + outdated.size() + ") ===");
         for (OutdatedEntry entry : outdated) {
             String from = entry.getStoredTag() != null ? entry.getStoredTag() : "unknown version";
-            messenger.send(sender, ChatColor.YELLOW + entry.getRecord().getName() + " " + from + " → " + entry.getLatestTag()
+            String to = entry.getLatestTag() != null ? entry.getLatestTag() : "unknown version";
+            messenger.send(sender, ChatColor.YELLOW + entry.getRecord().getName() + " " + from + " → " + to
                     + channelMarker(entry.getRecord()));
         }
         for (OutdatedEntry entry : unknown) {
