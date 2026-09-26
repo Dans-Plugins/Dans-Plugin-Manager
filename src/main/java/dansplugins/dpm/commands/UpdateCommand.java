@@ -5,6 +5,7 @@ import dansplugins.dpm.controllers.UpdateController.PluginResult;
 import dansplugins.dpm.controllers.UpdateController.SelectionResult;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.utils.ResultMessenger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -18,11 +19,13 @@ import java.util.stream.Collectors;
 public class UpdateCommand extends AbstractPluginCommand {
     private final UpdateController updateController;
     private final Plugin plugin;
+    private final ResultMessenger messenger;
 
     public UpdateCommand(UpdateController updateController, Plugin plugin) {
         super(new ArrayList<>(List.of("update")), new ArrayList<>(List.of("dpm.update")));
         this.updateController = updateController;
         this.plugin = plugin;
+        this.messenger = new ResultMessenger(plugin.getLogger());
     }
 
     @Override
@@ -110,7 +113,7 @@ public class UpdateCommand extends AbstractPluginCommand {
                     break;
             }
             final String fmsg = msg;
-            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(fmsg));
+            Bukkit.getScheduler().runTask(plugin, () -> messenger.send(sender, fmsg));
         }
 
         final int finalUpdated = updated;
@@ -129,9 +132,9 @@ public class UpdateCommand extends AbstractPluginCommand {
                 summary.append(ChatColor.RED).append(", ").append(finalFailed).append(" failed");
             }
             summary.append(ChatColor.AQUA).append(".");
-            sender.sendMessage(summary.toString());
+            messenger.send(sender, summary.toString());
             if (finalUpdated > 0) {
-                sender.sendMessage(ChatColor.YELLOW + "Restart the server to load updated plugins.");
+                messenger.send(sender, ChatColor.YELLOW + "Restart the server to load updated plugins.");
             }
         });
     }

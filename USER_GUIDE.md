@@ -21,6 +21,8 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 7. Run `/dpm clean` to preview duplicate plugin JARs (e.g. versioned copies left over from manual installs). Add `--confirm` to delete them.
 8. Run `/dpm remove <plugin-name>` to preview which JAR would be deleted. Add `--confirm` to remove it and clear its stored version tag and release channel.
 
+`/dpm get`, `/dpm update`, `/dpm info`, and `/dpm clean` do their work in the background and report the result when it finishes. When the command came from anyone other than the server console — a player, or RCON — the result is also written to the server log, prefixed with `[to <sender>]`. An RCON client only receives output produced while its command is running, so for RCON-driven servers the log is where these results appear.
+
 ## Release channels
 
 Every managed plugin tracks one of two channels.

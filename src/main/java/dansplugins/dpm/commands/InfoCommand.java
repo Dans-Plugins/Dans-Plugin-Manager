@@ -5,6 +5,7 @@ import dansplugins.dpm.controllers.InfoController.PluginInfo;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.utils.ResultMessenger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -17,11 +18,13 @@ import java.util.List;
 public class InfoCommand extends AbstractPluginCommand {
     private final InfoController infoController;
     private final Plugin plugin;
+    private final ResultMessenger messenger;
 
     public InfoCommand(InfoController infoController, Plugin plugin) {
         super(new ArrayList<>(List.of("info")), new ArrayList<>(List.of("dpm.info")));
         this.infoController = infoController;
         this.plugin = plugin;
+        this.messenger = new ResultMessenger(plugin.getLogger());
     }
 
     @Override
@@ -50,42 +53,42 @@ public class InfoCommand extends AbstractPluginCommand {
         ProjectRecord record = info.getRecord();
         ReleaseInfo release = info.getRelease();
         ReleaseChannel channel = info.getChannel();
-        sender.sendMessage(ChatColor.AQUA + "=== " + record.getName() + " ===");
+        messenger.send(sender, ChatColor.AQUA + "=== " + record.getName() + " ===");
 
         if (record.getDescription() != null) {
-            sender.sendMessage(ChatColor.WHITE + record.getDescription());
+            messenger.send(sender, ChatColor.WHITE + record.getDescription());
         }
 
-        sender.sendMessage(ChatColor.WHITE + "Owner: " + ChatColor.AQUA + record.getOwner());
-        sender.sendMessage(ChatColor.WHITE + "Repository: " + ChatColor.AQUA + record.getRepo());
-        sender.sendMessage(ChatColor.WHITE + "Channel: "
+        messenger.send(sender, ChatColor.WHITE + "Owner: " + ChatColor.AQUA + record.getOwner());
+        messenger.send(sender, ChatColor.WHITE + "Repository: " + ChatColor.AQUA + record.getRepo());
+        messenger.send(sender, ChatColor.WHITE + "Channel: "
                 + (channel == ReleaseChannel.EXPERIMENTAL ? ChatColor.YELLOW : ChatColor.AQUA)
                 + channel.getDisplayName());
 
         String releaseLabel = channel == ReleaseChannel.EXPERIMENTAL ? "Latest experimental build" : "Latest release";
         if (release == ReleaseInfo.NO_RELEASE) {
-            sender.sendMessage(ChatColor.YELLOW + releaseLabel + ": None published yet");
+            messenger.send(sender, ChatColor.YELLOW + releaseLabel + ": None published yet");
         } else if (release == null) {
-            sender.sendMessage(ChatColor.RED + releaseLabel + ": (could not fetch — check console for details)");
+            messenger.send(sender, ChatColor.RED + releaseLabel + ": (could not fetch — check console for details)");
         } else {
-            sender.sendMessage(ChatColor.WHITE + releaseLabel + ": " + ChatColor.GREEN + release.getTagName());
+            messenger.send(sender, ChatColor.WHITE + releaseLabel + ": " + ChatColor.GREEN + release.getTagName());
             if (release.getPublishedAt() != null) {
-                sender.sendMessage(ChatColor.WHITE + "Published: " + ChatColor.AQUA + formatDate(release.getPublishedAt()));
+                messenger.send(sender, ChatColor.WHITE + "Published: " + ChatColor.AQUA + formatDate(release.getPublishedAt()));
             }
         }
 
         if (info.isInstalled()) {
             String version = info.getStoredTag() != null ? info.getStoredTag() : "(version unknown)";
-            sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GREEN + "Yes (" + version + ")");
+            messenger.send(sender, ChatColor.WHITE + "Installed: " + ChatColor.GREEN + "Yes (" + version + ")");
             if (info.hasPublishedRelease()) {
                 if (info.isUpToDate()) {
-                    sender.sendMessage(ChatColor.WHITE + "Status: " + ChatColor.GREEN + "Up to date");
+                    messenger.send(sender, ChatColor.WHITE + "Status: " + ChatColor.GREEN + "Up to date");
                 } else {
-                    sender.sendMessage(ChatColor.WHITE + "Status: " + ChatColor.YELLOW + "Update available");
+                    messenger.send(sender, ChatColor.WHITE + "Status: " + ChatColor.YELLOW + "Update available");
                 }
             }
         } else {
-            sender.sendMessage(ChatColor.WHITE + "Installed: " + ChatColor.GRAY + "No");
+            messenger.send(sender, ChatColor.WHITE + "Installed: " + ChatColor.GRAY + "No");
         }
 
         showDependencies(sender, record.getHardDependencies(), "Requires", info);
@@ -98,7 +101,7 @@ public class InfoCommand extends AbstractPluginCommand {
             String status = info.isDependencyInstalled(dep)
                     ? ChatColor.GREEN + dep + " (installed)"
                     : ChatColor.RED + dep + " (not installed)";
-            sender.sendMessage(ChatColor.WHITE + label + ": " + status);
+            messenger.send(sender, ChatColor.WHITE + label + ": " + status);
         }
     }
 

@@ -7,6 +7,7 @@ import dansplugins.dpm.controllers.GetController.Target;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.utils.ResultMessenger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -20,12 +21,14 @@ public class GetCommand extends AbstractPluginCommand {
     private final ProjectRecordRepository projectRecordRepository;
     private final GetController getController;
     private final Plugin plugin;
+    private final ResultMessenger messenger;
 
     public GetCommand(ProjectRecordRepository projectRecordRepository, GetController getController, Plugin plugin) {
         super(new ArrayList<>(List.of("get")), new ArrayList<>(List.of("dpm.get")));
         this.projectRecordRepository = projectRecordRepository;
         this.getController = getController;
         this.plugin = plugin;
+        this.messenger = new ResultMessenger(plugin.getLogger());
     }
 
     @Override
@@ -219,7 +222,7 @@ public class GetCommand extends AbstractPluginCommand {
                     break;
             }
             final String fmsg = msg;
-            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(fmsg));
+            Bukkit.getScheduler().runTask(plugin, () -> messenger.send(sender, fmsg));
         }
         final int fd = downloaded, fu = upToDate, fs = skipped, ff = failed;
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -231,9 +234,9 @@ public class GetCommand extends AbstractPluginCommand {
             if (ff > 0) summary.append(ChatColor.RED).append(", ").append(ff).append(" failed");
             if (notFound > 0) summary.append(ChatColor.RED).append(", ").append(notFound).append(" not found");
             summary.append(ChatColor.AQUA).append(".");
-            sender.sendMessage(summary.toString());
+            messenger.send(sender, summary.toString());
             if (fd > 0) {
-                sender.sendMessage(ChatColor.YELLOW + "Restart the server to enable downloaded plugins.");
+                messenger.send(sender, ChatColor.YELLOW + "Restart the server to enable downloaded plugins.");
             }
         });
     }
@@ -242,25 +245,25 @@ public class GetCommand extends AbstractPluginCommand {
         ProjectRecord record = result.getRecord();
         switch (result.getOutcome()) {
             case NO_RELEASE:
-                sender.sendMessage(ChatColor.YELLOW + record.getName() + noReleaseSuffix(result) + " Try again later.");
+                messenger.send(sender, ChatColor.YELLOW + record.getName() + noReleaseSuffix(result) + " Try again later.");
                 break;
             case ALREADY_UP_TO_DATE:
                 String tag = result.getStoredTag();
                 String upToDateVersion = tag != null ? " (" + tag + ")" : "";
-                sender.sendMessage(ChatColor.GREEN + record.getName() + " is already up to date" + upToDateVersion + ".");
+                messenger.send(sender, ChatColor.GREEN + record.getName() + " is already up to date" + upToDateVersion + ".");
                 break;
             case NETWORK_ERROR:
-                sender.sendMessage(ChatColor.RED + "Could not reach GitHub when downloading " + record.getName() + " — check console for details.");
+                messenger.send(sender, ChatColor.RED + "Could not reach GitHub when downloading " + record.getName() + " — check console for details.");
                 break;
             case FILE_ERROR:
-                sender.sendMessage(ChatColor.RED + "Could not write " + record.getName() + " to the plugins folder — check server file permissions.");
+                messenger.send(sender, ChatColor.RED + "Could not write " + record.getName() + " to the plugins folder — check server file permissions.");
                 break;
             case DOWNLOADED:
                 String downloadedVersion = result.getStoredTag() != null ? " " + result.getStoredTag() : "";
-                sender.sendMessage(ChatColor.GREEN + "Downloaded" + downloadedVersion + " (" + (result.getDownloadedBytes() / 1024) + " KB). Restart the server to enable " + record.getName() + ".");
+                messenger.send(sender, ChatColor.GREEN + "Downloaded" + downloadedVersion + " (" + (result.getDownloadedBytes() / 1024) + " KB). Restart the server to enable " + record.getName() + ".");
                 break;
             default:
-                sender.sendMessage(ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
+                messenger.send(sender, ChatColor.RED + "Something went wrong downloading " + record.getName() + ".");
                 break;
         }
     }

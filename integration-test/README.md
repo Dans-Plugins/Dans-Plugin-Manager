@@ -42,6 +42,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | `dpm info <name>` | Mainly a display command; low regression risk |
 | `dpm reload` with a token present | Step 16 reloads with an empty token; the path where a token has been added and the warning stops is unit-tested only |
 | `dpm get <multiple names>` | Batch mode not tested; same download code path as single |
+| Async results mirrored to the log for non-console senders | The `[to <sender>]` log line written for RCON and player senders is unit-tested only (`ResultMessengerTest`); no step asserts the prefix |
 | Permission enforcement | Console has all permissions; player-level permission checks cannot be exercised without a player login |
 | Network failure / download error paths | Hard to simulate reliably in CI |
 | Tab-completion | Cannot be tested via console API |
