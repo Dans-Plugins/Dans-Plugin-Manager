@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-// Performs the /dpm list installed/version lookups, returning plain result data rather than
+// Performs the /dpm list installed/version lookups and the /dpm list outdated staleness check, returning plain result data rather than
 // sending messages. ListCommand formats and sends the results.
 public class ListController {
 
