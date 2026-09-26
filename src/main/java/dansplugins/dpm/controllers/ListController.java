@@ -1,6 +1,10 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.objects.ProjectRecord;
+import dansplugins.dpm.objects.ReleaseChannel;
+import dansplugins.dpm.objects.ReleaseInfo;
+import dansplugins.dpm.repositories.ChannelRepository;
+import dansplugins.dpm.repositories.GitHubReleaseRepository;
 import dansplugins.dpm.repositories.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
@@ -30,15 +34,45 @@ public class ListController {
         public String getStoredTag() { return storedTag; }
     }
 
+    public enum Staleness { OUTDATED, UP_TO_DATE, NO_RELEASE, LOOKUP_FAILED }
+
+    public static final class OutdatedEntry {
+        private final ProjectRecord record;
+        private final Staleness staleness;
+        private final String storedTag;
+        private final String latestTag;
+        private final ReleaseChannel channel;
+
+        OutdatedEntry(ProjectRecord record, Staleness staleness, String storedTag, String latestTag, ReleaseChannel channel) {
+            this.record = record;
+            this.staleness = staleness;
+            this.storedTag = storedTag;
+            this.latestTag = latestTag;
+            this.channel = channel;
+        }
+
+        public ProjectRecord getRecord() { return record; }
+        public Staleness getStaleness() { return staleness; }
+        public String getStoredTag() { return storedTag; }
+        /** The newest build on this plugin's channel, or null when none could be resolved. */
+        public String getLatestTag() { return latestTag; }
+        public ReleaseChannel getChannel() { return channel; }
+    }
+
     private final ProjectRecordRepository projectRecordRepository;
     private final PluginFileRepository pluginFileRepository;
     private final VersionRepository versionRepository;
+    private final GitHubReleaseRepository gitHubReleaseRepository;
+    private final ChannelRepository channelRepository;
 
     public ListController(ProjectRecordRepository projectRecordRepository, PluginFileRepository pluginFileRepository,
-                          VersionRepository versionRepository) {
+                          VersionRepository versionRepository, GitHubReleaseRepository gitHubReleaseRepository,
+                          ChannelRepository channelRepository) {
         this.projectRecordRepository = projectRecordRepository;
         this.pluginFileRepository = pluginFileRepository;
         this.versionRepository = versionRepository;
+        this.gitHubReleaseRepository = gitHubReleaseRepository;
+        this.channelRepository = channelRepository;
     }
 
     public List<ListEntry> listAll() {
@@ -70,6 +104,33 @@ public class ListController {
             if (!installedNames.contains(record.getName())) available.add(record);
         }
         return available;
+    }
+
+    // Touches the GitHub API — callers must invoke this off the main thread. Uses the same
+    // comparison /dpm update makes before downloading (stored tag vs. the newest build on the
+    // plugin's pinned channel), but never downloads anything.
+    public List<OutdatedEntry> listOutdated() {
+        List<ProjectRecord> installed = pluginFileRepository.filterInstalled(projectRecordRepository.getAllProjectRecords());
+        List<OutdatedEntry> entries = new ArrayList<>();
+        for (ProjectRecord record : installed) {
+            entries.add(checkStaleness(record));
+        }
+        return entries;
+    }
+
+    private OutdatedEntry checkStaleness(ProjectRecord record) {
+        ReleaseChannel channel = channelRepository.getChannel(record.getName());
+        String storedTag = versionRepository.getStoredTag(record.getName());
+        ReleaseInfo release = gitHubReleaseRepository.getReleaseMetadata(record.getOwner(), record.getRepo(), channel);
+        if (release == ReleaseInfo.NO_RELEASE) {
+            return new OutdatedEntry(record, Staleness.NO_RELEASE, storedTag, null, channel);
+        }
+        if (release == null) {
+            return new OutdatedEntry(record, Staleness.LOOKUP_FAILED, storedTag, null, channel);
+        }
+        String latestTag = release.getTagName();
+        Staleness staleness = latestTag != null && latestTag.equals(storedTag) ? Staleness.UP_TO_DATE : Staleness.OUTDATED;
+        return new OutdatedEntry(record, staleness, storedTag, latestTag, channel);
     }
 
     private ListEntry toEntry(ProjectRecord record, boolean installed) {

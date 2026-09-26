@@ -30,6 +30,7 @@ These tests exercise the full stack: Maven build → JAR deploy → Spigot reloa
 | 14 | `dpm get medievalfactions --bogus` | `Unknown option: --bogus` — confirms unknown options are rejected rather than treated as plugin names |
 | 15 | `dpm get medievalfactions --experimental --stable` | `--experimental and --stable cannot be used together` — confirms conflicting channel flags are rejected |
 | 16 | `dpm reload` | `DPM config reloaded` + `githubToken is not set` — confirms the config re-applies without a restart and that the empty-token warning reaches the console (the CI server has no token) |
+| 17 | `dpm list outdated` | `=== Outdated Plugins` — confirms the read-only staleness check routes, runs its GitHub lookups off the main thread, and reports back |
 
 ## What is not yet covered
 

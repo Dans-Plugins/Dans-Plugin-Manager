@@ -101,7 +101,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         updateController = new UpdateController(projectRecordRepository, pluginFileRepository, downloadService, versionRepository, channelRepository, discordNotificationService, getLogger());
         removeController = new RemoveController(projectRecordRepository, pluginFileRepository, versionRepository, channelRepository, dependencyResolutionService, getLogger());
         searchController = new SearchController(projectRecordRepository, pluginFileRepository, versionRepository);
-        listController = new ListController(projectRecordRepository, pluginFileRepository, versionRepository);
+        listController = new ListController(projectRecordRepository, pluginFileRepository, versionRepository, gitHubReleaseRepository, channelRepository);
         infoController = new InfoController(projectRecordRepository, gitHubReleaseRepository, pluginFileRepository, versionRepository, channelRepository);
         cleanController = new CleanController(projectRecordRepository, pluginFileRepository, getLogger());
         initializeCommandService();
@@ -126,7 +126,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
             return TabCompleter.filterByPrefix(allPluginNames(), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("list")) {
-            return TabCompleter.filterByPrefix(List.of("installed", "available"), args[1]);
+            return TabCompleter.filterByPrefix(List.of("installed", "available", "outdated"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             return TabCompleter.filterByPrefix(removeCommand.getInstalledPluginNames(), args[1]);
@@ -226,7 +226,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         ArrayList<AbstractPluginCommand> commands = new ArrayList<>(Arrays.asList(
                 new HelpCommand(),
                 new GetCommand(projectRecordRepository, getController, this),
-                new ListCommand(listController, channelRepository),
+                new ListCommand(listController, channelRepository, this),
                 new StatsCommand(statsController),
                 new CleanCommand(cleanController, this),
                 updateCommand = new UpdateCommand(updateController, this),

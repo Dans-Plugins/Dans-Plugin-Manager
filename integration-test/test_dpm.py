@@ -237,6 +237,12 @@ def main():
     assert_log_contains("DPM config reloaded", cursor=cursor)
     assert_log_contains("githubToken is not set", cursor=cursor)
 
+    # medievalfactions and currencies are installed by this point, so the check makes real
+    # GitHub lookups. The header is printed whatever each plugin's status turns out to be.
+    print("\n[17] /dpm list outdated — confirm the read-only staleness check routes and completes...")
+    cursor = send_command("dpm list outdated")
+    assert_log_contains("=== Outdated Plugins", cursor=cursor, retries=8, delay=5)
+
     print("\n=== All integration tests passed ===")
 
 

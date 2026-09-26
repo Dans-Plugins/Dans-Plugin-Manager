@@ -12,7 +12,7 @@ Dans Plugin Manager (DPM) is a Spigot plugin that lets server operators browse a
 
 ## Getting Started
 
-1. Run `/dpm list` to see all DPC plugins. Green entries are installed (with version tag when known); grey entries are not yet installed. Pass `installed` or `available` to filter the list.
+1. Run `/dpm list` to see all DPC plugins. Green entries are installed (with version tag when known); grey entries are not yet installed. Pass `installed` or `available` to filter the list, or `outdated` to see which installed plugins have a newer build on their channel — a read-only check that installs nothing, so what `/dpm update` would change can be reviewed first.
 2. Run `/dpm info <plugin-name>` to see a plugin's description, GitHub owner, repository, release channel, latest build on that channel, publish date, install status, and any required or optional dependencies.
 3. Run `/dpm get <plugin-name>` to download a plugin to your server's `plugins/` folder. The name must match the one shown by `/dpm list` (e.g. `medievalfactions`). Multiple names are accepted: `/dpm get plugin1 plugin2`. If a plugin is already on the latest version, the download is skipped. Missing hard dependencies that are registered DPC plugins are automatically included in the download; dependencies that are not registered DPC plugins produce a warning. Add `--experimental` to install main-branch builds instead of published releases — see [Release channels](#release-channels).
 4. Run `/dpm update` to check every installed managed plugin against the latest build on the channel it is set to, and download any that are out of date. Pass one or more plugin names to update only those: `/dpm update medievalfactions`.  
@@ -61,7 +61,7 @@ Notes:
 | Permission | Default | Description |
 |------------|---------|-------------|
 | `dpm.help` | `true` | View the help menu. |
-| `dpm.list` | `true` | Browse DPC plugins: list all/installed/available and search by keyword. |
+| `dpm.list` | `true` | Browse DPC plugins: list all/installed/available/outdated and search by keyword. |
 | `dpm.stats` | `true` | View plugin statistics. |
 | `dpm.get` | `op` | Download one or more plugins to the server, and switch them between the stable and experimental channels. |
 | `dpm.clean` | `op` | Preview or remove duplicate plugin JARs. |
