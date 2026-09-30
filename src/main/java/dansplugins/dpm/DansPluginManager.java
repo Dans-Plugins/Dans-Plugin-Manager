@@ -83,7 +83,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         // usage reporting: one event now, one per command; see config.yml. The
         // server-wide plugins/trace/config.yml and the environment get the last
         // word over this plugin's own switch, and the outcome is said every startup.
-        trace = TraceClient.builder(configRepository.getUsageReportingEndpoint(), getName())
+        trace = TraceClient.builder(configRepository.getUsageReportingEndpoint(), getName(), getDescription().getVersion())
                 .key(configRepository.getUsageReportingKey())
                 .enabled(configRepository.isUsageReportingEnabled())
                 .serverWideConfig(getDataFolder().getParentFile())
@@ -91,7 +91,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
                 .build();
         logUsageReportingState();
         traceTags = configRepository.getUsageReportingTags();
-        trace.report("startup", null, withTraceTags("version", getDescription().getVersion()));
+        trace.report("startup", null, traceTags);
         reloadController = new ReloadController(this::reloadConfig, configRepository, gitHubReleaseRepository, getLogger());
         reloadController.applySettings();
         versionRepository = new VersionRepository(new File(getDataFolder(), "dpm-versions.properties"), logger);
