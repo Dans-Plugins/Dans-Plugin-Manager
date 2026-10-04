@@ -42,8 +42,13 @@ public class InfoCommand extends AbstractPluginCommand {
             return false;
         }
         sender.sendMessage(ChatColor.AQUA + "Fetching release info for " + record.getName() + "...");
+        // Read on the main thread: the plugin manager is not safe to query from the async task.
+        List<String> loadedPluginNames = new ArrayList<>();
+        for (Plugin loaded : Bukkit.getPluginManager().getPlugins()) {
+            loadedPluginNames.add(loaded.getName());
+        }
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            PluginInfo info = infoController.getInfo(record);
+            PluginInfo info = infoController.getInfo(record, loadedPluginNames);
             Bukkit.getScheduler().runTask(plugin, () -> showInfo(sender, info));
         });
         return true;

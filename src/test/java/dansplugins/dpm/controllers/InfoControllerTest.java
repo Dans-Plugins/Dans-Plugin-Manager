@@ -159,6 +159,44 @@ class InfoControllerTest {
         assertFalse(controller.getInfo(record).isDependencyInstalled("SomeThirdPartyPlugin"));
     }
 
+    @Test
+    void getInfo_marksDependencyLoadedOnServerInstalledThoughNotManaged(@TempDir Path tempDir) {
+        ProjectRecord dependency = record("medievalfactions");
+        ProjectRecord record = ProjectRecord.builder("fiefs", "Dans-Plugins", "Fiefs")
+                .hardDependencies(List.of("medievalfactions"))
+                .build();
+        InfoController controller = controller(tempDir, null, versionRepository(tempDir), record, dependency);
+
+        PluginInfo info = controller.getInfo(record, List.of("MedievalFactions", "Fiefs"));
+
+        assertTrue(info.isDependencyInstalled("medievalfactions"));
+    }
+
+    @Test
+    void getInfo_marksUnregisteredDependencyLoadedOnServerInstalled(@TempDir Path tempDir) {
+        ProjectRecord record = ProjectRecord.builder("MedievalFactions", "Dans-Plugins", "MedievalFactions")
+                .hardDependencies(List.of("SomeThirdPartyPlugin"))
+                .softDependencies(List.of("NotLoaded"))
+                .build();
+        InfoController controller = controller(tempDir, null, versionRepository(tempDir), record);
+
+        PluginInfo info = controller.getInfo(record, List.of("somethirdpartyplugin"));
+
+        assertTrue(info.isDependencyInstalled("SomeThirdPartyPlugin"));
+        assertFalse(info.isDependencyInstalled("NotLoaded"));
+    }
+
+    @Test
+    void getInfo_loadedPluginDoesNotCountAsDpmInstalled(@TempDir Path tempDir) {
+        ProjectRecord record = record("MedievalFactions");
+        InfoController controller = controller(tempDir, new ReleaseInfo("v1.0.0", "url"), versionRepository(tempDir), record);
+
+        PluginInfo info = controller.getInfo(record, List.of("MedievalFactions"));
+
+        assertFalse(info.isInstalled());
+        assertFalse(info.isUpToDate());
+    }
+
     // -------------------------------------------------------------------------
     // PluginInfo.hasPublishedRelease() / isUpToDate()
     // -------------------------------------------------------------------------
