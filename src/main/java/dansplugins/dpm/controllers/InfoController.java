@@ -10,8 +10,11 @@ import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.repositories.VersionRepository;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 // Performs the /dpm info record lookup, release-metadata fetch, and install-status resolution for
@@ -26,14 +29,17 @@ public class InfoController {
         private final boolean installed;
         private final String storedTag;
         private final Set<String> installedNames;
+        private final Set<String> loadedNamesLower;
 
-        PluginInfo(ProjectRecord record, ReleaseInfo release, ReleaseChannel channel, boolean installed, String storedTag, Set<String> installedNames) {
+        PluginInfo(ProjectRecord record, ReleaseInfo release, ReleaseChannel channel, boolean installed, String storedTag,
+                   Set<String> installedNames, Set<String> loadedNamesLower) {
             this.record = record;
             this.release = release;
             this.channel = channel;
             this.installed = installed;
             this.storedTag = storedTag;
             this.installedNames = installedNames;
+            this.loadedNamesLower = loadedNamesLower;
         }
 
         public ProjectRecord getRecord() { return record; }
@@ -52,8 +58,14 @@ public class InfoController {
             return installed && hasPublishedRelease() && storedTag != null && storedTag.equals(release.getTagName());
         }
 
+        /**
+         * True when the dependency is present on the server: either DPM manages its jar, or a
+         * plugin of that name (compared case-insensitively) was loaded when the command ran,
+         * however it was installed. Only DPM-managed jars were recognised before, so a
+         * dependency the server was already running was listed as "(not installed)" (#152).
+         */
         public boolean isDependencyInstalled(String pluginName) {
-            return installedNames.contains(pluginName);
+            return installedNames.contains(pluginName) || loadedNamesLower.contains(pluginName.toLowerCase(Locale.ROOT));
         }
     }
 
@@ -79,12 +91,26 @@ public class InfoController {
 
     // Touches the GitHub API — callers must invoke this off the main thread.
     public PluginInfo getInfo(ProjectRecord record) {
+        return getInfo(record, Collections.emptySet());
+    }
+
+    /**
+     * As {@link #getInfo(ProjectRecord)}, also treating a dependency as installed when its name
+     * is among {@code loadedPluginNames}: the plugins loaded on the server, which the caller reads
+     * from Bukkit's plugin manager on the main thread. Names are matched case-insensitively.
+     * Touches the GitHub API — callers must invoke this off the main thread.
+     */
+    public PluginInfo getInfo(ProjectRecord record, Collection<String> loadedPluginNames) {
         ReleaseChannel channel = channelRepository.getChannel(record.getName());
         ReleaseInfo release = gitHubReleaseRepository.getReleaseMetadata(record.getOwner(), record.getRepo(), channel);
         Set<String> installedNames = installedNamesFor(record);
         boolean installed = installedNames.contains(record.getName());
         String storedTag = versionRepository.getStoredTag(record.getName());
-        return new PluginInfo(record, release, channel, installed, storedTag, installedNames);
+        Set<String> loadedNamesLower = new HashSet<>();
+        for (String name : loadedPluginNames) {
+            loadedNamesLower.add(name.toLowerCase(Locale.ROOT));
+        }
+        return new PluginInfo(record, release, channel, installed, storedTag, installedNames, loadedNamesLower);
     }
 
     private Set<String> installedNamesFor(ProjectRecord record) {

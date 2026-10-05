@@ -22,7 +22,7 @@ public class StatsCommand extends AbstractPluginCommand {
         Stats stats = statsController.getStats();
         commandSender.sendMessage(ChatColor.AQUA + "=== DPM Stats ===");
         commandSender.sendMessage(ChatColor.AQUA + "Registered plugins: " + stats.getTotal());
-        commandSender.sendMessage(ChatColor.AQUA + "Installed plugins: " + stats.getInstalled());
+        commandSender.sendMessage(ChatColor.AQUA + "Installed via DPM: " + stats.getInstalled());
         commandSender.sendMessage(ChatColor.AQUA + "Available plugins: " + stats.getAvailable());
         return true;
     }
