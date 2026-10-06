@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.List;
 
 public final class DansPluginManager extends PonderBukkitPlugin {
-    private static final String USAGE_REPORTING_DETAILS_URL = "https://github.com/Stephenson-Software/trace#usage-reporting";
+    private static final String USAGE_REPORTING_DETAILS_URL = "https://danielstephenson.dev/usage-reporting";
     private static final List<String> CONFIRM_COMPLETION = List.of("--confirm");
 
     private final String pluginVersion = "v" + getDescription().getVersion();
