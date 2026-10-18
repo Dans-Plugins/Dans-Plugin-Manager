@@ -1,5 +1,9 @@
 # Dan's Plugin Manager
 
+![/dpm search factions listing three plugins, then /dpm info showing Medieval Factions' latest release](docs/images/search-and-info.png)
+
+*Real in-game output from Dan's Plugin Manager 0.6.0 on a local throwaway Paper 1.21.11 test server: the commands were typed by a scripted bot client, and the chat it received is drawn as Minecraft-style chat (typed commands appear in the input bars; grey lines say what happened between commands).*
+
 ## Description
 This Minecraft plugin lets server operators download DPC plugins in-game or from the server console.
 
