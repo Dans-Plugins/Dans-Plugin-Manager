@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-23
+
 ### Added
 - `/dpm list outdated` — a read-only view of which installed plugins are behind the newest build on their pinned channel, shown as `<name> <installed> → <latest>`. It makes the same comparison `/dpm update` makes before downloading, but never downloads or changes anything, so deciding whether to update is separable from updating. Plugins whose status cannot be determined (no published build, or GitHub unreachable) are listed separately rather than counted as up to date. Tab completion for `/dpm list` now offers `outdated` (#125)
 - A console warning on every startup and `/dpm reload` while `githubToken` is empty, naming the 60-requests-per-hour unauthenticated limit and how to raise it. Before this the only sign that the token was missing came later, when a rate-limited lookup surfaced as "could not reach GitHub" partway through an update; the rate-limit response itself has been reported distinctly from a network failure since #90 (#126)
