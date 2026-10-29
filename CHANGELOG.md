@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-28
+
+### Changed
+- The vendored trace client is now 0.7.0. Repeats of one usage event (same name, value and tags) within 60 seconds are counted instead of each being sent: the first is sent at once, and the rest are sent as one event when the minute ends, tagged `coalesced` with how many there were. `startup` is never held back, and any count still open is sent when the plugin is disabled. This bounds how many events a single installation can send, for example when another plugin dispatches a `/dpm` command in a loop. Details: https://github.com/Stephenson-Software/trace-client-java/releases/tag/0.7.0
+
 ## [0.7.0] - 2026-10-23
 
 ### Added
