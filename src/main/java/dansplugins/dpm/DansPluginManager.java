@@ -27,6 +27,7 @@ import dansplugins.dpm.utils.ProjectRecordInitializer;
 import dansplugins.dpm.utils.TabCompleter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import preponderous.ponder.minecraft.bukkit.abs.AbstractPluginCommand;
 import preponderous.ponder.minecraft.bukkit.abs.PonderBukkitPlugin;
@@ -173,7 +174,10 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
-        trace.report("command", null, withTraceTags("name", cmd.getName()));
+        // console, command-block and plugin-dispatched commands are not counted
+        if (sender instanceof Player) {
+            trace.report("command", null, withTraceTags("name", cmd.getName()));
+        }
         if (args.length == 0) {
             DefaultCommand defaultCommand = new DefaultCommand(this);
             return defaultCommand.execute(sender);
