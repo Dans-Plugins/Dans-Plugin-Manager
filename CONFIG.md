@@ -16,7 +16,8 @@ A `config.yml` is generated in `plugins/DansPluginManager/` on first run. The `u
 
 ## Usage reporting
 
-When the plugin is enabled, and each time one of its commands is used, a small event is sent to the
+When the plugin is enabled, and each time a player uses one of its commands (console, command-block
+and plugin-dispatched commands are not counted), a small event is sent to the
 author's [trace](https://github.com/Stephenson-Software/trace-client-java) server so it is known which
 plugins are actually in use. An event carries the plugin's name, the event name (`startup` or
 `command`), the plugin version, and for a command the command name, plus a random server ID (the
