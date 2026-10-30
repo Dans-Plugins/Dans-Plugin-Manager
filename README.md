@@ -21,7 +21,7 @@ This Minecraft plugin lets server operators download DPC plugins in-game or from
 
 ## Usage reporting
 
-Usage reporting is on by default: when the plugin is enabled, and each time `/dpm` is used, it
+Usage reporting is on by default: when the plugin is enabled, and each time a player uses `/dpm`, it
 sends its name, its version and the command's name (`startup` and `command` events) to
 https://trace.danielstephenson.dev so it is known which plugins are actually in use. Nothing about
 players, worlds, IPs, or anything typed after a command is sent. The plugin says on
