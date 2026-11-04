@@ -27,7 +27,9 @@ https://trace.danielstephenson.dev so it is known which plugins are actually in 
 players, worlds, IPs, or anything typed after a command is sent. The plugin says on
 every startup whether reporting is on. Each event also carries a random server ID (the `server-id` line in `plugins/trace/config.yml`) so
 servers can be counted rather than events. It identifies no person, account or IP address; delete
-the line to get a new one.
+the line to get a new one. Repeats of a `command` event within a minute are not sent one by one: the
+first goes out at once, and the rest follow as a single event carrying how many there were (a
+`coalesced` tag).
 
 To turn it off:
 

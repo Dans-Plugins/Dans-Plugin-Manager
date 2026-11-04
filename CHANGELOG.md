@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- The usage-reporting text in the README, `USER_GUIDE.md`, `CONFIG.md` and the bundled `config.yml` now says that repeats of a `command` event within a minute are sent as one event with a `coalesced` count, which has been the behaviour since 0.8.0. Nothing about what is sent changed.
+
 ## [0.8.1] - 2026-10-30
 
 ### Changed
