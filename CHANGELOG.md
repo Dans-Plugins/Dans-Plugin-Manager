@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- `USER_GUIDE.md` and `CONFIG.md` said plugin-dispatched commands are never counted by usage reporting. A command a plugin dispatches with a player as the sender is counted, as it has been since 0.8.1; the text now says so. Nothing about what is sent changed.
+
 ## [0.8.2] - 2026-11-04
 
 ### Fixed
