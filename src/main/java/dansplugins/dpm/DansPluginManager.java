@@ -174,7 +174,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
-        // console and command-block commands are not counted; a plugin's is only if it runs it as a player
+        // console and command-block commands are not counted; a plugin dispatch counts only with a player sender
         if (sender instanceof Player) {
             trace.report("command", null, withTraceTags("name", cmd.getName()));
         }
