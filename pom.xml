@@ -6,7 +6,7 @@
 
     <groupId>dansplugins</groupId>
     <artifactId>DansPluginManager</artifactId>
-    <version>0.8.3-SNAPSHOT</version>
+    <version>0.8.3</version>
     <packaging>jar</packaging>
 
     <name>Dan's Plugin Manager</name>
