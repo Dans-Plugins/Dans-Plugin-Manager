@@ -23,7 +23,7 @@ public class ConfigController {
             sender.sendMessage(ChatColor.RED + "Cannot set version.");
             return;
         }
-        if (option.equalsIgnoreCase("debugMode")) {
+        if (option.equalsIgnoreCase("debugMode") || option.equalsIgnoreCase("usage-reporting.enabled")) {
             configRepository.getConfig().set(option, Boolean.parseBoolean(value));
         } else {
             configRepository.getConfig().set(option, value);

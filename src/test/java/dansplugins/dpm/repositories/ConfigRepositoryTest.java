@@ -2,12 +2,16 @@ package dansplugins.dpm.repositories;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
@@ -199,6 +203,29 @@ class ConfigRepositoryTest {
         assertFalse(repository.isUsageReportingEnabled());
         assertEquals("https://trace.danielstephenson.dev", repository.getUsageReportingEndpoint());
         assertEquals("", repository.getUsageReportingKey(), "no key anywhere must read as empty, which the client treats as off");
+    }
+
+    @Test
+    void usageReporting_aQuotedFalseIsOff() throws Exception {
+        // getBoolean() reads the string "false" as the bundled default, true.
+        YamlConfiguration onDisk = new YamlConfiguration();
+        onDisk.loadFromString("usage-reporting:\n  enabled: \"false\"\n");
+        onDisk.setDefaults(bundledConfig());
+        assertTrue(onDisk.getBoolean("usage-reporting.enabled"));
+
+        assertFalse(repository(onDisk, "v1.0", new ArrayList<>()).isUsageReportingEnabled());
+    }
+
+    @Test
+    void usageReporting_anOptOutInTheFileOnDiskWinsOverTheLoadedConfig(@TempDir Path tempDir) throws Exception {
+        // The operator sets enabled: false by hand after the config was loaded.
+        YamlConfiguration loaded = new YamlConfiguration();
+        loaded.setDefaults(bundledConfig());
+        File configFile = tempDir.resolve("config.yml").toFile();
+        Files.write(configFile.toPath(), "usage-reporting:\n  enabled: false\n".getBytes(StandardCharsets.UTF_8));
+        ConfigRepository repository = new ConfigRepository(() -> loaded, () -> "v1.0", () -> { }, () -> configFile);
+
+        assertFalse(repository.isUsageReportingEnabled());
     }
 
     @Test

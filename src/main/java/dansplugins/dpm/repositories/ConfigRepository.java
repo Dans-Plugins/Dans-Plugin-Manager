@@ -6,6 +6,10 @@ import java.util.Map;
 
 import org.bukkit.configuration.file.FileConfiguration;
 
+import dansplugins.dpm.trace.UsageReportingSetting;
+
+import java.io.File;
+
 import java.util.function.Supplier;
 
 public class ConfigRepository {
@@ -19,11 +23,22 @@ public class ConfigRepository {
     private final Supplier<FileConfiguration> configSupplier;
     private final Supplier<String> pluginVersionSupplier;
     private final Runnable saveAction;
+    private final Supplier<File> configFileSupplier;
 
     public ConfigRepository(Supplier<FileConfiguration> configSupplier, Supplier<String> pluginVersionSupplier, Runnable saveAction) {
+        this(configSupplier, pluginVersionSupplier, saveAction, () -> null);
+    }
+
+    /**
+     * @param configFileSupplier config.yml on disk, whose usage-reporting opt-out wins over the
+     *                           loaded config; a supplier of {@code null} skips the file
+     */
+    public ConfigRepository(Supplier<FileConfiguration> configSupplier, Supplier<String> pluginVersionSupplier, Runnable saveAction,
+                            Supplier<File> configFileSupplier) {
         this.configSupplier = configSupplier;
         this.pluginVersionSupplier = pluginVersionSupplier;
         this.saveAction = saveAction;
+        this.configFileSupplier = configFileSupplier;
     }
 
     public void saveMissingConfigDefaultsIfNotPresent() {
@@ -100,8 +115,13 @@ public class ConfigRepository {
     // be "" and would turn reporting off on every existing installation.
     // Verified against YamlConfiguration, not assumed.
 
+    /**
+     * Fails closed: only a value that clearly means on (not a quoted "false", which
+     * getBoolean() would read as the bundled true) turns reporting on, and an opt-out in
+     * config.yml on disk wins over the loaded copy.
+     */
     public boolean isUsageReportingEnabled() {
-        return getBoolean(USAGE_REPORTING_ENABLED_KEY);
+        return UsageReportingSetting.isEnabled(getConfig(), configFileSupplier.get());
     }
 
     public String getUsageReportingEndpoint() {

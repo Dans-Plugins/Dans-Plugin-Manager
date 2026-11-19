@@ -22,6 +22,7 @@ import dansplugins.dpm.services.DependencyResolutionService;
 import dansplugins.dpm.services.DiscordNotificationService;
 import dansplugins.dpm.services.DownloadService;
 import dansplugins.dpm.trace.TraceClient;
+import dansplugins.dpm.trace.UsageReportingSetting;
 import dansplugins.dpm.utils.Logger;
 import dansplugins.dpm.utils.ProjectRecordInitializer;
 import dansplugins.dpm.utils.TabCompleter;
@@ -51,7 +52,7 @@ public final class DansPluginManager extends PonderBukkitPlugin {
     private final ProjectRecordRepository projectRecordRepository = new ProjectRecordRepository();
     private final ProjectRecordFactory projectRecordFactory = new ProjectRecordFactory(projectRecordRepository);
     private final ProjectRecordInitializer projectRecordInitializer = new ProjectRecordInitializer(projectRecordFactory);
-    private final ConfigRepository configRepository = new ConfigRepository(this::getConfig, this::getVersion, this::saveConfig);
+    private final ConfigRepository configRepository = new ConfigRepository(this::getConfig, this::getVersion, this::saveConfig, this::getConfigFile);
     private final Logger logger = new Logger(this);
     private final GitHubReleaseRepository gitHubReleaseRepository = new GitHubReleaseRepository(logger);
     private final PluginFileRepository pluginFileRepository = new PluginFileRepository();
@@ -107,6 +108,26 @@ public final class DansPluginManager extends PonderBukkitPlugin {
         cleanController = new CleanController(projectRecordRepository, pluginFileRepository, getLogger());
         initializeCommandService();
         projectRecordInitializer.initializeProjectRecords();
+    }
+
+    /**
+     * Every save of config.yml goes through here, so none of them can lose the operator's
+     * settings, usage-reporting opt-out included. A file that cannot be parsed -- which Bukkit
+     * loads as empty, so the version stamp and the copied usage-reporting block would otherwise
+     * be written over it with enabled: true -- is never overwritten, and an opt-out written to
+     * the file while the server was running is kept rather than replaced by a stale copy.
+     */
+    @Override
+    public void saveConfig() {
+        if (!UsageReportingSetting.prepareSave(getConfig(), getConfigFile(), false)) {
+            getLogger().severe(UsageReportingSetting.UNPARSEABLE_MESSAGE);
+            return;
+        }
+        super.saveConfig();
+    }
+
+    private File getConfigFile() {
+        return new File(getDataFolder(), "config.yml");
     }
 
     @Override
