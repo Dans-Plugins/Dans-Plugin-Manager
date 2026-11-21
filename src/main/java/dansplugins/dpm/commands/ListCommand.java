@@ -5,7 +5,7 @@ import dansplugins.dpm.controllers.ListController.ListEntry;
 import dansplugins.dpm.controllers.ListController.OutdatedEntry;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
-import dansplugins.dpm.repositories.ChannelRepository;
+import dansplugins.dpm.install.adapters.ChannelRepository;
 import dansplugins.dpm.utils.ResultMessenger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

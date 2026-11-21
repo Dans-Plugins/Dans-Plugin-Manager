@@ -3,11 +3,11 @@ package dansplugins.dpm.controllers;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.objects.ReleaseInfo;
-import dansplugins.dpm.repositories.ChannelRepository;
-import dansplugins.dpm.repositories.GitHubReleaseRepository;
-import dansplugins.dpm.repositories.PluginFileRepository;
+import dansplugins.dpm.install.adapters.ChannelRepository;
+import dansplugins.dpm.install.adapters.GitHubReleaseRepository;
+import dansplugins.dpm.install.adapters.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.install.adapters.VersionRepository;
 
 import java.util.ArrayList;
 import java.util.HashSet;

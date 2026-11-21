@@ -1,9 +1,9 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.controllers.GetController;
-import dansplugins.dpm.controllers.GetController.DependencyResolutionResult;
-import dansplugins.dpm.controllers.GetController.PluginResult;
-import dansplugins.dpm.controllers.GetController.Target;
+import dansplugins.dpm.install.core.GetController;
+import dansplugins.dpm.install.core.GetController.DependencyResolutionResult;
+import dansplugins.dpm.install.core.GetController.PluginResult;
+import dansplugins.dpm.install.core.GetController.Target;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;

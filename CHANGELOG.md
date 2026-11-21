@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Internal: the `/dpm get` and `/dpm update` pipeline is now a pure core behind ports, with one adapter per file, in `dansplugins.dpm.install`. `DownloadService`, `GetController`, `UpdateController` and `DependencyResolutionService` moved to `install.core`; `GitHubReleaseRepository`, `PluginFileRepository`, `VersionRepository`, `ChannelRepository` and `DiscordNotificationService` moved to `install.adapters`; the jar download code moved out of `DownloadService` into `HttpJarDownloader`. No behaviour change: an old-vs-new parity run over 1536 install/update cases found no differences. An architecture test now keeps the core free of Bukkit, network and filesystem code.
+
 ### Fixed
 
 - Usage reporting stayed on when the opt-out was written in a way the plugin did not recognise: under another spelling of the block (`usage_reporting:`, `usageReporting:`), as `usage-reporting: false`, or with another spelling of the switch (`enable: false`, `disabled: true`). When the plugin wrote `config.yml` (on a version change, for example), it also added the bundled `usage-reporting` block, `enabled: true`, next to the operator's setting. Each of these now counts as off, and every save writes `usage-reporting.enabled: false` into the real block, so the file shows that reporting is off.

@@ -1,5 +1,6 @@
 package dansplugins.dpm.repositories;
 
+import dansplugins.dpm.install.adapters.GitHubReleaseRepository;
 import org.bukkit.configuration.ConfigurationSection;
 import java.util.LinkedHashMap;
 import java.util.Map;

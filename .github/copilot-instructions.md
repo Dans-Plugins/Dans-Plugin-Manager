@@ -19,6 +19,7 @@ making any changes.
 - `src/main/java/dansplugins/dpm/repositories/` – Data access (filesystem, GitHub API, Bukkit config)
 - `src/main/java/dansplugins/dpm/controllers/` – Business logic orchestration (ConfigController)
 - `src/main/java/dansplugins/dpm/services/` – Pure business-logic services
+- `src/main/java/dansplugins/dpm/install/` – The `/dpm get` + `/dpm update` pipeline as ports and adapters: `core/` (policy), `ports/` (interfaces), `adapters/` (GitHub, HTTP download, plugins folder, version/channel stores, Discord), `InstallService` (wiring). See its `package-info.java`
 - `src/main/resources/` – `plugin.yml`
 
 ## Contribution Workflow

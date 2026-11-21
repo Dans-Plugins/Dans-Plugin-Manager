@@ -40,7 +40,7 @@ This project had an issue posted claiming `/dpm update` caused duplicate GitHub 
 
 ## Test style
 
-Tests use **JUnit 5** (`org.junit.jupiter`). No mocking framework — use anonymous subclasses to fake dependencies (see `DownloadServiceTest` for examples).
+Tests use **JUnit 5** (`org.junit.jupiter`). No mocking framework — use anonymous subclasses to fake dependencies (see `DownloadServiceTest` for examples). In the install pipeline (`dansplugins.dpm.install`), prefer the in-memory fakes in `src/test/.../install/fakes` (`FakeReleaseSource`, `FakeJarDownloader`, `FakePluginFolder`, ...) — see `DownloadServicePortsTest`.
 
 Filesystem tests use `@TempDir Path tempDir` and construct a `PluginFolderService(tempDir.toString())` with the temp path.
 
@@ -55,7 +55,7 @@ Filesystem tests use `@TempDir Path tempDir` and construct a `PluginFolderServic
 
 **`HttpURLConnection` parameter-shadow gotcha**: when creating anonymous `HttpURLConnection` subclasses in tests, never name a parameter or local `responseCode` — `HttpURLConnection` has a protected `int responseCode` field that shadows it, so a `getResponseCode()` override returns the field (`-1`) instead of the value you passed in. Use `statusCode` or similar. The code compiles cleanly and the failure messages don't point at the root cause, so this can waste a full compile-test cycle.
 
-**Retry/sleep override pattern**: when adding retry logic with `Thread.sleep` (or equivalent) to a service method, extract the sleep into a package-private `void sleepMs(long ms)` method — same anonymous-subclass pattern as `doFetch()`/`openNetworkStream()`. Tests override it to a no-op so retries execute immediately. When you add retry to an *existing* method, audit tests that call it with always-failing URLs (e.g. `localhost:1`) — they will now incur the retry delay unless they also override `sleepMs`.
+**Retry/sleep override pattern**: when adding retry logic with `Thread.sleep` (or equivalent) to a service method, extract the sleep into a package-private `void sleepMs(long ms)` method — same anonymous-subclass pattern as `GitHubReleaseRepository.doFetch()`/`HttpJarDownloader.doOpenNetworkStream()`. Tests override it to a no-op so retries execute immediately; outside `install.adapters`, use the `NoSleepHttpJarDownloader` test helper instead. When you add retry to an *existing* method, audit tests that call it with always-failing URLs (e.g. `localhost:1`) — they will now incur the retry delay unless they also override `sleepMs`.
 
 ## Integration test suite
 
@@ -92,6 +92,10 @@ Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 Results are always dispatched back to the main thread via `runTask` before sending messages.
 
 **Destructive commands** use `--confirm` to preview before acting (see `CleanCommand`, `RemoveCommand`). The no-arg or no-flag path always previews; `--confirm` performs the action. This pattern works identically in-game and from the console and requires no server-side state.
+
+## Install pipeline layout (ports and adapters)
+
+`/dpm get` and `/dpm update` live in `src/main/java/dansplugins/dpm/install/`: policy in `core/`, one interface per file in `ports/`, one implementation per file in `adapters/`, wired by `InstallService`. `package-info.java` there has the diagram and the port → adapter table. `InstallArchitectureTest` fails the build if `core/` or `ports/` mention adapters, Bukkit, `java.net`, `java.io` or `java.nio.file`, or if a port/adapter file declares more than one top-level type. A new port needs a fake in `install/fakes`, an abstract contract test in `install/ports`, and a `*ContractTest` for both the fake and the production adapter.
 
 ## Dependency declarations
 

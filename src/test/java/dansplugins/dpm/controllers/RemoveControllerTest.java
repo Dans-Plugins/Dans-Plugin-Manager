@@ -5,11 +5,11 @@ import dansplugins.dpm.controllers.RemoveController.RemovalPreview;
 import dansplugins.dpm.controllers.RemoveController.RemovalResult;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
-import dansplugins.dpm.repositories.ChannelRepository;
-import dansplugins.dpm.repositories.PluginFileRepository;
+import dansplugins.dpm.install.adapters.ChannelRepository;
+import dansplugins.dpm.install.adapters.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
-import dansplugins.dpm.services.DependencyResolutionService;
+import dansplugins.dpm.install.adapters.VersionRepository;
+import dansplugins.dpm.install.core.DependencyResolutionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -1,9 +1,9 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.repositories.PluginFileRepository;
+import dansplugins.dpm.install.adapters.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
+import dansplugins.dpm.install.adapters.VersionRepository;
 
 import java.util.ArrayList;
 import java.util.HashSet;
