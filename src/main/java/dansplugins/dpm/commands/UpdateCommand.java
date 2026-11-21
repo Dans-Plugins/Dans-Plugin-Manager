@@ -1,8 +1,8 @@
 package dansplugins.dpm.commands;
 
-import dansplugins.dpm.controllers.UpdateController;
-import dansplugins.dpm.controllers.UpdateController.PluginResult;
-import dansplugins.dpm.controllers.UpdateController.SelectionResult;
+import dansplugins.dpm.install.core.UpdateController;
+import dansplugins.dpm.install.core.UpdateController.PluginResult;
+import dansplugins.dpm.install.core.UpdateController.SelectionResult;
 import dansplugins.dpm.objects.ProjectRecord;
 import dansplugins.dpm.objects.ReleaseChannel;
 import dansplugins.dpm.utils.ResultMessenger;

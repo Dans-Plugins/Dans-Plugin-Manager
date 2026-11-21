@@ -1,6 +1,6 @@
 package dansplugins.dpm.controllers;
 
-import dansplugins.dpm.repositories.PluginFileRepository;
+import dansplugins.dpm.install.adapters.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 
 // Aggregates /dpm stats counts, returning plain result data rather than sending messages.

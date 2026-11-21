@@ -2,7 +2,7 @@ package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.controllers.StatsController.Stats;
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.repositories.PluginFileRepository;
+import dansplugins.dpm.install.adapters.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

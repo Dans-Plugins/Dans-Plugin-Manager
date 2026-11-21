@@ -1,7 +1,7 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.repositories.ConfigRepository;
-import dansplugins.dpm.repositories.GitHubReleaseRepository;
+import dansplugins.dpm.install.adapters.GitHubReleaseRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 

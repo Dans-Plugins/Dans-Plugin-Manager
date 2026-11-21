@@ -1,11 +1,11 @@
 package dansplugins.dpm.controllers;
 
 import dansplugins.dpm.objects.ProjectRecord;
-import dansplugins.dpm.repositories.ChannelRepository;
-import dansplugins.dpm.repositories.PluginFileRepository;
+import dansplugins.dpm.install.adapters.ChannelRepository;
+import dansplugins.dpm.install.adapters.PluginFileRepository;
 import dansplugins.dpm.repositories.ProjectRecordRepository;
-import dansplugins.dpm.repositories.VersionRepository;
-import dansplugins.dpm.services.DependencyResolutionService;
+import dansplugins.dpm.install.adapters.VersionRepository;
+import dansplugins.dpm.install.core.DependencyResolutionService;
 
 import java.io.File;
 import java.util.List;
